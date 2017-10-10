@@ -144,7 +144,7 @@ for (i in 1:length(ECHOConv$feat_num)){
     LimitswNA<-unique(b$limit_value_nmbr[b$statistical_base_code==codes[j]])
     if(length(LimitswNA)>1){#Occasionally limits report as NA which can alter this code
       if(length(LimitswNA[!is.na(LimitswNA)])>1){
-        warning("More than one real limit found, only using median")
+        warning("More than one real limit found, only using median of latest permit")
         Limiti[j]<-median(b$limit_value_nmbr[b$statistical_base_code==codes[j]&b$limit_end_date==max(b$limit_end_date[b$statistical_base_code==codes[j]],na.rm=T)],na.rm=T)
       }else{
       Limiti[j]<-LimitswNA[!is.na(LimitswNA)] 
