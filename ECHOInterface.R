@@ -112,7 +112,6 @@ for (i in 1:length(DMR_summary$SourceID)){
 
 #Writes out a csv that contains ECHO ID, VPDES ID, and the outfall identifier (which is combined with ECHO ID to form VPDES ID) to a csv, ECHOConv.csv
 ECHOConv<-data.frame(ECHOID,VPDESID,feat_num)
-setwd("C:/Users/connorb5/Desktop")
 write.csv(ECHOConv,"ECHOConvWaterOnly.csv")
 rm(i,ECHOID,VPDESID,feat_num,VAID,addedzeroes,features,uri_effluent)
 
