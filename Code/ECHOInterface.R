@@ -9,6 +9,8 @@ rm(list=ls())
 #Some basic R libraries to get data from https servers and use parse XML data
 library(XML)
 library(RCurl)
+library(dplyr)
+library(foreign)
 
 #Current inputs for the R script. Right now, these inputs are manual entry only but they can be easily
 #converted into a function later on. Inputs are 'state', which is the state of interest, 'startDate' and
@@ -170,4 +172,4 @@ test<-FlowFrame[FlowFrame$Code=='MK',]
 write.csv(test,"test.csv")
 test2<-as.data.frame(FlowFrame %>% group_by(Coded) %>% summarize(Count=n()))
 write.dbf(test,"test")
-rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
+rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA,b)
