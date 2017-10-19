@@ -113,7 +113,7 @@ for (i in 1:length(DMR_summary$SourceID)){
 }
 
 #Writes out a csv that contains ECHO ID, VPDES ID, and the outfall identifier (which is combined with ECHO ID to form VPDES ID) to a csv, ECHOConv.csv
-ECHOConv<-data.frame(ECHOID,VPDESID,feat_num)
+ECHOConvWater<-data.frame(ECHOID,VPDESID,feat_num)
 write.csv(ECHOConv,"ECHOConvWaterOnly.csv")
 rm(i,ECHOID,VPDESID,feat_num,VAID,addedzeroes,features,uri_effluent)
 
@@ -129,9 +129,9 @@ ECHOID<-"";ECHOID<-ECHOID[-1]
 feat_num<-"";feat_num<-feat_num[-1]
 Code<-'';Code<-Code[-1]
 Coded<-'';Coded<-Coded[-1]
-for (i in 1:length(ECHOConv$feat_num)){
-  sourceID<-as.character(ECHOConv$ECHOID[i])
-  outfall<-as.character(ECHOConv$feat_num[i])
+for (i in 1:length(ECHOConvWater$feat_num)){
+  sourceID<-as.character(ECHOConvWater$ECHOID[i])
+  outfall<-as.character(ECHOConvWater$feat_num[i])
   uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&outfall=",outfall,"&start_date=",startDate,"&end_date=",endDate)
   b<-read.csv(uri_effluent,stringsAsFactors = F)
   b<-b[b$parameter_code==50050,]
@@ -173,3 +173,10 @@ write.csv(test,"test.csv")
 test2<-as.data.frame(FlowFrame %>% group_by(Coded) %>% summarize(Count=n()))
 write.dbf(test,"test")
 rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA,b)
+
+library(foreign)
+library(rgdal)
+temp<-tempfile()
+download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip",temp)
+unzip(temp,exdir="C:/Users/connorb5/Desktop/USGS Testing")
+VPDES<-as.data.frame(readOGR("C:/Users/connorb5/Desktop/USGS Testing/VPDES_Geodatabase.gdb",layer="VPDES_OUTFALLS"))
