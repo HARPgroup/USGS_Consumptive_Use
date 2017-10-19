@@ -11,6 +11,7 @@ library(XML)
 library(RCurl)
 library(dplyr)
 library(foreign)
+library(rgdal)
 
 #Current inputs for the R script. Right now, these inputs are manual entry only but they can be easily
 #converted into a function later on. Inputs are 'state', which is the state of interest, 'startDate' and
@@ -174,8 +175,7 @@ test2<-as.data.frame(FlowFrame %>% group_by(Coded) %>% summarize(Count=n()))
 write.dbf(test,"test")
 rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA,b)
 
-library(foreign)
-library(rgdal)
+
 temp<-tempfile()
 download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip",temp)
 unzip(temp,exdir="C:/Users/connorb5/Desktop/USGS Testing")
