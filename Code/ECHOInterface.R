@@ -128,9 +128,4 @@ for (i in 1:length(a$SourceID)) {
 FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,Flow,Unit,Limit,Code,Coded)
 #rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
 FlowFrameF<-FlowFrame[!is.na(FlowFrame$VPDESID),]
-FlowFrameO<-read.csv("c:/Users/connorb5/Desktop/USGS Testing/2016 ECHO/FlowFrame2016.csv",stringsAsFactors = F);FlowFrameO<-FlowFrameO[,-1]
-FlowFrameF[FlowFrameF$Flow==FlowFrameO$Flow,]
-for (i in 1:length(FlowFrameO$ECHOID)){
-FlowFrameO$NFlow[i]<-FlowFrameF$Flow[FlowFrameO$VPDESID[i]==FlowFrameF$VPDESID&FlowFrameO$Code[i]==FlowFrameF$Code]            
-FlowFrameO$Diff<-(FlowFrameO$Flow-FlowFrameO$NFlow)
-}
+
