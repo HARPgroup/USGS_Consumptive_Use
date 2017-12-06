@@ -66,6 +66,7 @@ for (i in 1:length(a$SourceID)) {
   uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate)
   b<-read.csv(uri_effluent,stringsAsFactors = F)
   b<-b[b$parameter_code==50050,]
+  b$dmr_value_nmbr[b$nodi_code %in% c('C','7')]<-0
   b$monitoring_period_end_date<-as.Date(as.POSIXct(b$monitoring_period_end_date,"EST",format='%m/%d/%Y'))
   data_length<-length(unique(b$monitoring_period_end_date))
   if (data_length>0){
