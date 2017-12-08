@@ -18,6 +18,7 @@ library(RCurl)
 state<-"VA"
 startDate<-"01/01/2016"
 endDate<-"12/31/2016"
+path<-"C:/Users/connorb5/Desktop/USGS Testing"
 #endDate<-Sys.Date()
 #endDate<-format(as.Date(endDate), "%m/%d/%Y")
 
@@ -129,4 +130,4 @@ for (i in 1:length(a$SourceID)) {
 FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,Flow,Unit,Limit,Code,Coded)
 #rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),]
-
+write.csv(FlowFrame,paste0(path,'/FlowFrame.csv'))
