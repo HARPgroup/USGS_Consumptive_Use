@@ -128,5 +128,5 @@ for (i in 1:length(a$SourceID)) {
 #These next few lines subset and export the data developed in the above loops
 FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,Flow,Unit,Limit,Code,Coded)
 #rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
-FlowFrameF<-FlowFrame[!is.na(FlowFrame$VPDESID),]
+FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),]
 

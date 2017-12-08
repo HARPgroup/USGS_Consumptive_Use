@@ -15,8 +15,7 @@ library(readxl)
 #VA Hydro facility list and VPDES info spreadsheet are manual downloads due to slow internet connections, making it difficult to access without R timing out
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
-path<-"C:/Users/connorb5/Desktop/USGS Testing/"
-ECHO_year<-'2016'
+path<-"C:/Users/connorb5/Desktop/USGS Testing"
 #Get ECHO Facility List and store in dataframe 'a'
   uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
   ECHO_xml<-getURL(uri_query)
@@ -29,18 +28,18 @@ a<-read.csv(uri_summary,stringsAsFactors = F)
 temp<-tempfile()
 download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip",temp)
 unzip(temp,exdir=path)
-VPDES<-as.data.frame(readOGR(paste0(path,"VPDES_Geodatabase.gdb"),layer="VPDES_OUTFALLS"))
+VPDES<-as.data.frame(readOGR(paste0(path,"/VPDES_Geodatabase.gdb"),layer="VPDES_OUTFALLS"))
 names(VPDES)[names(VPDES)=="OUTFALL_ID"]<-'VPDESID'
 VPDES_IP<-VPDES[VPDES$VAP_TYPE=='VPDES_IP',]
 names(a)[1]<-"VAP_PMT_NO"#Need to rename to give a central columnn name for future joins
 #Download statistical codes from ECHO
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 #Manual inputs are as follows below. By default, assumes path above:
-FlowFrame<-read.csv(paste0(path,"2016 ECHO/FlowFrameNoDis2016.csv"),stringsAsFactors = F)
-FlowFrameNew<-read.csv(paste0(path,"2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
-#Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
-Hydro<-read.csv(paste0(path,"vahydro_facilities.csv"),stringsAsFactors = F)
-VPDESFlows<-read_excel(paste0(path,'VPDES Active IP Nov 2017.xls'),skip=9)
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameNoDis2016.csv"),stringsAsFactors = F)
+FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
+Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
+Hydro<-read.csv(paste0(path,"/vahydro_facilities.csv"),stringsAsFactors = F)
+VPDESFlows<-read_excel(paste0(path,'/VPDES Active IP Nov 2017.xls'),skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 ################################################################################################################################
@@ -139,7 +138,7 @@ for (i in 1:length(AllFacs$FacilityID)){
 #Reorder data such that statistics are reported after basic facility information
 order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))
 AllFacs<-AllFacs[,order]
-AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$VPP_DES_FL_plus,decreasing=T),]
+AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]
 rm(order,orderi,i,headers,allcols)
 
 #Provide a summary on number of reporting facilities, value of statistics, etc.
