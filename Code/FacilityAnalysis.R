@@ -8,8 +8,9 @@ library(dplyr)
 library(XML)
 library(RCurl)
 library(readxl)
+library(httr)
 
-#Required inputs: State, Flow frame from ECHO run, VPDES information spreadsheet (available here:http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490)
+#Required inputs: State and Flow frame from ECHO run
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
 path<-"C:/Users/connorb5/Desktop/USGS Testing"
@@ -33,7 +34,8 @@ names(a)[1]<-"VAP_PMT_NO"#Need to rename to give a central columnn name for futu
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 #Manual inputs are as follows below. By default, assumes path above:
 FlowFrame<-read.csv(paste0(path,"/FlowFrame.csv"),stringsAsFactors = F)
-VPDESFlows<-read_excel(paste0(path,'/VPDES Active IP Nov 2017.xls'),skip=9)
+GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490', write_disk(temp <- tempfile(fileext = ".xls")))
+VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 ################################################################################################################################

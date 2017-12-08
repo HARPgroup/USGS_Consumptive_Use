@@ -8,9 +8,9 @@ library(dplyr)
 library(XML)
 library(RCurl)
 library(readxl)
+library(httr)
 
 #Required inputs: State, Flow frame from ECHO run, flow frame from 2017 (shows change in outfalls),
-#VPDES information spreadsheet (available here:https://www.google.com/url?q=http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%2520Spreadsheets/VPDES%2520Active%2520IP%2520Nov%25202017.xls?ver%3D2017-11-14-152041-490&sa=D&ust=1512674074351000&usg=AFQjCNGfjflxa8aP1DDNW304TUq16koAWA)
 #and VA Hydro facility list (http://deq1.bse.vt.edu/d.bet/vahydro_facilities)
 #VA Hydro facility list and VPDES info spreadsheet are manual downloads due to slow internet connections, making it difficult to access without R timing out
 #input/output path will also be required as the script needs a place to store downloads from VPDES
@@ -39,7 +39,8 @@ FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameNoDis2016.csv"),stringsAsFa
 FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
 Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
 Hydro<-read.csv(paste0(path,"/vahydro_facilities.csv"),stringsAsFactors = F)
-VPDESFlows<-read_excel(paste0(path,'/VPDES Active IP Nov 2017.xls'),skip=9)
+GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490', write_disk(temp <- tempfile(fileext = ".xls")))
+VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 ################################################################################################################################
