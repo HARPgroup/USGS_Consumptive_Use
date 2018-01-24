@@ -16,9 +16,10 @@ library(RCurl)
 #The state should be entered as the USPS abbreviation and the dates should be entered 'mm/dd/yyyy'
 #Current values for dates are default from ECHO
 state<-"VA"
-startDate<-"01/01/2016"
-endDate<-"12/31/2016"
+startDate<-"01/01/2017"
+endDate<-"12/31/2017"
 path<-"C:/Users/connorb5/Desktop/USGS Testing"
+#path<-"C:\\Users\\nrf46657\\Desktop\\connor_code\\"
 #endDate<-Sys.Date()
 #endDate<-format(as.Date(endDate), "%m/%d/%Y")
 
@@ -64,6 +65,9 @@ Coded<-'';Coded<-Coded[-1]
 #as the number of unique outfalls identified for that particular iteration of source ID
 for (i in 1:length(a$SourceID)) {
   sourceID<-a$SourceID[i]
+  
+  print(paste("Processing SourceID: ",sourceID," (",i," of ",length(a$SourceID),")", sep=""))
+  
   uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate)
   b<-read.csv(uri_effluent,stringsAsFactors = F)
   b<-b[b$parameter_code==50050,]
