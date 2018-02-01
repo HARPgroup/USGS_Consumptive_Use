@@ -1,5 +1,9 @@
 #This code is intended to take inputs from external VPDES databases and combine them with outputs from ECHO, creating merged datasets
 #It also formats and organizes data and searches for lat/long values to assign to VA Hydro MPs/Facs and those from ECHO
+#Primary outputs are the reformatted VA Hydro facility "Hydro" that have corrected geometries and "AllFacs" which offers discharge summaries
+#for every state facility. "All" given a merged version of VPDES and ECHO data on an outfall level, reordered for convenience.
+#"FacSummary" offers information on the variety of statistics reported by state DMR records and adds a total stat count for each facility
+#onto "AllFacs"
 #######################
 #Library Initialization
 library(foreign)
@@ -103,32 +107,32 @@ AllFacs<-as.data.frame(All %>% group_by(FacilityID) %>% summarize_at(vars(c(17,1
 headers<-as.character(unique(FlowFrame$Code))
 order<-numeric(0)
 for (i in 1:length(headers)){
-  orderi<-grep(headers[i],colnames(AllFacs))
+  orderi<-grep(headers[i],colnames(AllFacs))#reorganize by searching for a stat in column headers and grouping together those that have the same
   order<-c(order,orderi)
 }
 allcols<-seq(1,length(colnames(AllFacs)))
-order<-c(allcols[!(allcols %in% order)],order)
-AllFacs<-AllFacs[,order]
+order<-c(allcols[!(allcols %in% order)],order)#Ensure that all columns are present
+AllFacs<-AllFacs[,order]#Reorganize by the stat order developed in the immediate preceeding for loop
 
 #Add in facility names lat/long, and number of outfalls from each dataset looking at ECHO first to find data than VPDES (indicated by source data)
 for (i in 1:length(AllFacs$FacilityID)){
   AllFacs$FacilityName[i]<-NA
-  if(length(a$CWPName[a$VAP_PMT_NO==AllFacs$FacilityID[i]])>0){
+  if(length(a$CWPName[a$VAP_PMT_NO==AllFacs$FacilityID[i]])>0){#If the current examined facility is in the list of ECHO facilities, note that
     AllFacs$SourceData[i]<-'ECHO'
     AllFacs$FacilityName[i]<-a$CWPName[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
   }
-  if(is.na(AllFacs$FacilityName[i])){
+  if(is.na(AllFacs$FacilityName[i])){#If its not, than the facility is a VPDES exclusive. Make note of that
     AllFacs$FacilityName[i]<-as.character(All$FAC_NAME[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
     AllFacs$SourceData[i]<-'VPDES'
   }
-  AllFacs$VPDESOutfalls[i]<-sum(!(is.na(All$VAP_PMT_NO[All$FacilityID==AllFacs$FacilityID[i]])))
+  AllFacs$VPDESOutfalls[i]<-sum(!(is.na(All$VAP_PMT_NO[All$FacilityID==AllFacs$FacilityID[i]])))#Find the number of data reporting outfalls in VPDES and ECHO
   AllFacs$ECHOOutfalls[i]<-sum(!(is.na(All$ECHOID[All$FacilityID==AllFacs$FacilityID[i]])))
-  AllFacs$TotalOutfalls[i]<-length(All$FacilityID[All$FacilityID==AllFacs$FacilityID[i]])
-  AllFacs$VPDES2017Outfalls[i]<-length(VPDES$VAP_PMT_NO[VPDES$VAP_PMT_NO==AllFacs$FacilityID[i]])
+  AllFacs$TotalOutfalls[i]<-length(All$FacilityID[All$FacilityID==AllFacs$FacilityID[i]])#Find the total number of outfalls
+  AllFacs$VPDESOutfalls[i]<-length(VPDES$VAP_PMT_NO[VPDES$VAP_PMT_NO==AllFacs$FacilityID[i]])
   AllFacs$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==AllFacs$FacilityID[i]]))
 }
 for (i in 1:length(AllFacs$FacilityID)){
-  if(AllFacs$SourceData[i]=='ECHO'){
+  if(AllFacs$SourceData[i]=='ECHO'){#Based on value of source data noted earlier, find lat/long. VPDES lat/long may need to be reprojected, so check ECHO first
     AllFacs$lat[i]<-a$FacLat[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
     AllFacs$lon[i]<-a$FacLong[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
   }else{
@@ -137,27 +141,27 @@ for (i in 1:length(AllFacs$FacilityID)){
   }
   }
 #Reorder data such that statistics are reported after basic facility information
-order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))
-AllFacs<-AllFacs[,order]
-AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]
+order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))#May need manual adjustment if data changes. Basic reorganize
+AllFacs<-AllFacs[,order]#Reorganize so that facility info presents before statistics
+AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]#Order by largest ECHO/VPDES discrepencies first
 rm(order,orderi,i,headers,allcols)
 
 #Provide a summary on number of reporting facilities, value of statistics, etc.
 #only interested in ECHO statistics
-order<-grep('plus',colnames(AllFacs))
+order<-grep('plus',colnames(AllFacs))#Only want those that summed data (i.e. not facility info or NA counts)
 PlusFacs<-AllFacs[,order]
 FacSummary<-data.frame(Stat=colnames(PlusFacs),StatCode=character(length(colnames(PlusFacs))),Description=character(length(colnames(PlusFacs))),Present=numeric(length(colnames(PlusFacs))))
 FacSummary$Stat<-as.character(FacSummary$Stat);FacSummary$StatCode<-as.character(FacSummary$StatCode);FacSummary$Description<-as.character(FacSummary$Description)
 #A simle lopp to extract code name and the number/value of facilities collectivley reporting it
 for (i in 1:length(colnames(PlusFacs))){
   column<-as.vector(PlusFacs[,i])
-  FacSummary$StatCode[i]<-gsub(".*[.]([^_]+)[_].*","\\1",FacSummary$Stat[i])
+  FacSummary$StatCode[i]<-gsub(".*[.]([^_]+)[_].*","\\1",FacSummary$Stat[i])#Extract stat using glob notation
   FacSummary$Description[i]<-NA
-  if(FacSummary$StatCode[i] %in% CodeKey$STATISTICAL_BASE_CODE){
+  if(FacSummary$StatCode[i] %in% CodeKey$STATISTICAL_BASE_CODE){#Add a description of a code where possible
   FacSummary$Description[i]<-CodeKey$STATISTICAL_BASE_LONG_DESC[CodeKey$STATISTICAL_BASE_CODE==FacSummary$StatCode[i]]
   }
-  FacSummary$Present[i]<-sum(!(is.na(column)))
-  FacSummary$SumValue[i]<-plus(column)
+  FacSummary$Present[i]<-sum(!(is.na(column)))#Provide the count of how many facilities are reporting this given statistic
+  FacSummary$SumValue[i]<-plus(column)#Sum the column to show overall value of stat
 }
 #Create separate tables for flows and limits
 order<-grep('Limit',as.character(FacSummary$Stat))
@@ -167,14 +171,14 @@ rm(column)
 #Quick means of finding number of total reported statistcs per facility
 order<-c(1,2,grep('plus',colnames(AllFacs)))
 order2<-grep('Limit',colnames(AllFacs[,order]))
-order<-order[!(order %in% order2)]
+order<-order[!(order %in% order2)]#Extract facility and outfall ID along with all summed stat columns
 test<-AllFacs[,order]
 test<-test[,-3]
 for (i in 1:length(test$FacilityID)){
-  test$StatTotal[i]<-rowSums(!is.na(test[i,3:length(colnames(test))]))
+  test$StatTotal[i]<-rowSums(!is.na(test[i,3:length(colnames(test))]))#find how many stats a given facility is reporting
 }
 for (i in 1:length(AllFacs$FacilityName)){
-  AllFacs$FlowStatTotal[i]<-test$StatTotal[test$FacilityID==AllFacs$FacilityID[i]]
+  AllFacs$FlowStatTotal[i]<-test$StatTotal[test$FacilityID==AllFacs$FacilityID[i]]#Add the total number of columns onto the AllFacs output
 }
 rm(test,order,order2)
 

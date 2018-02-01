@@ -65,38 +65,36 @@ Coded<-'';Coded<-Coded[-1]
 #as the number of unique outfalls identified for that particular iteration of source ID
 for (i in 1:length(a$SourceID)) {
   sourceID<-a$SourceID[i]
-  
   print(paste("Processing SourceID: ",sourceID," (",i," of ",length(a$SourceID),")", sep=""))
-  
   uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate)
-  b<-read.csv(uri_effluent,stringsAsFactors = F)
-  b<-b[b$parameter_code==50050,]
-  b$dmr_value_nmbr[b$nodi_code %in% c('C','7')]<-0
-  b$monitoring_period_end_date<-as.Date(as.POSIXct(b$monitoring_period_end_date,"EST",format='%m/%d/%Y'))
-  data_length<-length(unique(b$monitoring_period_end_date))
+  b<-read.csv(uri_effluent,stringsAsFactors = F)#Obtain DMR data for outfall i
+  b<-b[b$parameter_code==50050,]#Extract only the parameter data from the DMR
+  b$dmr_value_nmbr[b$nodi_code %in% c('C','7')]<-0#Where values are noted as no dischartge, set discharge to zero rather than NA. This includes them in futrue calculations
+  b$monitoring_period_end_date<-as.Date(as.POSIXct(b$monitoring_period_end_date,"EST",format='%m/%d/%Y'))#Convert dates to Date class through POSIXct forcing
+  data_length<-length(unique(b$monitoring_period_end_date))#Obtain length of monitoring record. Note: May not be number of months if annual, quarterly, etc. reporting
   if (data_length>0){
-    featuresID<-unique(b$perm_feature_nmbr)
-    features<-unique(b$perm_feature_nmbr)
+    featuresID<-unique(b$perm_feature_nmbr)#Store all outfalls
+    features<-unique(b$perm_feature_nmbr)#Create a variable to store reformatted outfall IDs that will have leading zeroes where necessary
     for (j in 1:length(features)){
       if(!is.na(as.numeric(features[j]))){
-        addedzeroes<-paste(rep(0,3-nchar(features[j])),collapse = '')
-        features[j]<-paste0(addedzeroes,as.character(features[j]))
+        addedzeroes<-paste(rep(0,3-nchar(features[j])),collapse = '')#If the feature j is numeric, add leading zeroes such that the ID 
+        features[j]<-paste0(addedzeroes,as.character(features[j]))#is three places long (for outfall ID like those in VPDES)
       } else{
-        features[j]<-as.character(features[j])
+        features[j]<-as.character(features[j])#If the feature j is not numeric, then no formatting is necessary
       }
     }
     for (k in 1:length(features)){
-      outfall<-as.character(features[k])
-      bspec<-b[b$perm_feature_nmbr==featuresID[k],]
-      codes<-unique(bspec$statistical_base_code)
-      Flowi<-numeric(length(codes))
+      outfall<-as.character(features[k])#This loop will deal with outfall k
+      bspec<-b[b$perm_feature_nmbr==featuresID[k],]#Extract data from the DMR such that it only deals with feature/outfall k
+      codes<-unique(bspec$statistical_base_code)#Determine how many statistics are reported for this outfall
+      Flowi<-numeric(length(codes))#Create areas to store extracted flows, units, and limits
       Uniti<-numeric(length(codes))
       Limiti<-numeric(length(codes))
       Codedi<-unique(bspec$statistical_base_code)
       for (j in 1:length(codes)){
-        Flowi[j]<-mean(bspec$dmr_value_nmbr[bspec$statistical_base_code==codes[j]],na.rm=T)
-        Uniti[j]<-unique(bspec$standard_unit_desc[bspec$statistical_base_code==codes[j]])
-        LimitswNA<-unique(bspec$limit_value_nmbr[bspec$statistical_base_code==codes[j]])
+        Flowi[j]<-median(bspec$dmr_value_nmbr[bspec$statistical_base_code==codes[j]],na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
+        Uniti[j]<-unique(bspec$standard_unit_desc[bspec$statistical_base_code==codes[j]])#Find the units being associated with this particular outfall
+        LimitswNA<-unique(bspec$limit_value_nmbr[bspec$statistical_base_code==codes[j]])#Store limits and eliminate if NA or take median if multiple
         if(length(LimitswNA)>1){#Occasionally limits report as NA which can alter this code
           if(length(LimitswNA[!is.na(LimitswNA)])>1){
             warning("More than one real limit found, only using median")
@@ -107,9 +105,9 @@ for (i in 1:length(a$SourceID)) {
         }else{
           Limiti[j]<-LimitswNA
         }
-        Codedi[j]<-unique(bspec$statistical_base_short_desc[bspec$statistical_base_code==codes[j]])
+        Codedi[j]<-unique(bspec$statistical_base_short_desc[bspec$statistical_base_code==codes[j]])#Store the statistic used in developing the meadian above
       }
-      Flow<-c(Flow,Flowi)
+      Flow<-c(Flow,Flowi)#Store flow, units, limits, and stat codes as needed
       Unit<-c(Unit,Uniti)
       Limit<-c(Limit,Limiti)
       Code<-c(Code,codes)
