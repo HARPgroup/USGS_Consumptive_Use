@@ -1,6 +1,6 @@
 #name, hydrocode,wkt_geom,ftype,bundle
 #Need from_node and to_node for conveyance. Omit wkt_geom for conveyance
-#Require flow frame to be generated from ECHOInterface.R
+#Require flow frame flipped to be generated from AnalysisCode.R
 #######################
 #Library Initialization
 library(XML)
