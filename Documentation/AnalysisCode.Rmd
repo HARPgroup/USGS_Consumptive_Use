@@ -1,0 +1,98 @@
+---
+title: "Analysis Code"
+author: "Connor Brogan"
+date: "February 8, 2018"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+
+This code is intended to take inputs from external VPDES databases and combine them with outputs from ECHO, creating merged datasets. It formats and organizes data and searches for lat/long values to assign to VA Hydro MPs/Facs and those from ECHO. Primary outputs are then reformatted to create two primary datasets: VA Hydro facility "**Hydro**" that have corrected geometries and "**AllFacs**" which offers discharge summaries for every state facility. Other data output includes: "*All*" given a merged version of VPDES and ECHO data on an outfall level, reordered for convenience; "*FacSummary*" offers information on the variety of statistics reported by state DMR records and adds a total stat count for each facility onto "**AllFacs**". The primary purpose of this code, however, is the output data frame "**AllFacs**". By aggregating outfall DMRs to the facility level, AnalysisCode.R generates a facility summary that shows every available statistic reported in their DMRs. This makes cross-facility comparison possible by more easily giving fields for reference.
+
+
+#Initialization
+The following libraries are called within AnalysisCode. The *foreign* library allows for easy manipulation of \*.dbf file types. It's 'read.dbf' function is called repeatedly in data introduction and writing to retrieve/write data/results. *rgdal* is a package designed to allow users to extract files from file geodatabases, like those create in Esri ArcGIS. It is necessary here to extract the VPDES shapefile, which offers preliminary lat/long data of many outfalls in the state. *dplyr* is a data manipulation package that can speed up group, summarize, and ordering processes used several times here. It's piping function '%>%' is useful to feed data along a series of functions without needing to call it each time.. *XML* is a package that downloads and reads XML file types from webpages. It is used here to access ECHO rest services to download state facilities. *RCurl* is a package that helps download and interact with web-based content. This code makes use of its 'getURL' function to read data from ECHO. *readxl* is a self-explanatory package that enables direct reading of excel files into R used here to read VPDES data. *httr* is similar to RCurl. Both are called here due to the fact 
+```{r, warning=FALSE,message=FALSE}
+library(foreign)
+library(rgdal)
+library(dplyr)
+library(XML)
+library(RCurl)
+library(readxl)
+library(httr)
+```
+
+After libraries are added, preliminary data is drawn in based on user inputs for the variable *state* (which drives the facility download query). It is necessary to load several data frames into the code manually. *FlowFrame* contains every outfall and every reported value for discharge across the state. It is generated separatley in **ECHOInterface.R** and needs to be loaded here by first writing it from ECHOInterface with 'write.csv'. *FlowFrameNew* is the flow frame generated in 2017 and is referenced here to show modern values for outfall counts. Finally, the VA Hydro withdrawal facility list *Hydro* should be accessed manually. This can be downloaded from the following site, but downloads within R often timeout or expire:
+(http://deq1.bse.vt.edu/d.bet/vahydro_facilities)
+The *path* variable should set the data path to an available workspace. AnalysisCode.R will write out several files as well as store downloads from VPDES and ECHO. Manual inputs are seen below, using 2016 as an example year:
+```{r, warning=FALSE,message=FALSE}
+state<-"VA"
+path<-"C:/Users/connorb5/Desktop/USGS Testing"
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameNoDis2016.csv"),stringsAsFactors = F)
+FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
+#Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
+Hydro<-read.csv(paste0(path,"/vahydro_facilities.csv"),stringsAsFactors = F)
+```
+
+First, download facilities from ECHO and store arbitrarily as a after setting state and path. ECHO is queried through its Clean Water Act rest services. Output XML files are downlaoded and reformatted using *XML* and *RCurl* libraries. ECHO generates a query ID *QID* that can be used to find and download the required facility list.
+```{r, warning=FALSE,message=FALSE}
+uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
+ECHO_xml<-getURL(uri_query)
+ECHO_query<-xmlParse(ECHO_xml)
+QID<-xmlToList(ECHO_query)
+QID<-QID$QueryID
+uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qid=",QID)
+a<-read.csv(uri_summary,stringsAsFactors = F)
+head(a[,c(1,5,10,12,13)])
+```
+Now, access VPDES to download a list of active outfalls and separate out the individual permits as these are the only permits that require discharge monitor reporting. Data is downloaded from the VPDES mapper database as a zipped file. This section of code downloads this file as a temporary file before extracting its contents, a geodatabase names "VPDES_Geodatabase.gdb". Using *rgdal* the desired layer of VPDES outfalls is extracted. Columns containing data for facility and outfall identifiers are renamed after those in ECHO.
+```{r, warning=FALSE,message=FALSE}
+temp<-tempfile()
+download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip",temp)
+unzip(temp,exdir=path)
+VPDES<-as.data.frame(readOGR(paste0(path,"/VPDES_Geodatabase.gdb"),layer="VPDES_OUTFALLS"))
+names(VPDES)[names(VPDES)=="OUTFALL_ID"]<-'VPDESID'
+VPDES_IP<-VPDES[VPDES$VAP_TYPE=='VPDES_IP',]
+names(a)[1]<-"VAP_PMT_NO"
+head(VPDES_IP[,c(1,9,10,11,13,14,15,16)])
+```
+
+Finally, download a key to statistical codes from ECHO that can help reveal the meaning of various outfall statistics. Also get maximum design flows from routinely published excel files from VPDES. These contain maximum design discharges, facility names, and identifiers but lack any temporal data. Finish by removing uncessary data from the global environment.
+```{r, warning=FALSE,message=FALSE}
+CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
+GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490', write_disk(temp <- tempfile(fileext = ".xls")))
+VPDESFlows <- read_excel(temp,skip=9)
+VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
+rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)
+head(CodeKey)
+head(VPDESFlows)
+```
+#Data formatting
+To begin formatting the ECHO data, AnalysisCode first adds the design flows from *VPDESFlows* to the *VPDES_IP* data frame. With this, a single data frame is created that contains all relevant data from VPDES. This will later be merged with the *FlowFrame* data frames from ECHO. The following code block searches the *VPDESFlows* data frame for flow data pertaining to each facility within *VPDES_IP* by searching the renamed facility ID field, "VAP_PMT_NO". If it does not find data, it writes out NA for that facility.
+
+```{r,warning=FALSE,message=FALSE}
+for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
+  VPDES_IP$DesFlow[i]<-NA
+  if (length(VPDESFlows$`Design Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]])>0){
+    VPDES_IP$DesFlow[i]<-VPDESFlows$`Design Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]]  
+  }
+  VPDES_IP$TotalFlow[i]<-NA
+  if (length(VPDESFlows$`Total Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]])>0){
+    VPDES_IP$TotalFlow[i]<-VPDESFlows$`Total Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]]  
+  }
+}
+head(VPDES_IP[,c(1,9,10,13,17,18)])
+```
+A column can then be added onto the ECHO data to display the number of outfalls from the most recent data frame, *FlowFrameNew*. This looks at each facility in *a* and searches for their equivalent within *FlowFrameNew*. It then counts the number of unique outfall IDs for the facility and stores the result. 
+```{r}
+for (i in 1:length(a$VAP_PMT_NO)){
+  a$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==a$VAP_PMT_NO[i]]))
+}
+```
+
