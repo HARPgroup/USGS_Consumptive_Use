@@ -12,7 +12,7 @@ library(dplyr)
 library(XML)
 library(RCurl)
 library(readxl)
-library(httr)
+library(httr)#Do we need this?
 
 #Required inputs: State, Flow frame from ECHO run, flow frame from 2017 (shows change in outfalls),
 #and VA Hydro facility list (http://deq1.bse.vt.edu/d.bet/vahydro_facilities)
@@ -125,7 +125,7 @@ for (i in 1:length(AllFacs$FacilityID)){
     AllFacs$FacilityName[i]<-as.character(All$FAC_NAME[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
     AllFacs$SourceData[i]<-'VPDES'
   }
-  AllFacs$VPDESOutfalls[i]<-sum(!(is.na(All$VAP_PMT_NO[All$FacilityID==AllFacs$FacilityID[i]])))#Find the number of data reporting outfalls in VPDES and ECHO
+  #Find the number of data reporting outfalls in VPDES and ECHO
   AllFacs$ECHOOutfalls[i]<-sum(!(is.na(All$ECHOID[All$FacilityID==AllFacs$FacilityID[i]])))
   AllFacs$TotalOutfalls[i]<-length(All$FacilityID[All$FacilityID==AllFacs$FacilityID[i]])#Find the total number of outfalls
   AllFacs$VPDESOutfalls[i]<-length(VPDES$VAP_PMT_NO[VPDES$VAP_PMT_NO==AllFacs$FacilityID[i]])
@@ -139,9 +139,9 @@ for (i in 1:length(AllFacs$FacilityID)){
     AllFacs$lat[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
     AllFacs$lon[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
   }
-  }
+}
 #Reorder data such that statistics are reported after basic facility information
-order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))#May need manual adjustment if data changes. Basic reorganize
+order<-c(1,seq(length(colnames(AllFacs))-7,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-8))#May need manual adjustment if data changes. Basic reorganize
 AllFacs<-AllFacs[,order]#Reorganize so that facility info presents before statistics
 AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]#Order by largest ECHO/VPDES discrepencies first
 rm(order,orderi,i,headers,allcols)

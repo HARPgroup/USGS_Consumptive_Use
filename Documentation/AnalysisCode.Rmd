@@ -63,15 +63,15 @@ names(a)[1]<-"VAP_PMT_NO"
 head(VPDES_IP[,c(1,9,10,11,13,14,15,16)])
 ```
 
-Finally, download a key to statistical codes from ECHO that can help reveal the meaning of various outfall statistics. Also get maximum design flows from routinely published excel files from VPDES. These contain maximum design discharges, facility names, and identifiers but lack any temporal data. Finish by removing uncessary data from the global environment.
+Finally, download a key to statistical codes from ECHO that can help reveal the meaning of various outfall statistics. Also get maximum design flows from routinely published excel files from VPDES. These contain maximum design discharges, facility names, and identifiers but lack any temporal data. Finish by removing uncessary data from the global environment. It should be noted that VPDESFlows also contains facility manager contact information that can be included in NWIS exports as ancillary data
 ```{r, warning=FALSE,message=FALSE}
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490', write_disk(temp <- tempfile(fileext = ".xls")))
 VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)
-head(CodeKey)
-head(VPDESFlows)
+head(CodeKey[,1:2])
+head(VPDESFlows[,c(1,2,13,14)])
 ```
 #Data formatting
 To begin formatting the ECHO data, AnalysisCode first adds the design flows from *VPDESFlows* to the *VPDES_IP* data frame. With this, a single data frame is created that contains all relevant data from VPDES. This will later be merged with the *FlowFrame* data frames from ECHO. The following code block searches the *VPDESFlows* data frame for flow data pertaining to each facility within *VPDES_IP* by searching the renamed facility ID field, "VAP_PMT_NO". If it does not find data, it writes out NA for that facility.
@@ -90,9 +90,277 @@ for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
 head(VPDES_IP[,c(1,9,10,13,17,18)])
 ```
 A column can then be added onto the ECHO data to display the number of outfalls from the most recent data frame, *FlowFrameNew*. This looks at each facility in *a* and searches for their equivalent within *FlowFrameNew*. It then counts the number of unique outfall IDs for the facility and stores the result. 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 for (i in 1:length(a$VAP_PMT_NO)){
   a$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==a$VAP_PMT_NO[i]]))
 }
 ```
+
+Now, the ECHO data contained in *FlowFrame* needs to be reformatted. First, AnalysisCode.R extracts the four important data columns of 'VPDESID', 'Flow', 'Limit', and 'Code'. Following this, the data frame is "reshaped". In other words, the data frame is transposed such that each type of statistic is given it's own column within *FlowFrameFlipped*. Each row represents an outfall such that each row shows every statistic reported for a given outfall. A facility ID is added to each outfall by assigning its searching and assigning a corresponding 'ECHOID' from each outfall's 'VPDESID'.
+```{r}
+FlowFrameFlipped<-FlowFrame[,c('VPDESID','Flow','Limit','Code')]
+FlowFrameFlipped<-reshape(FlowFrameFlipped,idvar='VPDESID',timevar = 'Code',direction='wide')
+for (i in 1:length(FlowFrameFlipped$VPDESID)){
+  FlowFrameFlipped$ECHOID[i]<-as.character(FlowFrame$ECHOID[FlowFrame$VPDESID==FlowFrameFlipped$VPDESID[i]][1])
+}
+head(FlowFrameFlipped[1:4,1:5])
+```
+#Merging VPDES and ECHO
+Before we can beging merging data from VPDES to ECHO, AnalysisCode.R defines a few functions to better track discharge data. The function *plus* works similarly to *sum()*. However, it is built to treat NA data differently. Vecotrs containing all NA are reported as a sum of NA; otherwise, if the vector is only partially NA, it treats NA as zero and computes the sum (identical to *sum(,r=na.rm=TRUE)*), In this manner, the function can add all statistics for a given outfall and report the sum. If that statistic is not reported, NA is returned ensuring the code does no misrepresent missing discharge data.
+The second function, *NAcount*, takes in a vector and counts the number of NA values. It takes advantage of R's dual-storage of binary operators as TRUE/FALSE and 1/0. By summing a series of TRUE/FALSE, a value is returned representing the number of TRUE present. By checking for NAs, TRUE is only retunred when data is missing. Thus, the sum shows the number of NAs within the input vector. This is useful to demonstrate how many outfalls at a given facility are reporting each statistic
+```{r}
+plus<-function(x){
+  if(all(is.na(x))){
+    c(NA)
+    }else{
+      sum(x,na.rm = TRUE)}
+}
+NAcount<-function(x){
+  sum(is.na(x))
+}
+```
+
+To complete the merge, Analysis.R adds all columns of *FlowFrameFlipped* to those of *VPDES_IP* based on their common identifier, the "VPDESID". After the merge is completed, a column is created to store a central "FacilityID". This ID is that for the facility given by ECHO or VPDES. AnalysisCode.R assumes this data is present in VPDES and searches for a valid entry of "VAP_PMT_NO" for that outfall. If this returns NA, then it looks for an ID from ECHO. Facility IDs are equal across databases so both entries are equally valid. Data is reclassified as numeric or character to prevent treatment as factors. 
+```{r}
+All<-merge(VPDES_IP,FlowFrameFlipped,by="VPDESID",all=T)
+for (i in 1:length(All$VPDESID)){
+  if(is.na(All$VAP_PMT_NO[i])){
+    All$FacilityID[i]<-as.character(All$ECHOID[i])
+  }else{
+    All$FacilityID[i]<-as.character(All$VAP_PMT_NO[i])
+  }
+}
+All$VAP_PMT_NO<-as.character(All$VAP_PMT_NO)
+All$DesFlow<-as.numeric(All$DesFlow)
+All$TotalFlow<-as.numeric(All$TotalFlow)
+colnames(All)
+```
+Now that the data from VPDES and ECHO has been merged, the next step is to create a data frame *AllFacs* that aggregates information for all of the different outfalls up to the facility level. This is accomplished through the use of the *dplyr* library, grouping all entries by facility ID and using the plus function to sum all statistics for each outfall. Once the facility level aggregation is accomplished, the data is reorganized such that all of the statistics appear in the later columns. This makes *AllFacs* easier to read by organizing the data frame to first show facility identifiers and then statistics.
+```{r}
+AllFacs<-as.data.frame(All %>% group_by(FacilityID) %>% summarize_at(vars(c(17,18,19:64)),funs(plus,NAcount)))
+headers<-as.character(unique(FlowFrame$Code))
+order<-numeric(0)
+for (i in 1:length(headers)){
+  orderi<-grep(headers[i],colnames(AllFacs))
+  order<-c(order,orderi)
+}
+allcols<-seq(1,length(colnames(AllFacs)))
+order<-c(allcols[!(allcols %in% order)],order)
+AllFacs<-AllFacs[,order]
+head(AllFacs[,1:5])
+```
+To make *AllFacs* a more useful summary data frame, AnalysisCode.R attaches other pieces of summary information to each facility using the folliwng script. First, it uses a facility's "FacilityID" column to drive a query that searches the list of ECHO facilities in *a* for a facility name. If this fails or returns NA, then it checks VPDES. It creates a column "SourceData" to reveal where information was pulled. Next, it counts the number of outfalls reporting information. The code then looks for the number of outfalls reporting data for the facility within ECHO and VPDES. It stores the total number of outfalls, the number present in *FlowFrameNew*, the number from *FlowFrame* (now in *All*), and the number from *VPDES_IP* (now in *All*). Finally, it assigns a latitude and lognitude to each facility. It draws these values from matching facilities in ECHO (from *a*) or VPDES (from *All*) based on the "SourceData" column described earlier.
+```{r}
+for (i in 1:length(AllFacs$FacilityID)){
+  AllFacs$FacilityName[i]<-NA
+  if(length(a$CWPName[a$VAP_PMT_NO==AllFacs$FacilityID[i]])>0){
+    AllFacs$SourceData[i]<-'ECHO'
+    AllFacs$FacilityName[i]<-a$CWPName[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+  }
+  if(is.na(AllFacs$FacilityName[i])){
+    AllFacs$FacilityName[i]<-as.character(All$FAC_NAME[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
+    AllFacs$SourceData[i]<-'VPDES'
+  }
+  AllFacs$ECHOOutfalls[i]<-sum(!(is.na(All$ECHOID[All$FacilityID==AllFacs$FacilityID[i]])))
+  AllFacs$TotalOutfalls[i]<-length(All$FacilityID[All$FacilityID==AllFacs$FacilityID[i]])
+  AllFacs$VPDESOutfalls[i]<-length(VPDES$VAP_PMT_NO[VPDES$VAP_PMT_NO==AllFacs$FacilityID[i]])
+  AllFacs$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==AllFacs$FacilityID[i]]))
+}
+for (i in 1:length(AllFacs$FacilityID)){
+  if(AllFacs$SourceData[i]=='ECHO'){
+    AllFacs$lat[i]<-a$FacLat[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+    AllFacs$lon[i]<-a$FacLong[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+  }else{
+    AllFacs$lat[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
+    AllFacs$lon[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
+  }
+}
+```
+Again, AnalysisCode.R reorganizes the *AllFacs* data frame to make sure all of this summary information is now contained at the beginning of the data frame. This makes *AllFacs* easier to read and visualize if opened in text files, Excel, GIS, etc. It is important to note that these may require manual adjustment if the data is amended in the future to prevent certain columns from being deleted or pushed to the back. "order" below is defined as the facility identifier, then those summary columns just created, and finally followed by every other column.
+
+```{r}
+order<-c(1,seq(length(colnames(AllFacs))-7,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-8))
+AllFacs<-AllFacs[,order]
+AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]
+head(AllFacs[1:5])
+```
+#Data Analysis
+AnalysisCode.R is true to its name. It is designed to create summary data frames that count the number of facilities reporting a certain statistic, show the statewide sum of a given statistic, and show the summed limit value given by ECHO. For convenience, it also splits limits and flows into separate data frames. It extracts all columns containing ECHO data and then analyzes each column one at a time. It takes the statistic code from the column table and references it with the table of codes (*CodeKey*) downloaded from ECHO to list the complete the description. It then sums the statistic for that column and counts the number of facilities reporting it. 
+
+```{r}
+order<-grep('plus',colnames(AllFacs))
+PlusFacs<-AllFacs[,order]
+FacSummary<-data.frame(Stat=colnames(PlusFacs),StatCode=character(length(colnames(PlusFacs))),Description=character(length(colnames(PlusFacs))),Present=numeric(length(colnames(PlusFacs))))
+FacSummary$Stat<-as.character(FacSummary$Stat);FacSummary$StatCode<-as.character(FacSummary$StatCode);FacSummary$Description<-as.character(FacSummary$Description)
+for (i in 1:length(colnames(PlusFacs))){
+  column<-as.vector(PlusFacs[,i])
+  FacSummary$StatCode[i]<-gsub(".*[.]([^_]+)[_].*","\\1",FacSummary$Stat[i])
+  FacSummary$Description[i]<-NA
+  if(FacSummary$StatCode[i] %in% CodeKey$STATISTICAL_BASE_CODE){
+  FacSummary$Description[i]<-CodeKey$STATISTICAL_BASE_LONG_DESC[CodeKey$STATISTICAL_BASE_CODE==FacSummary$StatCode[i]]
+  }
+  FacSummary$Present[i]<-sum(!(is.na(column)))
+  FacSummary$SumValue[i]<-plus(column)
+}
+order<-grep('Limit',as.character(FacSummary$Stat))
+FacSummaryLimits<-FacSummary[order,]
+FacSummaryFlow<-FacSummary[-order,]
+head(FacSummaryFlow)
+head(FacSummaryLimits)
+```
+Finally, a last column is created to count the number of reported statistics for a given facility. *AllFacs* is a long, many columned data frame. "FlowStatTotal" allows for instant assesment of how many statistics are being reported and can be used in conjunction with the number of outfalls to get a sense of how complete the discharge monitoring records are for a given facility. This code chunk operates by first extracting all ECHO columns from *AllFacs*. It then ignores those that deal with limits and focuses on the actual discharge values reported. It creates a reference data frame *test* that is used to compile information about number of avaiable statistics by counting the number of NAs in a given row of *AllFacs*. This is then added to the back end of *AllFacs*
+```{r}
+order<-c(1,2,grep('plus',colnames(AllFacs)))
+order2<-grep('Limit',colnames(AllFacs[,order]))
+order<-order[!(order %in% order2)]
+test<-AllFacs[,order]
+test<-test[,-3]
+for (i in 1:length(test$FacilityID)){
+  test$StatTotal[i]<-rowSums(!is.na(test[i,3:length(colnames(test))]))
+}
+for (i in 1:length(AllFacs$FacilityName)){
+  AllFacs$FlowStatTotal[i]<-test$StatTotal[test$FacilityID==AllFacs$FacilityID[i]]
+}
+head(AllFacs[,c(1,2,length(colnames(AllFacs)))])
+```
+#VA Hydro Geometry Correction
+The final part of this code deals with bad geometry values found in measuring points and facilities within VA Hydro. It starts by extracting lat/long from the WKT geometry provided by VA Hydro. It then checks rough bounds for Virginia to see if these geometry are valid. If not, it looks for ways to correct them by assuming a mistake was made during data entry. Values are flipped and or reversed to check for a possible valid lat/long. Data is aggregated to the facility level in *HydroFacs* and a similar process is computed. Where needed, facility geomoetry is drawn from MPs and vice versa.
+
+```{r}
+Hydro$FacLat<-as.numeric(gsub(".*[ ]([^)]+)[)].*","\\1",Hydro$fac_geom))
+Hydro$FacLong<-as.numeric(gsub(".*[(]([^ ]+)[ ].*","\\1",Hydro$fac_geom))
+Hydro$tsvalue<-as.numeric(Hydro$tsvalue)
+Hydro$MPLat<-as.numeric(gsub(".*[ ]([^)]+)[)].*","\\1",Hydro$mp_geom))
+Hydro$MPLong<-as.numeric(gsub(".*[(]([^ ]+)[ ].*","\\1",Hydro$mp_geom))
+#A simple search function to check for NAs and replace them for use in boolean code
+NAReplace<-function(x){
+  if(is.na(x)){
+    return(-99)
+  }else{
+    return(x)
+  }
+}
+#Correct lat/long values for possible typos i.e. missing negative signs, switched lat/long, or both
+#Is set to check if data falls in rough state boundaries set by (35.-70) and (45,-90)
+Hydro$Lat<-numeric(length(Hydro$MPLat))
+Hydro$Long<-numeric(length(Hydro$MPLong))
+for (i in 1:length(Hydro$fac_name)){
+  Hydro$Lat[i]<-Hydro$MPLat[i]
+  Hydro$Long[i]<-Hydro$MPLong[i]
+  Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+  Hydro$Long[i]<-NAReplace(Hydro$Long[i])
+    if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+      Hydro$Lat[i]<-Hydro$MPLong[i]
+      Hydro$Long[i]<-Hydro$MPLat[i]
+      Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+      Hydro$Long[i]<-NAReplace(Hydro$Long[i]) 
+      if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+        Hydro$Lat[i]<-Hydro$MPLat[i]
+        Hydro$Long[i]<-(-1)*Hydro$MPLong[i]
+        Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+        Hydro$Long[i]<-NAReplace(Hydro$Long[i]) 
+        if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+          Hydro$Lat[i]<-Hydro$MPLong[i]
+          Hydro$Long[i]<-(-1)*Hydro$MPLat[i]
+          Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+          Hydro$Long[i]<-NAReplace(Hydro$Long[i]) 
+          if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+            Hydro$Lat[i]<-Hydro$FacLat[i]
+            Hydro$Long[i]<-Hydro$FacLong[i]
+            Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+            Hydro$Long[i]<-NAReplace(Hydro$Long[i])
+            if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+              Hydro$Lat[i]<-Hydro$FacLong[i]
+              Hydro$Long[i]<-Hydro$FacLat[i]
+              Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+              Hydro$Long[i]<-NAReplace(Hydro$Long[i])
+              if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+                Hydro$Lat[i]<-Hydro$FacLat[i]
+                Hydro$Long[i]<-(-1)*Hydro$FacLong[i]
+                Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+                Hydro$Long[i]<-NAReplace(Hydro$Long[i])
+                if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+                  Hydro$Lat[i]<-Hydro$FacLong[i]
+                  Hydro$Long[i]<-(-1)*Hydro$FacLat[i]
+                  Hydro$Lat[i]<-NAReplace(Hydro$Lat[i])
+                  Hydro$Long[i]<-NAReplace(Hydro$Long[i])
+                 if((Hydro$Lat[i]<35|Hydro$Lat[i]>45)|(Hydro$Long[i]<(-90)|Hydro$Long[i]>(-70))){
+                    Hydro$Lat[i]<-Hydro$MPLat[i]
+                    Hydro$Long[i]<-Hydro$MPLong[i]
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+}
+#Same process as above, but on a facilitiy level rather than an MP one. If no valid facility ID can be found,
+#MP data may be used in its place. If no passable geometry can be fournd, return original data
+HydroFacs<-as.data.frame(Hydro %>% group_by(fac_hydroid) %>% summarize(Name=first(fac_name),Sum=plus(tsvalue)))
+HydroFacs$Lat<-numeric(length(HydroFacs$fac_hydroid))
+HydroFacs$Long<-numeric(length(HydroFacs$fac_hydroid))
+
+for (i in 1:length(HydroFacs$fac_hydroid)){
+  HydroFacs$Lat[i]<-Hydro$FacLat[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+  HydroFacs$Long[i]<-Hydro$FacLong[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+  HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+  HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+  if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+    HydroFacs$Lat[i]<-Hydro$FacLong[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+    HydroFacs$Long[i]<-Hydro$FacLat[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+    HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+    HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+    if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+      HydroFacs$Lat[i]<-Hydro$FacLat[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+      HydroFacs$Long[i]<-(-1)*Hydro$FacLong[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+      HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+      HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+      if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+        HydroFacs$Lat[i]<-Hydro$FacLong[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+        HydroFacs$Long[i]<-(-1)*Hydro$FacLat[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+        HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+        HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+      }
+    }
+  }
+  if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+    j<-1
+    MP<-Hydro[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i],]
+    while(j<(length(MP$fac_name)+1)){
+      HydroFacs$Lat[i]<-MP$MPLat[j]
+      HydroFacs$Long[i]<-MP$MPLong[j]
+      HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+      HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+      if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+        HydroFacs$Lat[i]<-MP$MPLong[j]
+        HydroFacs$Long[i]<-MP$MPLat[j]
+        HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+        HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+        if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+          HydroFacs$Lat[i]<-MP$MPLat[j]
+          HydroFacs$Long[i]<-(-1)*MP$MPLong[j]
+          HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+          HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+          if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+            HydroFacs$Lat[i]<-MP$MPLong[j]
+            HydroFacs$Long[i]<-(-1)*MP$MPLat[j]
+            HydroFacs$Lat[i]<-NAReplace(HydroFacs$Lat[i])
+            HydroFacs$Long[i]<-NAReplace(HydroFacs$Long[i])
+          }
+        }
+      j<-j+1
+      }else{
+        j<-length(MP$fac_name)+1
+      }
+    }
+    if((HydroFacs$Lat[i]<35|HydroFacs$Lat[i]>45)|(HydroFacs$Long[i]<(-90)|HydroFacs$Long[i]>(-70))){
+    HydroFacs$Lat[i]<-Hydro$FacLat[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+    HydroFacs$Long[i]<-Hydro$FacLong[Hydro$fac_hydroid==HydroFacs$fac_hydroid[i]][1]
+    }
+  }
+}
+```
+
 
