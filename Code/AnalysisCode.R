@@ -49,18 +49,17 @@ VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 ################################################################################################################################
-#Assign design flows to VPDES outfalls using the VPDES information spreadsheet
-
+#Set initial projections for VPDES coordinates
 d <- data.frame(x=VPDES_IP$coords.x1, y=VPDES_IP$coords.x2)
 proj4string <- "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
 
-# Transformed data
+#Transform VPDES data and store within VPDES_IP
 pj <- proj4::project(d, proj4string, inverse=TRUE)
 latlon <- data.frame(lat=pj$y, lon=pj$x)
 VPDES_IP$coords.x1<-latlon$lon
 VPDES_IP$coords.x2<-latlon$lat
 
-
+#Assign design flows to VPDES outfalls using the VPDES information spreadsheet
 for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
   VPDES_IP$DesFlow[i]<-NA
   if (length(VPDESFlows$`Design Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]])>0){
