@@ -12,6 +12,7 @@ library(dplyr)
 library(XML)
 library(RCurl)
 library(readxl)
+library(proj4)
 library(httr)#Do we need this?
 
 #Required inputs: State, Flow frame from ECHO run, flow frame from 2017 (shows change in outfalls),
@@ -19,7 +20,7 @@ library(httr)#Do we need this?
 #VA Hydro facility list and VPDES info spreadsheet are manual downloads due to slow internet connections, making it difficult to access without R timing out
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
-path<-"C:/Users/connorb5/Desktop/USGS Testing"
+path<-"G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing"
 #Get ECHO Facility List and store in dataframe 'a'
   uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
   ECHO_xml<-getURL(uri_query)
@@ -35,7 +36,7 @@ unzip(temp,exdir=path)
 VPDES<-as.data.frame(readOGR(paste0(path,"/VPDES_Geodatabase.gdb"),layer="VPDES_OUTFALLS"))
 names(VPDES)[names(VPDES)=="OUTFALL_ID"]<-'VPDESID'
 VPDES_IP<-VPDES[VPDES$VAP_TYPE=='VPDES_IP',]
-names(a)[1]<-"VAP_PMT_NO"#Need to rename to give a central columnn name for future joins
+names(a)[names(a)=="SourceID"]<-"VAP_PMT_NO"#Need to rename to give a central columnn name for future joins
 #Download statistical codes from ECHO
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 #Manual inputs are as follows below. By default, assumes path above:
@@ -48,6 +49,16 @@ VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 ################################################################################################################################
+#Set initial projections for VPDES coordinates
+d <- data.frame(x=VPDES_IP$coords.x1, y=VPDES_IP$coords.x2)
+proj4string <- "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
+
+#Transform VPDES data and store within VPDES_IP
+pj <- proj4::project(d, proj4string, inverse=TRUE)
+latlon <- data.frame(lat=pj$y, lon=pj$x)
+VPDES_IP$coords.x1<-latlon$lon
+VPDES_IP$coords.x2<-latlon$lat
+
 #Assign design flows to VPDES outfalls using the VPDES information spreadsheet
 for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
   VPDES_IP$DesFlow[i]<-NA
@@ -102,7 +113,7 @@ All$TotalFlow<-as.numeric(All$TotalFlow)
 #Create a data frame containing data in 'All' aggregated to the facility level
 #Thus, data in AllFacs shows a facility ID and then VPDES flow and ECHO stats summed to the
 #facility level. It also counts the number of outfalls at each facility reporting NA
-AllFacs<-as.data.frame(All %>% group_by(FacilityID) %>% summarize_at(vars(c(17,18,19:64)),funs(plus,NAcount)))
+AllFacs<-as.data.frame(All %>% group_by(FacilityID) %>% summarize_at(vars(19:64),funs(plus,NAcount)))
 #Organize data such that all similar statistics are reported together
 headers<-as.character(unique(FlowFrame$Code))
 order<-numeric(0)
@@ -139,11 +150,24 @@ for (i in 1:length(AllFacs$FacilityID)){
     AllFacs$lat[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
     AllFacs$lon[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
   }
+  AllFacs$DesFlow[i]<-All$DesFlow[All$FacilityID==AllFacs$FacilityID[i]][1]
+  AllFacs$TotalFlow[i]<-All$TotalFlow[All$FacilityID==AllFacs$FacilityID[i]][1]
+}
+diff<-numeric(0)
+ind<-numeric(0)
+for (i in 1:length(a$CWPActualAverageFlowNmbr)){
+  if(!is.na(a$CWPActualAverageFlowNmbr[i])){
+    if(length(AllFacs$DesFlow[AllFacs$FacilityID==a$VAP_PMT_NO[i]])>0){
+      store<-a$CWPActualAverageFlowNmbr[i]==AllFacs$DesFlow[AllFacs$FacilityID==a$VAP_PMT_NO[i]] 
+      diff<-c(diff,store)
+      ind<-c(ind,i)
+    }
+  }
 }
 #Reorder data such that statistics are reported after basic facility information
-order<-c(1,seq(length(colnames(AllFacs))-7,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-8))#May need manual adjustment if data changes. Basic reorganize
+order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))#May need manual adjustment if data changes. Basic reorganize
 AllFacs<-AllFacs[,order]#Reorganize so that facility info presents before statistics
-AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]#Order by largest ECHO/VPDES discrepencies first
+AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow,decreasing=T),]#Order by largest ECHO/VPDES discrepencies first
 rm(order,orderi,i,headers,allcols)
 
 #Provide a summary on number of reporting facilities, value of statistics, etc.

@@ -3,8 +3,10 @@ title: "Analysis Code"
 author: "Connor Brogan"
 date: "February 8, 2018"
 output:
-  word_document: default
+  html_document:
+    df_print: paged
   pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
