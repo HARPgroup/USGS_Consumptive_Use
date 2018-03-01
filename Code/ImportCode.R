@@ -117,12 +117,19 @@ facilities$wkt_geom<-paste0('POINT (',a$FacLat,' ',a$FacLong,')')
 write.csv(facilities,"C:/Users/Connor/Desktop/USGS Testing/Import/facilities.csv",row.names = F)
 
 #Release Point Generation
-releasepoint<-data.frame(hydocode=as.character(FlowFrameFlipped$VPDESID),bundle='transfer',ftype='release')
-releasepoint$hydocode<-as.character(releasepoint$hydocode)
-for (i in 1:length(releasepoint$hydocode)){
-  releasepoint$hydocode[i]<-paste0(FlowFrameFlipped$ECHOID[i],':',FlowFrameFlipped$VPDESID[i])
-  releasepoint$name[i]<-paste0('Release to outfall ',FlowFrameFlipped$VPDESID[i])
-  releasepoint$wkt_geom[i]<-paste0('POINT (',a$FacLat[a$VAP_PMT_NO==FlowFrameFlipped$ECHOID[i]],' ',a$FacLong[a$VAP_PMT_NO==FlowFrameFlipped$ECHOID[i]],')')
+All$VPDESID<-as.character(All$VPDESID)
+releasepoint<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
+for (i in 1:length(releasepoint$bundle)){
+  releasepoint$name[i]<-paste0('TO ',All$VPDESID[i])
+  releasepoint$ftype[i]<-'release'
+  releasepoint$hydocode[i]<-paste0('vahydro_',All$VPDESID[i])
+  if(All$VPDESID[i]%in%FlowFrame$VPDESID){
+    releasepoint$fstatus[i]<-'active'  
+  } else {
+    releasepoint$fstatus[i]<-'inactive'
+  }
+  releasepoint$wkt_geom[i]<-paste0('POINT (',All$coords.x2[All$VPDESID==All$VPDESID[i]],' ',All$coords.x1[All$VPDESID==All$VPDESID[i]],')')
+  releasepoint$dh_link_facility_mps[i]<-paste0('echo_',All$VAP_PMT_NO)
 }
 write.csv(releasepoint,"C:/Users/Connor/Desktop/USGS Testing/Import/releasepoint.csv",row.names = F)
 
@@ -138,10 +145,18 @@ for (i in 1:length(conveyance$hydocode)){
 write.csv(conveyance,"C:/Users/Connor/Desktop/USGS Testing/Import/conveyance.csv",row.names = F)
 
 #Outfall Generation
-outfalls<-data.frame(bundle='transfer',ftype='outfall',hydrocode=FlowFrameFlipped$VPDESID)
-for (i in 1:length(outfalls$hydrocode)){
-  outfalls$wkt_geom[i]<-paste0('POINT (',a$FacLat[a$VAP_PMT_NO==FlowFrameFlipped$ECHOID[i]],' ',a$FacLong[a$VAP_PMT_NO==FlowFrameFlipped$ECHOID[i]],')')
-  outfalls$geom_source[i]<-'estimated'
-  outfalls$name[i]<-paste0('Outfall ',FlowFrameFlipped$VPDESID[i],' of facility ',FlowFrameFlipped$ECHOID[i])
+outfalls<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
+for (i in 1:length(outfalls$bundle)){
+  outfalls$name[i]<-paste0('FROM ',All$VAP_PMT_NO[i])
+  outfalls$ftype[i]<-'outfall'
+  outfalls$hydrocode<-paste0('echo_',All$VPDESID[i])
+  if(All$VPDESID[i]%in%FlowFrame$VPDESID){
+    outfalls$fstatus[i]<-'active'  
+  } else {
+    outfalls$fstatus[i]<-'inactive'
+  }
+  outfalls$wkt_geom[i]<-paste0('POINT (',All$coords.x2[All$VPDESID==All$VPDESID[i]],' ',All$coords.x1[All$VPDESID==All$VPDESID[i]],')')
+  outfalls$dh_link_facility_mps[i]<-paste0('echo_',All$VAP_PMT_NO[i])
+ 
 }
 write.csv(outfalls,"C:/Users/Connor/Desktop/USGS Testing/Import/outfalls.csv",row.names = F)

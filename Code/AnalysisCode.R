@@ -20,7 +20,7 @@ library(httr)#Do we need this?
 #VA Hydro facility list and VPDES info spreadsheet are manual downloads due to slow internet connections, making it difficult to access without R timing out
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
-path<-"C:/Users/connorb5/Desktop/USGS Testing"
+path<-"G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing"
 #Get ECHO Facility List and store in dataframe 'a'
   uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
   ECHO_xml<-getURL(uri_query)
@@ -165,9 +165,9 @@ for (i in 1:length(a$CWPActualAverageFlowNmbr)){
   }
 }
 #Reorder data such that statistics are reported after basic facility information
-order<-c(1,seq(length(colnames(AllFacs))-9,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-10))#May need manual adjustment if data changes. Basic reorganize
+order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))#May need manual adjustment if data changes. Basic reorganize
 AllFacs<-AllFacs[,order]#Reorganize so that facility info presents before statistics
-AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]#Order by largest ECHO/VPDES discrepencies first
+AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow,decreasing=T),]#Order by largest ECHO/VPDES discrepencies first
 rm(order,orderi,i,headers,allcols)
 
 #Provide a summary on number of reporting facilities, value of statistics, etc.
