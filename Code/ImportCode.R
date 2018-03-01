@@ -2,6 +2,7 @@
 #######################
 #Library Initialization
 library(XML)
+library(jsonlite)
 library(RCurl)
 state<-"VA"
 #Get ECHO Facility List and store in dataframe 'a'
@@ -13,6 +14,19 @@ QID<-QID$QueryID
 uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qid=",QID)
 a<-read.csv(uri_summary,stringsAsFactors = F)
 a$CWPName<-toupper(a$CWPName)
+
+for (i in 1:length(a$CWPName)){
+  json_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",a$SourceID[i])
+  json_data<-fromJSON(txt=json_file)
+  if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
+    a$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
+    a$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
+  } else {
+    a$Faclat[i]<-NA
+    a$Faclong[i]<-NA
+  }
+}
+
 
 #Facility Generation
 facilities<-data.frame(bundle='facility',name=a$CWPName)
@@ -112,42 +126,74 @@ for (i in 1:length(facilities$hydrocode)){
   if (a$SourceID[i]%in%FlowFrameFlipped$ECHOID){
     facilities$fstatus[i]<-'active'
   }
+  if(!is.na(a$Faclat[i]) & !is.na(a$Faclong[i])){
+    facilities$wkt_geom[i]<-paste0('POINT (',a$Faclat[a$SourceID==a$SourceID[i]],' ',a$Faclong[a$SourceID==a$SourceID[i]],')')
+  } else {
+    lat<-All$coords.x2[All$FacilityID==All$FacilityID[i]]
+    long<-All$coords.x1[All$FacilityID==All$FacilityID[i]]
+    for (i in 1:length(lat)){
+      if(!is.na(lat[i]) & !is.na(long[i])){
+        facilities$wkt_geom[i]<-paste0('POINT (',lat[i],' ',long[i],')')
+        break
+      } else {
+        facilities$wkt_geom[i]<-'NULL'
+      }
+    }
+  }
 }
-facilities$wkt_geom<-paste0('POINT (',a$FacLat,' ',a$FacLong,')')
-write.csv(facilities,"C:/Users/Connor/Desktop/USGS Testing/Import/facilities.csv",row.names = F)
+write.csv(facilities,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/facilities.csv",row.names = F)
 
 #Release Point Generation
 All$VPDESID<-as.character(All$VPDESID)
+All$FacilityID<-as.character(All$FacilityID)
 releasepoint<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
 for (i in 1:length(releasepoint$bundle)){
   releasepoint$name[i]<-paste0('TO ',All$VPDESID[i])
   releasepoint$ftype[i]<-'release'
-  releasepoint$hydocode[i]<-paste0('vahydro_',All$VPDESID[i])
+  releasepoint$hydocode[i]<-paste0('vahydro_',All$FacilityID[i])
   if(All$VPDESID[i]%in%FlowFrame$VPDESID){
     releasepoint$fstatus[i]<-'active'  
   } else {
     releasepoint$fstatus[i]<-'inactive'
   }
-  releasepoint$wkt_geom[i]<-paste0('POINT (',All$coords.x2[All$VPDESID==All$VPDESID[i]],' ',All$coords.x1[All$VPDESID==All$VPDESID[i]],')')
-  releasepoint$dh_link_facility_mps[i]<-paste0('echo_',All$VAP_PMT_NO)
+  if(!is.na(a$Faclat[a$SourceID==All$FacilityID[i]]) & !is.na(a$Faclong[a$SourceID==All$FacilityID[i]])){
+    releasepoint$wkt_geom[i]<-paste0('POINT (',a$Faclat[a$SourceID==All$FacilityID[i]],' ',a$Faclong[a$SourceID==All$FacilityID[i]],')')
+  } else {
+    lat<-All$coords.x2[All$FacilityID==All$FacilityID[i]]
+    long<-All$coords.x1[All$FacilityID==All$FacilityID[i]]
+    for (i in 1:length(lat)){
+      if(!is.na(lat[i]) & !is.na(long[i])){
+        releasepoint$wkt_geom[i]<-paste0('POINT (',lat[i],' ',long[i],')')
+        break
+      } else {
+        releasepoint$wkt_geom[i]<-'NULL'
+      }
+    }
+  }
+  releasepoint$dh_link_facility_mps[i]<-paste0('echo_',All$FacilityID[i])
 }
-write.csv(releasepoint,"C:/Users/Connor/Desktop/USGS Testing/Import/releasepoint.csv",row.names = F)
+write.csv(releasepoint,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/releasepoint.csv",row.names = F)
 
 #Conveyance Generation
-conveyance<-data.frame(hydocode=as.character(FlowFrameFlipped$VPDESID),bundle='coneyance',ftype='water_transfer')
-conveyance$hydocode<-as.character(conveyance$hydocode)
-for (i in 1:length(conveyance$hydocode)){
-  conveyance$hydocode[i]<-paste0(FlowFrameFlipped$ECHOID[i],':',FlowFrameFlipped$VPDESID[i])
-  conveyance$name[i]<-paste0('From ',FlowFrameFlipped$ECHOID[i],' to ',FlowFrameFlipped$VPDESID[i])
-  conveyance$from_node[i]<-paste0(FlowFrameFlipped$ECHOID[i],':',FlowFrameFlipped$VPDESID[i])
-  conveyance$to_node[i]<-FlowFrameFlipped$VPDESID[i]
+conveyance<-data.frame(bundle=rep('conveyance',length(All$VPDESID)))
+for (i in 1:length(conveyance$bundle)){
+  conveyance$name[i]<-paste0(All$FacilityID[i],' TO ',All$VPDESID[i])
+  conveyance$ftype[i]<-'water_transfer'
+  conveyance$hydocode[i]<-paste0('vahydro_',All$FacilityID[i],'_',All$VPDESID[i])
+  if(All$VPDESID[i]%in%FlowFrame$VPDESID){
+    conveyance$fstatus[i]<-'active'  
+  } else {
+    conveyance$fstatus[i]<-'inactive'
+  }
+  conveyance$from_node[i]<-paste0('echo_',All$FacilityID[i])
+  conveyance$to_node[i]<-paste0('vahydro_',All$VPDESID[i])
 }
-write.csv(conveyance,"C:/Users/Connor/Desktop/USGS Testing/Import/conveyance.csv",row.names = F)
+write.csv(conveyance,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/conveyance.csv",row.names = F)
 
 #Outfall Generation
 outfalls<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
 for (i in 1:length(outfalls$bundle)){
-  outfalls$name[i]<-paste0('FROM ',All$VAP_PMT_NO[i])
+  outfalls$name[i]<-paste0('FROM ',All$FacilityID[i])
   outfalls$ftype[i]<-'outfall'
   outfalls$hydrocode<-paste0('echo_',All$VPDESID[i])
   if(All$VPDESID[i]%in%FlowFrame$VPDESID){
@@ -155,8 +201,13 @@ for (i in 1:length(outfalls$bundle)){
   } else {
     outfalls$fstatus[i]<-'inactive'
   }
-  outfalls$wkt_geom[i]<-paste0('POINT (',All$coords.x2[All$VPDESID==All$VPDESID[i]],' ',All$coords.x1[All$VPDESID==All$VPDESID[i]],')')
-  outfalls$dh_link_facility_mps[i]<-paste0('echo_',All$VAP_PMT_NO[i])
- 
+  if(!is.na(All$coords.x2[All$VPDESID==All$VPDESID[i]]) & !is.na(All$coords.x1[All$VPDESID==All$VPDESID[i]])){
+    outfalls$wkt_geom[i]<-paste0('POINT (',All$coords.x2[All$VPDESID==All$VPDESID[i]],' ',All$coords.x1[All$VPDESID==All$VPDESID[i]],')')  
+    } else if (!is.na(a$Faclat[a$SourceID==All$FacilityID[i]]) & !is.na(a$Faclong[a$SourceID==All$FacilityID[i]])) {
+      outfalls$wkt_geom[i]<-paste0('POINT (',a$Faclat[a$SourceID==All$FacilityID[i]],' ',a$Faclong[a$SourceID==All$FacilityID[i]])
+    } else {
+      outfalls$wkt_geom[i]<-'NULL'
+  }
+  outfalls$dh_link_facility_mps[i]<-paste0('echo_',All$FacilityID[i])
 }
-write.csv(outfalls,"C:/Users/Connor/Desktop/USGS Testing/Import/outfalls.csv",row.names = F)
+write.csv(outfalls,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/outfalls.csv",row.names = F)
