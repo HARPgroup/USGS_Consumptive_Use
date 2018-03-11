@@ -43,3 +43,10 @@ uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_eff
 facility<-read.csv(uri_effluent,stringsAsFactors = F)
 #This portion creates a basic dataframe from the effluent data to show some potential outputs of interest
 facility<-facility[facility$parameter_code==50050,]
+#Function to automate DMR download
+DMR<-function(sourceID,startDate,endDate,parameter_code=50050){
+  uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate)
+  facility<-read.csv(uri_effluent,stringsAsFactors = F)
+  facility<-facility[facility$parameter_code==parameter_code,]
+  return(facility)
+}

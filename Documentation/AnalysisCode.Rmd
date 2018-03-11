@@ -19,7 +19,7 @@ This code is intended to take inputs from external VPDES databases and combine t
 
 
 #Initialization
-The following libraries are called within AnalysisCode. The *foreign* library allows for easy manipulation of \*.dbf file types. It's 'read.dbf' function is called repeatedly in data introduction and writing to retrieve/write data/results. *rgdal* is a package designed to allow users to extract files from file geodatabases, like those create in Esri ArcGIS. It is necessary here to extract the VPDES shapefile, which offers preliminary lat/long data of many outfalls in the state. *dplyr* is a data manipulation package that can speed up group, summarize, and ordering processes used several times here. It's piping function '%>%' is useful to feed data along a series of functions without needing to call it each time.. *XML* is a package that downloads and reads XML file types from webpages. It is used here to access ECHO rest services to download state facilities. *RCurl* is a package that helps download and interact with web-based content. This code makes use of its 'getURL' function to read data from ECHO. *readxl* is a self-explanatory package that enables direct reading of excel files into R used here to read VPDES data. *httr* is similar to RCurl. Both are called here due to the fact 
+The following libraries are called within AnalysisCode. The *foreign* library allows for easy manipulation of \*.dbf file types. It's 'read.dbf' function is called repeatedly in data introduction and writing to retrieve/write data/results. *rgdal* is a package designed to allow users to extract files from file geodatabases, like those create in Esri ArcGIS. It is necessary here to extract the VPDES shapefile, which offers preliminary lat/long data of many outfalls in the state. *dplyr* is a data manipulation package that can speed up group, summarize, and ordering processes used several times here. It's piping function '%>%' is useful to feed data along a series of functions without needing to call it each time.. *XML* is a package that downloads and reads XML file types from webpages. It is used here to access ECHO rest services to download state facilities. *RCurl* is a package that helps download and interact with web-based content. This code makes use of its 'getURL' function to read data from ECHO. *readxl* is a self-explanatory package that enables direct reading of excel files into R used here to read VPDES data. *httr* is similar to RCurl. Both are called here due to their separate advantages in downloads and data extraction. Finally, *jsonlite* is called to allow for the reading of Java Script Object Notation (JSON) which is avialable for some ECHO services to speed up download times. 
 ```{r, warning=FALSE,message=FALSE}
 library(foreign)
 library(rgdal)
@@ -28,6 +28,7 @@ library(XML)
 library(RCurl)
 library(readxl)
 library(httr)
+library(jsonlite)
 ```
 
 After libraries are added, preliminary data is drawn in based on user inputs for the variable *state* (which drives the facility download query). It is necessary to load several data frames into the code manually. *FlowFrame* contains every outfall and every reported value for discharge across the state. It is generated separatley in **ECHOInterface.R** and needs to be loaded here by first writing it from ECHOInterface with 'write.csv'. *FlowFrameNew* is the flow frame generated in 2017 and is referenced here to show modern values for outfall counts. Finally, the VA Hydro withdrawal facility list *Hydro* should be accessed manually. This can be downloaded from the following site, but downloads within R often timeout or expire:
@@ -38,7 +39,6 @@ state<-"VA"
 path<-"C:/Users/connorb5/Desktop/USGS Testing"
 FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameNoDis2016.csv"),stringsAsFactors = F)
 FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
-#Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
 Hydro<-read.csv(paste0(path,"/vahydro_facilities.csv"),stringsAsFactors = F)
 ```
 
@@ -76,7 +76,17 @@ head(CodeKey[,1:2])
 head(VPDESFlows[,c(1,2,13,14)])
 ```
 #Data formatting
-To begin formatting the ECHO data, AnalysisCode first adds the design flows from *VPDESFlows* to the *VPDES_IP* data frame. With this, a single data frame is created that contains all relevant data from VPDES. This will later be merged with the *FlowFrame* data frames from ECHO. The following code block searches the *VPDESFlows* data frame for flow data pertaining to each facility within *VPDES_IP* by searching the renamed facility ID field, "VAP_PMT_NO". If it does not find data, it writes out NA for that facility.
+To begin formatting the ECHO data, AnalysisCode.R first reprojects the coordinates for VPDES outfalls offered within the created data frame *VPDES_IP*. In doing so, coordinates are offered in decimal degrees format that creates a consistent format with other ECHO data as well as the withdrawal information offered by the DEQ. Reprojection is made possible through the *proj4* package offered within *rgdal*. It uses *proj4* strings to identify target coordinate systems; these are offered online and can be found for many coordinate systems on [this site](http://spatialreference.org/).
+```{r,warning=FALSE,message=FALSE}
+d <- data.frame(x=VPDES_IP$coords.x1, y=VPDES_IP$coords.x2)
+proj4string <- "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
+pj <- proj4::project(d, proj4string, inverse=TRUE)
+latlon <- data.frame(lat=pj$y, lon=pj$x)
+VPDES_IP$coords.x1<-latlon$lon
+VPDES_IP$coords.x2<-latlon$lat
+```
+
+Following reprojection, AnalysisCode adds design flows from *VPDESFlows* to the *VPDES_IP* data frame. With this, a single data frame is created that contains all relevant data from VPDES. This will later be merged with the *FlowFrame* data frames from ECHO. The following code block searches the *VPDESFlows* data frame for flow data pertaining to each facility within *VPDES_IP* by searching the renamed facility ID field, "VAP_PMT_NO". If it does not find data, it writes out NA for that facility.
 
 ```{r,warning=FALSE,message=FALSE}
 for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
@@ -95,6 +105,20 @@ A column can then be added onto the ECHO data to display the number of outfalls 
 ```{r,warning=FALSE,message=FALSE}
 for (i in 1:length(a$VAP_PMT_NO)){
   a$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==a$VAP_PMT_NO[i]]))
+}
+```
+Facility latitude and longitude can be associated with *a* by using the following code. This will take a long time to run as it steps through each facility to run queries within ECHO's Detailed Facility Report, which exports extensive datasets.
+```{r,eval=FALSE}
+for (i in 1:length(a$CWPName)){
+  json_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",a$SourceID[i])
+  json_data<-fromJSON(txt=json_file)
+  if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
+    a$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
+    a$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
+  } else {
+    a$Faclat[i]<-NA
+    a$Faclong[i]<-NA
+  }
 }
 ```
 
@@ -139,7 +163,7 @@ colnames(All)
 ```
 Now that the data from VPDES and ECHO has been merged, the next step is to create a data frame *AllFacs* that aggregates information for all of the different outfalls up to the facility level. This is accomplished through the use of the *dplyr* library, grouping all entries by facility ID and using the plus function to sum all statistics for each outfall. Once the facility level aggregation is accomplished, the data is reorganized such that all of the statistics appear in the later columns. This makes *AllFacs* easier to read by organizing the data frame to first show facility identifiers and then statistics.
 ```{r}
-AllFacs<-as.data.frame(All %>% group_by(FacilityID) %>% summarize_at(vars(c(17,18,19:64)),funs(plus,NAcount)))
+AllFacs<-as.data.frame(All %>% group_by(FacilityID) %>% summarize_at(vars(19:64),funs(plus,NAcount)))
 headers<-as.character(unique(FlowFrame$Code))
 order<-numeric(0)
 for (i in 1:length(headers)){
@@ -151,7 +175,7 @@ order<-c(allcols[!(allcols %in% order)],order)
 AllFacs<-AllFacs[,order]
 head(AllFacs[,1:5])
 ```
-To make *AllFacs* a more useful summary data frame, AnalysisCode.R attaches other pieces of summary information to each facility using the folliwng script. First, it uses a facility's "FacilityID" column to drive a query that searches the list of ECHO facilities in *a* for a facility name. If this fails or returns NA, then it checks VPDES. It creates a column "SourceData" to reveal where information was pulled. Next, it counts the number of outfalls reporting information. The code then looks for the number of outfalls reporting data for the facility within ECHO and VPDES. It stores the total number of outfalls, the number present in *FlowFrameNew*, the number from *FlowFrame* (now in *All*), and the number from *VPDES_IP* (now in *All*). Finally, it assigns a latitude and lognitude to each facility. It draws these values from matching facilities in ECHO (from *a*) or VPDES (from *All*) based on the "SourceData" column described earlier.
+To make *AllFacs* a more useful summary data frame, AnalysisCode.R attaches other pieces of summary information to each facility using the folliwng script. First, it uses a facility's "FacilityID" column to drive a query that searches the list of ECHO facilities in *a* for a facility name. If this fails or returns NA, then it checks VPDES. It creates a column "SourceData" to reveal where information was pulled. Next, it counts the number of outfalls reporting information. The code then looks for the number of outfalls reporting data for the facility within ECHO and VPDES. It stores the total number of outfalls, the number present in *FlowFrameNew*, the number from *FlowFrame* (now in *All*), and the number from *VPDES_IP* (now in *All*). Finally, it assigns a latitude and lognitude to each facility. It draws these values from matching facilities in ECHO (from *a*) or the first listed outfall in VPDES (from *All*) based on the "SourceData" column described earlier. Below, this data is commented out by use of the # pound sign. This is because facility coordinate downloads take a long time and this example is meant to step through the overall process. The script finishes this section by assigning each facility a design fow and total flow, as associated in *VPDESFlows*
 ```{r}
 for (i in 1:length(AllFacs$FacilityID)){
   AllFacs$FacilityName[i]<-NA
@@ -169,21 +193,38 @@ for (i in 1:length(AllFacs$FacilityID)){
   AllFacs$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==AllFacs$FacilityID[i]]))
 }
 for (i in 1:length(AllFacs$FacilityID)){
-  if(AllFacs$SourceData[i]=='ECHO'){
-    AllFacs$lat[i]<-a$FacLat[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
-    AllFacs$lon[i]<-a$FacLong[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
-  }else{
+  #if(AllFacs$SourceData[i]=='ECHO'){
+    #AllFacs$lat[i]<-a$FacLat[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+    #AllFacs$lon[i]<-a$FacLong[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+  #}else{
     AllFacs$lat[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
     AllFacs$lon[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
+  #}
+  AllFacs$DesFlow[i]<-All$DesFlow[All$FacilityID==AllFacs$FacilityID[i]][1]
+  AllFacs$TotalFlow[i]<-All$TotalFlow[All$FacilityID==AllFacs$FacilityID[i]][1]
+}
+```
+Using the information offered within *a* and *VPDES_IP*, AnalysisCode.R now looks at facility design flows as presented in both datasets. It assumes that presented in *VPDES_IP* is correct (and thus stores it in *AllFacs*). However, this code block finds and stores all instances (and their corresponding data entry number within *a*) in which facilities have conflicting design flow numbers in ECHO and VPDES.
+```{r}
+diff<-numeric(0)
+ind<-numeric(0)
+for (i in 1:length(a$CWPActualAverageFlowNmbr)){
+  if(!is.na(a$CWPActualAverageFlowNmbr[i])){
+    if(length(AllFacs$DesFlow[AllFacs$FacilityID==a$VAP_PMT_NO[i]])>0){
+      store<-a$CWPActualAverageFlowNmbr[i]==AllFacs$DesFlow[AllFacs$FacilityID==a$VAP_PMT_NO[i]] 
+      diff<-c(diff,store)
+      ind<-c(ind,i)
+    }
   }
 }
 ```
+
 Again, AnalysisCode.R reorganizes the *AllFacs* data frame to make sure all of this summary information is now contained at the beginning of the data frame. This makes *AllFacs* easier to read and visualize if opened in text files, Excel, GIS, etc. It is important to note that these may require manual adjustment if the data is amended in the future to prevent certain columns from being deleted or pushed to the back. "order" below is defined as the facility identifier, then those summary columns just created, and finally followed by every other column.
 
 ```{r}
-order<-c(1,seq(length(colnames(AllFacs))-7,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-8))
+order<-c(1,seq(length(colnames(AllFacs))-8,length(colnames(AllFacs))),seq(2,length(colnames(AllFacs))-9))
 AllFacs<-AllFacs[,order]
-AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow_plus,decreasing=T),]
+AllFacs<-AllFacs[order(AllFacs$Flow.MK_plus-AllFacs$DesFlow,decreasing=T),]
 head(AllFacs[1:5])
 ```
 #Data Analysis

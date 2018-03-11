@@ -12,7 +12,6 @@ library(dplyr)
 library(XML)
 library(RCurl)
 library(readxl)
-library(proj4)
 library(httr)#Do we need this?
 
 #Required inputs: State, Flow frame from ECHO run, flow frame from 2017 (shows change in outfalls),
@@ -49,6 +48,19 @@ VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 ################################################################################################################################
+#Use the detailed facility report query to read in facility coordinates from EHCO. This will take some time but is necessary due to recent EHCO reformatting
+#for (i in 1:length(a$CWPName)){
+  j#son_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",a$SourceID[i])
+  #json_data<-fromJSON(txt=json_file)
+  #if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
+    #a$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
+    #a$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
+  #} else {
+    #a$Faclat[i]<-NA
+    #a$Faclong[i]<-NA
+  #}
+#}
+
 #Set initial projections for VPDES coordinates
 d <- data.frame(x=VPDES_IP$coords.x1, y=VPDES_IP$coords.x2)
 proj4string <- "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
@@ -83,6 +95,18 @@ FlowFrameFlipped<-reshape(FlowFrameFlipped,idvar='VPDESID',timevar = 'Code',dire
 for (i in 1:length(FlowFrameFlipped$VPDESID)){
   FlowFrameFlipped$ECHOID[i]<-as.character(FlowFrame$ECHOID[FlowFrame$VPDESID==FlowFrameFlipped$VPDESID[i]][1])
 }
+#Basic functions for analysis
+#'plus' is a modified sum function that will reveal if all values in a vector are NA
+plus<-function(x){
+  if(all(is.na(x))){
+    c(NA)
+  }else{
+    sum(x,na.rm = TRUE)}
+}
+#'NAcount' counts the number of NAs in a vector
+NAcount<-function(x){
+  sum(is.na(x))
+}
 #Use VPDESID to provide a center for an inner join such that 
 #data frame 'All' contains every outfall from ECHO and VPDES
 All<-merge(VPDES_IP,FlowFrameFlipped,by="VPDESID",all=T)
@@ -93,18 +117,6 @@ for (i in 1:length(All$VPDESID)){
   }else{
     All$FacilityID[i]<-as.character(All$VAP_PMT_NO[i])
   }
- }
-#Basic functions for analysis
-#'plus' is a modified sum function that will reveal if all values in a vector are NA
-plus<-function(x){
-  if(all(is.na(x))){
-    c(NA)
-    }else{
-      sum(x,na.rm = TRUE)}
-}
-#'NAcount' counts the number of NAs in a vector
-NAcount<-function(x){
-  sum(is.na(x))
 }
 #Data reclassification to avoid factors and character classes being assigned to numbers
 All$VAP_PMT_NO<-as.character(All$VAP_PMT_NO)
