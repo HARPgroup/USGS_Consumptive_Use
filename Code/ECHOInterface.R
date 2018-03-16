@@ -16,9 +16,9 @@ library(RCurl)
 #The state should be entered as the USPS abbreviation and the dates should be entered 'mm/dd/yyyy'
 #Current values for dates are default from ECHO
 state<-"VA"
-startDate<-"01/01/2017"
-endDate<-"12/31/2017"
-path<-"C:/Users/connorb5/Desktop/USGS Testing"
+startDate<-"01/01/2016"
+endDate<-"12/31/2016"
+path<-"G:/My Drive/USGS_ConsumptiveUse/Spring Semester, 2018/Connor/USGS Testing/2016 ECHO"
 #path<-"C:\\Users\\nrf46657\\Desktop\\connor_code\\"
 #endDate<-Sys.Date()
 #endDate<-format(as.Date(endDate), "%m/%d/%Y")
@@ -132,4 +132,4 @@ for (i in 1:length(a$SourceID)) {
 FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,Flow,Unit,Limit,Code,Coded)
 #rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),]
-write.csv(FlowFrame,paste0(path,'/FlowFrame.csv'))
+write.csv(FlowFrame,paste0(path,'/FlowFrameMedNoDis2016.csv'))

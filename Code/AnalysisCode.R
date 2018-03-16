@@ -13,6 +13,7 @@ library(XML)
 library(RCurl)
 library(readxl)
 library(proj4)
+library(jsonlite)
 library(httr)#Do we need this?
 
 #Required inputs: State, Flow frame from ECHO run, flow frame from 2017 (shows change in outfalls),
@@ -40,7 +41,7 @@ names(a)[names(a)=="SourceID"]<-"VAP_PMT_NO"#Need to rename to give a central co
 #Download statistical codes from ECHO
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 #Manual inputs are as follows below. By default, assumes path above:
-FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameNoDis2016.csv"),stringsAsFactors = F)
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameMedNoDis2016.csv"),stringsAsFactors = F)
 FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
 Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
 Hydro<-read.csv(paste0(path,"/vahydro_facilities.csv"),stringsAsFactors = F)
@@ -58,6 +59,19 @@ pj <- proj4::project(d, proj4string, inverse=TRUE)
 latlon <- data.frame(lat=pj$y, lon=pj$x)
 VPDES_IP$coords.x1<-latlon$lon
 VPDES_IP$coords.x2<-latlon$lat
+
+for (i in 1:length(a$CWPName)){
+  json_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",a$VAP_PMT_NO[i])
+  json_data<-fromJSON(txt=json_file)
+  if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
+    a$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
+    a$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
+  } else {
+    a$Faclat[i]<-NA
+    a$Faclong[i]<-NA
+  }
+  print(paste0("Processing SourceID: ",a$VAP_PMT_NO[i]," (",i," of ",length(a$CWPName),")"))
+}
 
 #Assign design flows to VPDES outfalls using the VPDES information spreadsheet
 for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
@@ -144,8 +158,8 @@ for (i in 1:length(AllFacs$FacilityID)){
 }
 for (i in 1:length(AllFacs$FacilityID)){
   if(AllFacs$SourceData[i]=='ECHO'){#Based on value of source data noted earlier, find lat/long. VPDES lat/long may need to be reprojected, so check ECHO first
-    AllFacs$lat[i]<-a$FacLat[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
-    AllFacs$lon[i]<-a$FacLong[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+    AllFacs$lat[i]<-a$Faclat[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
+    AllFacs$lon[i]<-a$Faclong[a$VAP_PMT_NO==AllFacs$FacilityID[i]]
   }else{
     AllFacs$lat[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
     AllFacs$lon[i]<-as.numeric(All$coords.x1[All$VAP_PMT_NO==AllFacs$FacilityID[i]])[1]
