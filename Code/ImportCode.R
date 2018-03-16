@@ -25,6 +25,7 @@ for (i in 1:length(a$CWPName)){
     a$Faclat[i]<-NA
     a$Faclong[i]<-NA
   }
+  print(paste0("Processing SourceID: ",a$VAP_PMT_NO[i]," (",i," of ",length(a$CWPName),")"))
 }
 
 
@@ -127,13 +128,13 @@ for (i in 1:length(facilities$hydrocode)){
     facilities$fstatus[i]<-'active'
   }
   if(!is.na(a$Faclat[i]) & !is.na(a$Faclong[i])){
-    facilities$wkt_geom[i]<-paste0('POINT (',a$Faclat[a$SourceID==a$SourceID[i]],' ',a$Faclong[a$SourceID==a$SourceID[i]],')')
+    facilities$wkt_geom[i]<-paste0('POINT (',a$Faclong[a$SourceID==a$SourceID[i]],' ',a$Faclat[a$SourceID==a$SourceID[i]],')')
   } else {
     lat<-All$coords.x2[All$FacilityID==All$FacilityID[i]]
     long<-All$coords.x1[All$FacilityID==All$FacilityID[i]]
     for (i in 1:length(lat)){
       if(!is.na(lat[i]) & !is.na(long[i])){
-        facilities$wkt_geom[i]<-paste0('POINT (',lat[i],' ',long[i],')')
+        facilities$wkt_geom[i]<-paste0('POINT (',long[i],' ',lat[i],')')
         break
       } else {
         facilities$wkt_geom[i]<-'NULL'
@@ -150,20 +151,20 @@ releasepoint<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
 for (i in 1:length(releasepoint$bundle)){
   releasepoint$name[i]<-paste0('TO ',All$VPDESID[i])
   releasepoint$ftype[i]<-'release'
-  releasepoint$hydocode[i]<-paste0('vahydro_',All$FacilityID[i])
+  releasepoint$hydocode[i]<-paste0('vahydro_',All$VPDESID[i])
   if(All$VPDESID[i]%in%FlowFrame$VPDESID){
     releasepoint$fstatus[i]<-'active'  
   } else {
     releasepoint$fstatus[i]<-'inactive'
   }
   if(!is.na(a$Faclat[a$SourceID==All$FacilityID[i]]) & !is.na(a$Faclong[a$SourceID==All$FacilityID[i]])){
-    releasepoint$wkt_geom[i]<-paste0('POINT (',a$Faclat[a$SourceID==All$FacilityID[i]],' ',a$Faclong[a$SourceID==All$FacilityID[i]],')')
+    releasepoint$wkt_geom[i]<-paste0('POINT (',a$Faclong[a$SourceID==All$FacilityID[i]],' ',a$Faclat[a$SourceID==All$FacilityID[i]],')')
   } else {
     lat<-All$coords.x2[All$FacilityID==All$FacilityID[i]]
     long<-All$coords.x1[All$FacilityID==All$FacilityID[i]]
     for (i in 1:length(lat)){
       if(!is.na(lat[i]) & !is.na(long[i])){
-        releasepoint$wkt_geom[i]<-paste0('POINT (',lat[i],' ',long[i],')')
+        releasepoint$wkt_geom[i]<-paste0('POINT (',long[i],' ',lat[i],')')
         break
       } else {
         releasepoint$wkt_geom[i]<-'NULL'
@@ -185,8 +186,8 @@ for (i in 1:length(conveyance$bundle)){
   } else {
     conveyance$fstatus[i]<-'inactive'
   }
-  conveyance$from_node[i]<-paste0('echo_',All$FacilityID[i])
-  conveyance$to_node[i]<-paste0('vahydro_',All$VPDESID[i])
+  conveyance$from_node[i]<-paste0('vahydro_',All$VPDESID[i])
+  conveyance$to_node[i]<-paste0('echo_',All$VPDESID[i])
 }
 write.csv(conveyance,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/conveyance.csv",row.names = F)
 
@@ -202,9 +203,9 @@ for (i in 1:length(outfalls$bundle)){
     outfalls$fstatus[i]<-'inactive'
   }
   if(!is.na(All$coords.x2[All$VPDESID==All$VPDESID[i]]) & !is.na(All$coords.x1[All$VPDESID==All$VPDESID[i]])){
-    outfalls$wkt_geom[i]<-paste0('POINT (',All$coords.x2[All$VPDESID==All$VPDESID[i]],' ',All$coords.x1[All$VPDESID==All$VPDESID[i]],')')  
+    outfalls$wkt_geom[i]<-paste0('POINT (',All$coords.x1[All$VPDESID==All$VPDESID[i]],' ',All$coords.x2[All$VPDESID==All$VPDESID[i]],')')  
     } else if (!is.na(a$Faclat[a$SourceID==All$FacilityID[i]]) & !is.na(a$Faclong[a$SourceID==All$FacilityID[i]])) {
-      outfalls$wkt_geom[i]<-paste0('POINT (',a$Faclat[a$SourceID==All$FacilityID[i]],' ',a$Faclong[a$SourceID==All$FacilityID[i]])
+      outfalls$wkt_geom[i]<-paste0('POINT (',a$Faclong[a$SourceID==All$FacilityID[i]],' ',a$Faclat[a$SourceID==All$FacilityID[i]])
     } else {
       outfalls$wkt_geom[i]<-'NULL'
   }
