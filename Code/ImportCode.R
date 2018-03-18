@@ -142,7 +142,7 @@ for (i in 1:length(facilities$hydrocode)){
     }
   }
 }
-write.csv(facilities,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/facilities.csv",row.names = F)
+write.table(facilities,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/facilities.txt",sep="\t",row.names = F)
 
 #Release Point Generation
 All$VPDESID<-as.character(All$VPDESID)
@@ -173,7 +173,7 @@ for (i in 1:length(releasepoint$bundle)){
   }
   releasepoint$dh_link_facility_mps[i]<-paste0('echo_',All$FacilityID[i])
 }
-write.csv(releasepoint,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/releasepoint.csv",row.names = F)
+write.table(releasepoint,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/releasepoint.txt",sep="\t",row.names = F)
 
 #Conveyance Generation
 conveyance<-data.frame(bundle=rep('conveyance',length(All$VPDESID)))
@@ -189,7 +189,7 @@ for (i in 1:length(conveyance$bundle)){
   conveyance$from_node[i]<-paste0('vahydro_',All$VPDESID[i])
   conveyance$to_node[i]<-paste0('echo_',All$VPDESID[i])
 }
-write.csv(conveyance,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/conveyance.csv",row.names = F)
+write.table(conveyance,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/conveyance.txt",sep="\t",row.names = F)
 
 #Outfall Generation
 outfalls<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
@@ -211,4 +211,4 @@ for (i in 1:length(outfalls$bundle)){
   }
   outfalls$dh_link_facility_mps[i]<-paste0('echo_',All$FacilityID[i])
 }
-write.csv(outfalls,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/outfalls.csv",row.names = F)
+write.table(outfalls,"C:/Users/connorb5/Desktop/GitHub/USGS_Consumptive_Use/Documentation/Imports/outfalls.txt",sep="\t",row.names = F)
