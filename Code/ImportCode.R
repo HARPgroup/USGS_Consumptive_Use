@@ -5,6 +5,7 @@ library(XML)
 library(jsonlite)
 library(RCurl)
 state<-"VA"
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameMedNoDis2016.csv"),stringsAsFactors = F)
 #Get ECHO Facility List and store in dataframe 'a'
 uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
 ECHO_xml<-getURL(uri_query)
