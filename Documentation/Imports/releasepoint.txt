@@ -1,4 +1,4 @@
-bundle	name	ftype	hydocode	fstatus	wkt_geom	dh_link_facility_mps
+bundle	name	ftype	hydrocode	fstatus	wkt_geom	dh_link_facility_mps
 transfer	TO VA0000248004	release	vahydro_VA0000248004	inactive	POINT (-80.541111 37.180556)	echo_VA0000248
 transfer	TO VA0000248005	release	vahydro_VA0000248005	active	POINT (-80.541111 37.180556)	echo_VA0000248
 transfer	TO VA0000248006	release	vahydro_VA0000248006	active	POINT (-80.541111 37.180556)	echo_VA0000248

@@ -151,7 +151,7 @@ releasepoint<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
 for (i in 1:length(releasepoint$bundle)){
   releasepoint$name[i]<-paste0('TO ',All$VPDESID[i])
   releasepoint$ftype[i]<-'release'
-  releasepoint$hydocode[i]<-paste0('vahydro_',All$VPDESID[i])
+  releasepoint$hydrocode[i]<-paste0('vahydro_',All$VPDESID[i])
   if(All$VPDESID[i]%in%FlowFrame$VPDESID){
     releasepoint$fstatus[i]<-'active'  
   } else {
@@ -180,7 +180,7 @@ conveyance<-data.frame(bundle=rep('conveyance',length(All$VPDESID)))
 for (i in 1:length(conveyance$bundle)){
   conveyance$name[i]<-paste0(All$FacilityID[i],' TO ',All$VPDESID[i])
   conveyance$ftype[i]<-'water_transfer'
-  conveyance$hydocode[i]<-paste0('vahydro_',All$FacilityID[i],'_',All$VPDESID[i])
+  conveyance$hydrocode[i]<-paste0('vahydro_',All$FacilityID[i],'_',All$VPDESID[i])
   if(All$VPDESID[i]%in%FlowFrame$VPDESID){
     conveyance$fstatus[i]<-'active'  
   } else {
@@ -196,7 +196,7 @@ outfalls<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
 for (i in 1:length(outfalls$bundle)){
   outfalls$name[i]<-paste0('FROM ',All$FacilityID[i])
   outfalls$ftype[i]<-'outfall'
-  outfalls$hydrocode<-paste0('echo_',All$VPDESID[i])
+  outfalls$hydrocode[i]<-paste0('echo_',All$VPDESID[i])
   if(All$VPDESID[i]%in%FlowFrame$VPDESID){
     outfalls$fstatus[i]<-'active'  
   } else {

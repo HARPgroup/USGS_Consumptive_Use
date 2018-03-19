@@ -1,4 +1,4 @@
-bundle	name	ftype	hydocode	fstatus	from_node	to_node
+bundle	name	ftype	hydrocode	fstatus	from_node	to_node
 conveyance	VA0000248 TO VA0000248004	water_transfer	vahydro_VA0000248_VA0000248004	inactive	vahydro_VA0000248004	echo_VA0000248004
 conveyance	VA0000248 TO VA0000248005	water_transfer	vahydro_VA0000248_VA0000248005	active	vahydro_VA0000248005	echo_VA0000248005
 conveyance	VA0000248 TO VA0000248006	water_transfer	vahydro_VA0000248_VA0000248006	active	vahydro_VA0000248006	echo_VA0000248006
