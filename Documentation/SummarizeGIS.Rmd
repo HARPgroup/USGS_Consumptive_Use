@@ -1,0 +1,54 @@
+---
+title: "Consumptive Use GIS"
+author: "Connor Brogan"
+date: "March 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning=FALSE,fig.width = 6.5,fig.height = 3.25)
+```
+
+## Summary
+  
+The objective of this code is to draw in an input table of facility-aggregated withdraw and discharge from **AnalysisCode.R** (which draws off of **ECHOInterface.R**) to create figures summarizing consumptive-use at a watershed level across the state. This script uses traditional GIS proccesses to create consistent maps in an automated manner that greatly accelerates data vizualization over an external GIS program (i.e. ESRI ArcGIS or open-source QGIS). This code is easily modified to allow for visualization off any type of watershed delineations, but is here set to show consumptive use trends across USGS hydrologic units 6, 8, and 10. Several approaches are taken to improve data quality and the process is visualized at each major step. It is the intent of this document to familiarize users with the R GIS process, indicate relevant inputs and outputs, and allow for successful map recreation. 
+  
+## Data Initialization
+  
+The first component of this script is data initialization. Several exisitng R packages allow for an easy GIS interface within R. The **dplyr** library is a data managment package that increases the written-efficiency of data grouping and summarization. This library allows this script to aggregate facility data to a watershed level and compare it across the state. These same tasks can be accomplished in base R, but are easier to read with **dplyr** notation.  
+The **rgdal** package is one of three primary R GIS libraries. It creates an easy interface for R to read in spatial data, creating unique R data classes (i.e. *spatialpointsdataframes*) that store both data attributes and coordinates. Attributes and spatial data can be referenced indiviudally, which allows users to create unique selections and queries based on both location and facility details.  
+The **rgeos** library is the next R GIS package used by this code. **rgeos** converts standard GIS procedures into R notation, allowing users to calculate feature area, run intersections, and create spatial overlays. In this script, it is primarily called to create an machine-readable overlay of facility coordinates and watershed polygons. **rgeos** develops a new dataset that represents a classic spatial join, determining which watershed every facility falls in (thus giving a means for watershed-level aggregation).  
+Finally, the **raster** library is called here. This package is written to allow R to use and manipulate data rasters. Although this analysis requires no such datasets, the **raster** package allows users to plot spatial data with base R commands. Thus, the *plot()* function can be used to visualize a polygon dataset colored by attribute data and the *lines()* command can be used to add in just the polygon outlines. This script utilizes this very situation, using the same dataset to create watershed outlines and to shade them by magnitude of consumptive use. The below lines show how to call these libraries into R.   
+
+```{r}
+library(dplyr)
+library(rgdal)
+library(rgeos)
+library(raster)
+```
+  
+Once libraries are loaded, a function is written to aggregate data. It takes in a vector data-series and outputs their sum. It varies from the *sum()* command in base R as it searches each component of the input vector for data. If the whole data set is missing, it returns *NA*. Otherwise, it sets missing values to zero and computes the sum. This is useful in small-scale watershed aggregation, as inactive facilties may create misleading trends when summarized over a small area.  
+
+```{r}
+plus<-function(x){
+  if(all(is.na(x))){
+    c(NA)
+  }else{
+    sum(x,na.rm = TRUE)}
+}
+```
+  
+## Data frame projection and watershed input
+   
+This section of the script reads in watershed boundaries and the Commonwealth border. In doing so, it initializes the data R needs to clip watershed boundaries to the state border and create a sptial reference for future overlays. This section also creates a standard coordinate system to project all data to, as used by the ECHO data system (EPSG 4269 a.k.a. NAD 1983).  
+First, the coordinate reference system used by ECHO (NAD 1983) is stored for reference. All future data is projected into this reference system. It is input into *ECHOCRS* as a proj4 string. The Virginia state boundary is read-in here, developed externally from freely-available TIGER shapefiles. It is projected to *ECHOCRS*.
+```{r}
+ECHOCRS<-'+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs'
+VA<-readOGR('G:\\My Drive\\HARP\\impoundment_evap_HARP-2016\\EvapInputs.gdb',layer="VA")
+VA<-spTransform(VA,CRS=ECHOCRS)
+```
+```{r,echo=FALSE}
+plot(VA,axes=T,cex.axis=2)
+```
+
+
