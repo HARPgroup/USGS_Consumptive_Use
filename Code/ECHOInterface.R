@@ -9,6 +9,7 @@ rm(list=ls())
 #Some basic R libraries to get data from https servers and use parse XML data
 library(XML)
 library(RCurl)
+library(lubridate)
 
 #Current inputs for the R script. Right now, these inputs are manual entry only but they can be easily
 #converted into a function later on. Inputs are 'state', which is the state of interest, 'startDate' and
@@ -16,8 +17,8 @@ library(RCurl)
 #The state should be entered as the USPS abbreviation and the dates should be entered 'mm/dd/yyyy'
 #Current values for dates are default from ECHO
 state<-"VA"
-startDate<-"01/01/2017"
-endDate<-"12/31/2017"
+startDate<-"01/01/2015"
+endDate<-"12/31/2015"
 path<-"C:/Users/connorb5/Desktop/USGS Testing"
 #path<-"C:\\Users\\nrf46657\\Desktop\\connor_code\\"
 #endDate<-Sys.Date()
@@ -59,7 +60,9 @@ feat_num<-"";feat_num<-feat_num[-1]
 Code<-'';Code<-Code[-1]
 Coded<-'';Coded<-Coded[-1]
 
-#The following for loop goes iterates through each source ID and obtains its DMR data from echo. From there, it extracts
+mr<-data.frame(month=1:12,days=c(31,29,31,30,31,30,31,31,30,31,30,31))
+
+#The following for loop iterates through each source ID and obtains its DMR data from echo. From there, it extracts
 #only discharge data using the parameter code 50050. It then checks the discharge data for all unique months to develop
 #the number of months studied at that particular facility. Finally, it stores maximum and minimum data if possible (else puts 0) as well
 #as the number of unique outfalls identified for that particular iteration of source ID
@@ -92,20 +95,28 @@ for (i in 1:length(a$SourceID)) {
       Limiti<-numeric(length(codes))
       Codedi<-unique(bspec$statistical_base_code)
       for (j in 1:length(codes)){
-        Flowi[j]<-median(bspec$dmr_value_nmbr[bspec$statistical_base_code==codes[j]],na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
-        Uniti[j]<-unique(bspec$standard_unit_desc[bspec$statistical_base_code==codes[j]])#Find the units being associated with this particular outfall
-        LimitswNA<-unique(bspec$limit_value_nmbr[bspec$statistical_base_code==codes[j]])#Store limits and eliminate if NA or take median if multiple
+        bcode<-bspec[bspec$statistical_base_code==codes[j],]
+        nodays<-numeric()
+        nmbr<-numeric()
+        for (l in 1:length(bcode$nmbr_of_submission)){
+          mo<-month(bcode$monitoring_period_end_date[l])
+          nmbr[l]<-bcode$nmbr_of_submission[l]
+          nodays[l]<-sum(mr$days[mr$month%in%seq(mo-nmbr[l]+1,mo)])
+        }
+        Flowi[j]<-sum(bcode$dmr_value_nmbr*nodays*nmbr,na.rm=T)/sum(nodays)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
+        Uniti[j]<-unique(bcode$standard_unit_desc)#Find the units being associated with this particular outfall
+        LimitswNA<-unique(bcode$limit_value_nmbr)#Store limits and eliminate if NA or take median if multiple
         if(length(LimitswNA)>1){#Occasionally limits report as NA which can alter this code
           if(length(LimitswNA[!is.na(LimitswNA)])>1){
             warning("More than one real limit found, only using median")
-            Limiti[j]<-median(bspec$limit_value_nmbr[bspec$statistical_base_code==codes[j]&bspec$limit_end_date==max(bspec$limit_end_date[bspec$statistical_base_code==codes[j]],na.rm=T)],na.rm=T)
+            Limiti[j]<-median(bcode$limit_value_nmbr[bcode$limit_end_date==max(bcode$limit_end_date,na.rm=T)],na.rm=T)
           }else{
             Limiti[j]<-LimitswNA[!is.na(LimitswNA)] 
           }
         }else{
           Limiti[j]<-LimitswNA
         }
-        Codedi[j]<-unique(bspec$statistical_base_short_desc[bspec$statistical_base_code==codes[j]])#Store the statistic used in developing the meadian above
+        Codedi[j]<-unique(bcode$statistical_base_short_desc)#Store the statistic used in developing the meadian above
       }
       Flow<-c(Flow,Flowi)#Store flow, units, limits, and stat codes as needed
       Unit<-c(Unit,Uniti)
@@ -133,3 +144,4 @@ FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,Flow,Unit,Limit,Code,Coded)
 #rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),]
 write.csv(FlowFrame,paste0(path,'/FlowFrame.csv'))
+
