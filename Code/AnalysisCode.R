@@ -20,9 +20,10 @@ library(httr)#Do we need this?
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
 path<-"G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing"
-FlowFrame<-read.csv(paste0(path,"/2015 ECHO/FlowFrameSumNoDisNoSW2015.csv"),stringsAsFactors = F)
-#Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
-Hydro<-read.csv(paste0(path,"/2015 ECHO/vahydro_facilities2015.csv"),stringsAsFactors = F)
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameSumsNoDis2016.csv"),stringsAsFactors = F)
+#Hydro<-read.csv('http://deq2.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
+Hydro<-read.csv(paste0(path,"/2016 ECHO/vahydro_facilities2016.csv"),stringsAsFactors = F)
+
 #Get ECHO Facility List and store in dataframe 'a'
   uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
   ECHO_xml<-getURL(uri_query)
