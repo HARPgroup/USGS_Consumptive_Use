@@ -9,12 +9,13 @@ rm(list=ls())
 #Some basic R libraries to get data from https servers and use parse XML data
 library(XML)
 library(RCurl)
+library(lubridate)
 
 #Current inputs for the R script. Right now, these inputs are manual entry only but they can be easily
 #converted into a function later on. Inputs are 'state', which is the state of interest, 'startDate' and
-#'endDate' which are simply the data of interest. Most sites have data from 2012-present, some 2009-present
-#The state should be entered as the USPS abbreviation and the dates should be entered 'mm/dd/yyyy'
-#Current values for dates are default from ECHO
+#'endDate' which are simply the data of interest, and 'path' which is where data will be written out to.
+#Most sites have data from 2012-present, some 2009-present. The state should be entered as the USPS 
+#abbreviation and the dates should be entered 'mm/dd/yyyy'
 state<-"VA"
 startDate<-"01/01/2017"
 endDate<-"12/31/2017"
@@ -47,22 +48,28 @@ rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID)
 #b<-b[b$parameter_code==50050,]
 
 
-#The next three lines of code create three empty character vectors. These vectors will be used in a for loop to extract Source IDs and outfall IDs from 
-#ECHO. These use the DMR_summary data frame created above, to prevent the script from searching facilities with no DMR data available. At the end of the 
-#loop, the source IDs and outfall IDs are combined to match VPDES ID formatting
-Flow<-0;Flow<-Flow[-1]
-Unit<-"";Unit<-Unit[-1]
-Limit<-0;Limit<-Limit[-1]
-VPDESID<-"";VPDESID<-VPDESID[-1]
-ECHOID<-"";ECHOID<-ECHOID[-1]
-feat_num<-"";feat_num<-feat_num[-1]
-Code<-'';Code<-Code[-1]
-Coded<-'';Coded<-Coded[-1]
+#The next few lines of code create empty character and numeric vectors. These vectors will be used in
+#a 'for' loop to extract Source IDs, flow values, permit limits, statistical codes, and outfall IDs from ECHO.
+#These use the DMR_summary data frame created above, to prevent the script from searching facilities with no
+#DMR data available. At the end of the loop, the source IDs and outfall IDs are combined to match VPDES ID formatting
+FlowSum<-numeric()
+FlowMed<-numeric()
+Unit<-character()
+Limit<-numeric()
+VPDESID<-character()
+ECHOID<-character()
+feat_num<-character()
+Code<-character()
+Coded<-character()
+#A data frame of the months of the year and their corresponding number of days, to be used to generate sums of discharge
+#in time frame
+mr<-data.frame(month=1:12,days=c(31,29,31,30,31,30,31,31,30,31,30,31))
 
-#The following for loop goes iterates through each source ID and obtains its DMR data from echo. From there, it extracts
+#The following 'for' loop iterates through each source ID and obtains its DMR data from echo. From there, it extracts
 #only discharge data using the parameter code 50050. It then checks the discharge data for all unique months to develop
-#the number of months studied at that particular facility. Finally, it stores maximum and minimum data if possible (else puts 0) as well
-#as the number of unique outfalls identified for that particular iteration of source ID
+#the number of months studied at that particular facility. It sotres the unique identifiers of the facility and outfall
+#and then stores DMR statistics, including a sum and median of DMR values. Permit limits and statistical codes (i.e. is 
+#reported discharge a monthly average, a daily maximum, a 7-day maximum, etc.)
 for (i in 1:length(a$SourceID)) {
   sourceID<-a$SourceID[i]
   print(paste("Processing SourceID: ",sourceID," (",i," of ",length(a$SourceID),")", sep=""))
@@ -87,27 +94,38 @@ for (i in 1:length(a$SourceID)) {
       outfall<-as.character(features[k])#This loop will deal with outfall k
       bspec<-b[b$perm_feature_nmbr==featuresID[k],]#Extract data from the DMR such that it only deals with feature/outfall k
       codes<-unique(bspec$statistical_base_code)#Determine how many statistics are reported for this outfall
-      Flowi<-numeric(length(codes))#Create areas to store extracted flows, units, and limits
+      FlowSumi<-numeric(length(codes))#Create areas to store extracted flows, units, and limits
+      FlowMedi<-numeric(length(codes))
       Uniti<-numeric(length(codes))
       Limiti<-numeric(length(codes))
       Codedi<-unique(bspec$statistical_base_code)
       for (j in 1:length(codes)){
-        Flowi[j]<-median(bspec$dmr_value_nmbr[bspec$statistical_base_code==codes[j]],na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
-        Uniti[j]<-unique(bspec$standard_unit_desc[bspec$statistical_base_code==codes[j]])#Find the units being associated with this particular outfall
-        LimitswNA<-unique(bspec$limit_value_nmbr[bspec$statistical_base_code==codes[j]])#Store limits and eliminate if NA or take median if multiple
+        bcode<-bspec[bspec$statistical_base_code==codes[j],]
+        nodays<-numeric()
+        nmbr<-numeric()
+        for (l in 1:length(bcode$nmbr_of_submission)){
+          mo<-month(bcode$monitoring_period_end_date[l])
+          nmbr[l]<-bcode$nmbr_of_submission[l]
+          nodays[l]<-sum(mr$days[mr$month%in%seq(mo-nmbr[l]+1,mo)])
+        }
+        FlowSumi[j]<-sum(bcode$dmr_value_nmbr*nodays,na.rm=T)/sum(nodays)#Store the aggregated sum of all discharge for this outfall. This sheds light on seasonal trends but may be affected by outliers/typos
+        FlowMedi[i]<-median(bcode$dmr_value_nmbr,na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
+        Uniti[j]<-unique(bcode$standard_unit_desc)#Find the units being associated with this particular outfall
+        LimitswNA<-unique(bcode$limit_value_nmbr)#Store limits and eliminate if NA or take median if multiple
         if(length(LimitswNA)>1){#Occasionally limits report as NA which can alter this code
           if(length(LimitswNA[!is.na(LimitswNA)])>1){
             warning("More than one real limit found, only using median")
-            Limiti[j]<-median(bspec$limit_value_nmbr[bspec$statistical_base_code==codes[j]&bspec$limit_end_date==max(bspec$limit_end_date[bspec$statistical_base_code==codes[j]],na.rm=T)],na.rm=T)
+            Limiti[j]<-median(bcode$limit_value_nmbr[bcode$limit_end_date==max(bcode$limit_end_date,na.rm=T)],na.rm=T)
           }else{
             Limiti[j]<-LimitswNA[!is.na(LimitswNA)] 
           }
         }else{
           Limiti[j]<-LimitswNA
         }
-        Codedi[j]<-unique(bspec$statistical_base_short_desc[bspec$statistical_base_code==codes[j]])#Store the statistic used in developing the meadian above
+        Codedi[j]<-unique(bcode$statistical_base_short_desc)#Store the statistic used in developing the meadian above
       }
-      Flow<-c(Flow,Flowi)#Store flow, units, limits, and stat codes as needed
+      FlowSum<-c(FlowSum,FlowSumi)#Store flow, units, limits, and stat codes as needed
+      FlowMed<-c(FlowMed,FlowMedi)
       Unit<-c(Unit,Uniti)
       Limit<-c(Limit,Limiti)
       Code<-c(Code,codes)
@@ -117,7 +135,8 @@ for (i in 1:length(a$SourceID)) {
       ECHOID<-c(ECHOID,rep(sourceID,length(codes)))
     }
   }else{
-    Flow<-c(Flow,NA)
+    FlowSum<-c(FlowSum,NA)
+    FlowMed<-c(FlowMed,NA)
     Unit<-c(Unit,NA)
     Limit<-c(Limit,NA)
     Code<-c(Code,NA)
@@ -129,7 +148,8 @@ for (i in 1:length(a$SourceID)) {
 }
 
 #These next few lines subset and export the data developed in the above loops
-FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,Flow,Unit,Limit,Code,Coded)
-#rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,Flow,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
+FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,FlowSum,FlowMed,Unit,Limit,Code,Coded)
+#rm(codes,Codedi,Limiti,Uniti,Flowi,sourceID,i,j,outfall,Coded,Code,Unit,FlowSum,FlowMed,feat_num,ECHOID,VPDESID,uri_effluent,Limit,LimitswNA)
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),]
 write.csv(FlowFrame,paste0(path,'/FlowFrame.csv'))
+
