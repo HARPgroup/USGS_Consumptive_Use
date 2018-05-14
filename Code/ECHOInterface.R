@@ -17,8 +17,8 @@ library(lubridate)
 #Most sites have data from 2012-present, some 2009-present. The state should be entered as the USPS 
 #abbreviation and the dates should be entered 'mm/dd/yyyy'
 state<-"VA"
-startDate<-"01/01/2017"
-endDate<-"12/31/2017"
+startDate<-"01/01/2016"
+endDate<-"12/31/2016"
 path<-"C:/Users/connorb5/Desktop/USGS Testing"
 #path<-"C:\\Users\\nrf46657\\Desktop\\connor_code\\"
 #endDate<-Sys.Date()
@@ -109,7 +109,7 @@ for (i in 1:length(a$SourceID)) {
           nodays[l]<-sum(mr$days[mr$month%in%seq(mo-nmbr[l]+1,mo)])
         }
         FlowSumi[j]<-sum(bcode$dmr_value_nmbr*nodays,na.rm=T)/sum(nodays)#Store the aggregated sum of all discharge for this outfall. This sheds light on seasonal trends but may be affected by outliers/typos
-        FlowMedi[i]<-median(bcode$dmr_value_nmbr,na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
+        FlowMedi[j]<-median(bcode$dmr_value_nmbr,na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
         Uniti[j]<-unique(bcode$standard_unit_desc)#Find the units being associated with this particular outfall
         LimitswNA<-unique(bcode$limit_value_nmbr)#Store limits and eliminate if NA or take median if multiple
         if(length(LimitswNA)>1){#Occasionally limits report as NA which can alter this code
@@ -153,3 +153,4 @@ FlowFrame<-data.frame(ECHOID,VPDESID,feat_num,FlowSum,FlowMed,Unit,Limit,Code,Co
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),]
 write.csv(FlowFrame,paste0(path,'/FlowFrame.csv'))
 
+write.csv(FlowFrame,'G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing\\2016 ECHO\\FlowFrameMedSumNoDis2016.csv')

@@ -16,9 +16,22 @@ uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?
 a<-read.csv(uri_summary,stringsAsFactors = F)
 a$CWPName<-toupper(a$CWPName)
 
+
+a$Faclat[i]<-NA
+a$Faclong[i]<-NA
+a$Status[i]<-NA
+a$PermitExpDate[i]<-NA
+a$LastInspection[i]<-NA
+a$CSOFlg[i]<-NA
+a$CWPCso[i]<-NA
+a$RecievingWB[i]<-NA
+a$RecievingReachCode[i]<-NA
+a$WBDesignatedUse[i]<-NA
 for (i in 1:length(a$CWPName)){
+  print(paste0("Processing SourceID: ",a$VAP_PMT_NO[i]," (",i," of ",length(a$CWPName),")"))
   json_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",a$SourceID[i])
   json_data<-fromJSON(txt=json_file)
+  
   if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
     a$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
     a$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
@@ -26,9 +39,38 @@ for (i in 1:length(a$CWPName)){
     a$Faclat[i]<-NA
     a$Faclong[i]<-NA
   }
-  print(paste0("Processing SourceID: ",a$VAP_PMT_NO[i]," (",i," of ",length(a$CWPName),")"))
+  
+  if(length(json_data$Results$Permits$Statute[json_data$Results$Permits$Statute=="CWA"])>0){
+    indexCWA<-which(json_data$Results$Permits$Statute=="CWA")
+    a$Status[i]<-json_data$Results$Permits$FacilityStatus[indexCWA]
+    a$PermitExpDate[i]<-json_data$Results$Permits$ExpDate[indexCWA]
+  } else {
+    a$Status[i]<-NA
+    a$PermitExpDate[i]<-NA
+  }
+  
+  if(length(json_data$Results$EnforcementComplianceSummaries$Summaries$Statute[json_data$Results$EnforcementComplianceSummaries$Summaries$Statute=="CWA"])>0){
+    indexCWA<-which(json_data$Results$EnforcementComplianceSummaries$Summaries$Statute=="CWA")
+    a$LastInspection[i]<-json_data$Results$EnforcementComplianceSummaries$Summaries$LastInspection[indexCWA]
+  } else {
+    a$LastInspection[i]<-NA
+  }
+  
+  if(length(json_data$Results$WaterQuality$Sources$SourceID)>0){
+    a$CSOFlg[i]<-json_data$Results$WaterQuality$Sources$CSS
+    a$CWPCso[i]<-json_data$Results$WaterQuality$Sources$CWPCsoOutfalls
+    a$RecievingWB[i]<-json_data$Results$WaterQuality$Sources$RadGnisName
+    a$RecievingReachCode[i]<-json_data$Results$WaterQuality$Sources$RadReachcode
+    a$WBDesignatedUse[i]<-paste(json_data$Results$WaterQuality$Sources$AttainsCauseGroups,collapse = '_')
+  } else {
+    a$CSOFlg[i]<-NA
+    a$CWPCso[i]<-NA
+    a$RecievingWB[i]<-NA
+    a$RecievingReachCode[i]<-NA
+    a$WBDesignatedUse[i]<-NA
+  }
 }
-
+a$address<-paste0(a$CWPStreet,'; ',a$CWPCity)
 
 #Facility Generation
 facilities<-data.frame(bundle='facility',name=a$CWPName)
