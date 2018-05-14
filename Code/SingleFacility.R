@@ -26,7 +26,7 @@ endDate<-"12/31/2016"
 #Modified to include all VA HUCS as desired (easy option on the ECHO database)
 #This query will be created in a two-step process. First, a short XML document will be created
 #containing a queryID. This ID can be used in other parts of the database to access the summary
-uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
+uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
 ECHO_xml<-getURL(uri_query)
 ECHO_query<-xmlParse(ECHO_xml)
 QID<-xmlToList(ECHO_query)

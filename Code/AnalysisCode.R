@@ -22,7 +22,7 @@ library(httr)#Do we need this?
 state<-"VA"
 path<-"G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing"
 #Get ECHO Facility List and store in dataframe 'a'
-  uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
+  uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
   ECHO_xml<-getURL(uri_query)
   ECHO_query<-xmlParse(ECHO_xml)
   QID<-xmlToList(ECHO_query)
