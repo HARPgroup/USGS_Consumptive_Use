@@ -15,12 +15,15 @@ library(readxl)
 library(jsonlite)
 library(httr)#Do we need this?
 
-#Required inputs: State, Flow frame from ECHO run, flow frame from 2017 (shows change in outfalls),
-#and VA Hydro facility list (http://deq1.bse.vt.edu/d.bet/vahydro_facilities)
-#VA Hydro facility list and VPDES info spreadsheet are manual downloads due to slow internet connections, making it difficult to access without R timing out
+#Required inputs: State, Flow frame from ECHO run and VA Hydro facility list (http://deq1.bse.vt.edu/d.bet/vahydro_facilities)
+#VA Hydro facility list is a manual downloads due to slow internet connections, making it difficult to access without R timing out
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
 path<-"G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing"
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameMedSumNoDis2016.csv"),stringsAsFactors = F)
+#Hydro<-read.csv('http://deq2.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
+Hydro<-read.csv(paste0(path,"/2016 ECHO/vahydro_facilities2016.csv"),stringsAsFactors = F)
+
 #Get ECHO Facility List and store in dataframe 'a'
   uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
   ECHO_xml<-getURL(uri_query)
@@ -40,10 +43,6 @@ names(a)[names(a)=="SourceID"]<-"VAP_PMT_NO"#Need to rename to give a central co
 #Download statistical codes from ECHO
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 #Manual inputs are as follows below. By default, assumes path above:
-FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameMedNoDis2016.csv"),stringsAsFactors = F)
-FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrame.csv"),stringsAsFactors = F)
-Hydro<-read.csv('http://deq1.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
-Hydro<-read.csv(paste0(path,"/vahydro_facilities2016.csv"),stringsAsFactors = F)
 GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490', write_disk(temp <- tempfile(fileext = ".xls")))
 VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
@@ -83,10 +82,6 @@ for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
   if (length(VPDESFlows$`Total Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]])>0){
     VPDES_IP$TotalFlow[i]<-VPDESFlows$`Total Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]]  
   }
-}
-#Add a column to the list of ECHO facilities with the number of outfalls in ECHO in 2017
-for (i in 1:length(a$VAP_PMT_NO)){
-  a$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==a$VAP_PMT_NO[i]]))
 }
 
 #Analysis of ECHO data, providing all values for all statistics reported for a given facility
@@ -154,7 +149,6 @@ for (i in 1:length(AllFacs$FacilityID)){
   AllFacs$ECHOOutfalls[i]<-sum(!(is.na(All$ECHOID[All$FacilityID==AllFacs$FacilityID[i]])))
   AllFacs$TotalOutfalls[i]<-length(All$FacilityID[All$FacilityID==AllFacs$FacilityID[i]])#Find the total number of outfalls
   AllFacs$VPDESOutfalls[i]<-length(VPDES$VAP_PMT_NO[VPDES$VAP_PMT_NO==AllFacs$FacilityID[i]])
-  AllFacs$ECHO2017Outfalls[i]<-length(unique(FlowFrameNew$VPDESID[FlowFrameNew$ECHOID==AllFacs$FacilityID[i]]))
 }
 for (i in 1:length(AllFacs$FacilityID)){
   if(AllFacs$SourceData[i]=='ECHO'){#Based on value of source data noted earlier, find lat/long. VPDES lat/long may need to be reprojected, so check ECHO first
