@@ -20,7 +20,7 @@ library(httr)#Do we need this?
 #input/output path will also be required as the script needs a place to store downloads from VPDES
 state<-"VA"
 path<-"G:\\My Drive\\USGS_ConsumptiveUse\\Spring Semester, 2018\\Connor\\USGS Testing"
-FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameSumsNoDis2016.csv"),stringsAsFactors = F)
+FlowFrame<-read.csv(paste0(path,"/2016 ECHO/FlowFrameMedSumNoDis2016.csv"),stringsAsFactors = F)
 #Hydro<-read.csv('http://deq2.bse.vt.edu/d.bet/vahydro_facilities',stringsAsFactors = F)
 Hydro<-read.csv(paste0(path,"/2016 ECHO/vahydro_facilities2016.csv"),stringsAsFactors = F)
 
@@ -43,7 +43,6 @@ names(a)[names(a)=="SourceID"]<-"VAP_PMT_NO"#Need to rename to give a central co
 #Download statistical codes from ECHO
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 #Manual inputs are as follows below. By default, assumes path above:
-FlowFrameNew<-read.csv(paste0(path,"/2017 ECHO/FlowFrameSumsNoDis2017.csv"),stringsAsFactors = F)
 GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Active%20IP%20Nov%202017.xls?ver=2017-11-14-152041-490', write_disk(temp <- tempfile(fileext = ".xls")))
 VPDESFlows <- read_excel(temp,skip=9)
 VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
