@@ -86,7 +86,8 @@ for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
 
 #Analysis of ECHO data, providing all values for all statistics reported for a given facility
 #First, flip flow frame to show statistical codes in columns rather than rows
-FlowFrameFlipped<-FlowFrame[,c('VPDESID','Flow','Limit','Code')]
+FlowFrameFlipped<-FlowFrame[,c('VPDESID','FlowMed','Limit','Code')]
+colnames(FlowFrameFlipped)[2]<-'Flow'
 FlowFrameFlipped<-reshape(FlowFrameFlipped,idvar='VPDESID',timevar = 'Code',direction='wide')
 #Add in VPDES IDs for each outfall
 for (i in 1:length(FlowFrameFlipped$VPDESID)){
