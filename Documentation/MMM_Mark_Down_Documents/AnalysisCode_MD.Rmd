@@ -1,0 +1,60 @@
+---
+title: "AnalysisCode_MD"
+author: "Originally Drafted by Connor Brogan. Adapted by Morgan McCarthy"
+date: "June 27, 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Purpose
+
+This script is intended to compare aggregated flows from CWA regulated facilities in the ECHO Database (ECHOInterface.R) to their respective VPDES Individual Permitted flows. The Virginia Pollution Discharge Elimination System (VPDES) is administered by Virginia's Department of Environmental Quality (VDEQ). Specifically, we are looking at Individual Permits for municipal and industrial discharging facilities. An excel spreadsheet listing active VPDES Individual Permits is found on the VDEQ website (https://www.deq.virginia.gov/Programs/Water/PermittingCompliance/PollutionDischargeElimination/PermitsFees.aspx#GGPs).
+
+## Resources
+
+ECHO [Statistical Code Guide](https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv)
+
+Information about [VPDES Permits](http://www.deq.virginia.gov/Programs/Water/PermittingCompliance/PollutionDischargeElimination/PermitsFees.aspx#GGPs)
+
+List of Active [VPDES Permits](http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20March%202018.xls?ver=2018-03-13-170732-267)
+
+Active VPDES outfalls [geodatabase](http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip)
+
+## Data Dictionary
+
+The data dictionary for this script can be found [here]
+
+## 
+
+## Dependancy Initilization
+
+```{r,warning=FALSE,message=FALSE}
+library(foreign) #allows for easy manipulation of *.dbf file types
+library(rgdal) #extract files from file geodatabases-like in ArcMap
+library(dplyr)#data manipulation package that speeds up grouping, summarizing, ordering. 
+library(XML) #downloads and reads XML file types-used to access ECHORest Services to download facilities
+library(RCurl) #downloads and interacts with web-based content
+library(readxl) #reads excel files
+library(jsonlite)
+library(httr)
+library(proj4)
+library(data.table)
+```
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
