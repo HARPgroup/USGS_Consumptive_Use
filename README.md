@@ -19,6 +19,7 @@ Surface Water Modeler | Office of Water Supply | Virginia Department of Environm
 ##### Joseph Kleiner
 
 Senior Surface Water Modeler | Virginia Department of Environmental Quality
+
 B.S. Biological Systems Engineering | Virginia Tech | 2016
 
 <joseph.kleiner@deq.virginia.gov>
@@ -26,12 +27,14 @@ B.S. Biological Systems Engineering | Virginia Tech | 2016
 ##### Dr. Julie Shortridge
 
 Assistant Profesor & Extension Specialist | Virginia Tech | Department of Biological Systems Engineering
+
 Ph.D Geography and Environmental Engineering | Johns Hopkins University | 2016
 
 <jshortridge@vt.edu>
     
 ##### Dr. Durelle Scott
 Assistant Professor | Virginia Tech | Department of Biological Systems Engineering
+
 Ph.D Civil Engineering | University of Colorado at Boulder | 2001
 
 <dscott@vt.edu>
