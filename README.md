@@ -49,10 +49,9 @@ M.S Biological Systems Engineering | Virginia Tech | 2019
 
 <mccartma@vt.edu>
 
-## Files
-Code
+## Visual Mapping of Scripts
 
-Documentation
+![](G:\My Drive\ECHO NPDES\USGS_Consumptive_Use_mccartma\Script_Mapping\Morgan Code Flow Chart.jpeg)
 
 ### R scripts
 ECHOInterface.R 
