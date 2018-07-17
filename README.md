@@ -51,7 +51,7 @@ M.S Biological Systems Engineering | Virginia Tech | 2019
 
 ## Visual Mapping of Scripts
 
-![](G:\My Drive\ECHO NPDES\USGS_Consumptive_Use_mccartma\Script_Mapping\Morgan Code Flow Chart.jpeg)
+![](https://github.com/mccartma/USGS_Consumptive_Use/blob/master/Script_Mapping/Morgan%20Code%20Flow%20Chart.jpg)
 
 ### R scripts
 ECHOInterface.R 
