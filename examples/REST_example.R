@@ -36,7 +36,7 @@ token <- rest_token(site, token, rest_uname, rest_pw)
   )
   
   timeseries.df <- getTimeseries(ts_inputs, site, ts)
-  #-------------------------------------------------------------------------------------------- 
+  #------------------------------------------------------------------------------------------ 
   # Alternatively you can retrieve a single timeseries by supplying a date 
   
   ts_inputs <- list (
