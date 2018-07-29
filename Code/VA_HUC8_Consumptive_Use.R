@@ -1,8 +1,15 @@
-#This script formats VA Hydro transfer data and pre-created ECHO discharge and VA Hydro withdraw data frames from
-#AnalysisCode.R and ECHOInterface.R to plot consumptive use across the state and develop HUC estimates of discharge,
-#withdraw, transfer, and net use. Discharge data may or may not be VPDES referenced
-############################
-#Library initialization for organization and RGIS functions
+###########################################################################################################################################
+#########################Estimating Consumptive Use in Virginia HUC 8 Watersheds##########################################################
+
+##This code calculates consumptive use by performing a water balance (In-Out=Change in Storage)
+#Inputs are defined as the discharges/return flows from NPDES permitted facilities (ECHO Database)
+#Outputs are the withdrawals from surface water found in the Virginia Wateruse Data System (VWUDS)
+#The change in storage refers to transfers between facilities (releases and deliveries)--This is calculated in this script
+
+###########################################################################################################################################
+####House Keeping####
+
+#Load required packages-including spatial analysis
 library(dplyr)
 library(rgdal)
 library(rgeos)
@@ -17,50 +24,69 @@ plus<-function(x){
     sum(x,na.rm = TRUE)}
 }
 
-#RGIS operations to load HUC8 and Virginia shapefile and crop HUC8s to the state boundary
-ECHOCRS<-'+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs'#ECHO coordinate system
-VA<-readOGR('C:/Users/Morgan/Documents/VT/GRA/EvapInputs.gdb',layer="VA")#Read in the state boundary
-VA<-spTransform(VA,CRS=ECHOCRS)#Reproject
-HUC8<-readOGR("C:/Users/Morgan/Documents/VT/GRA/HUC.gdb",layer='WBDHU8')#Read in the HUC8 boundaries for Virginia
-HUC8<-spTransform(HUC8,CRS=ECHOCRS)#Reproject
-HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)#Crop HUC8s to state boundary
-HUC8Overlay<-HUC8#Create a simplified, uncropped HUC list that just contains name and ID
-HUC8Overlay@data<-HUC8Overlay@data[,c(11,12)]
-names(HUC8Overlay@data)<-c("HUC8","HUC8Name")
+###########################################################################################################################################
+####HUC8 and Virginia Shapefile Manipulation####
 
+#Load databases and extract required layers
+HUC8<-readOGR("C:/Users/Morgan/Documents/VT/GRA/HUC.gdb",layer='WBDHU8')
+VA<-readOGR('C:/Users/Morgan/Documents/VT/GRA/EvapInputs.gdb',layer="VA")
 
-######Define TO transfers##############
-#Load in delivery VA Hydro Transfers. VA Hydro stores transfers at both the recieving and departing facilities
-#These lists are not identical and must be formatted separatley. Delivery transfers may be accessed at:
+#Reproject shapefiles to NAD83=EPSG Code of 4269
+HUC8<-spTransform(HUC8, CRS("+init=epsg:4269"))
+VA<-spTransform(VA, CRS("+init=epsg:4269"))
+
+#Crop Watersheds to Virginia State Boundaries
+HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+#plot(HUC8_Clipped)
+
+#Create HUC8 Dataframe that will be used in future overlay processes
+HUC8_Overlay<-HUC8 #Keep integrity of spatial dataframe
+HUC8_Overlay@data<-HUC8_Overlay@data[,c(11,12)] 
+names(HUC8_Overlay)<-c("HUC8","HUC8Name")
+
+###########################################################################################################################################
+###########################################Calculating Transfers###########################################################################
+#There are two different types of Transfers: TO and FROM
+#This is because VA Hydro stores transfers at both the recieving and departing facilities
+#Therefore, we will keep them separate during calculations and refer to transfers as deliveries and releases in both the TO and FROM lists
+
+###########################################################################################################################################
+####Delivery Transfers (TO)####
+#Download list of delivery transfers from this link
 #http://deq1.bse.vt.edu/d.bet/admin/structure/views/view/vwuds_data_cb/edit/views_data_export_4
 transTo<-read.csv("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/vahydro_transfer_to.csv")
 transTo$geom<-as.character(transTo$geom)
 
+####Reformat Coordinates####
 #Transfer geometry comes in the form "LINESTRING(TO LONG TO LAT, FROM LONG FROM LAT)
 #The following lines extract the to and from geometry and store them in appropriate columns
-transTo$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",transTo$geom)
-transTo$geomFlon<-as.numeric(gsub(" [^ ]*$","\\1",transTo$geomFlat))
-transTo$geomFlat<-as.numeric(gsub("^[^ ]* ","\\1",transTo$geomFlat))
-transTo$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",transTo$geom)
-transTo$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",transTo$geomTlat))
-transTo$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",transTo$geomTlat))
+transTo$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",transTo$geom) 
+transTo$geomFlon<-as.numeric(gsub(" [^ ]*$","\\1",transTo$geomFlat)) #FROM
+transTo$geomFlat<-as.numeric(gsub("^[^ ]* ","\\1",transTo$geomFlat)) #FROM
+transTo$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",transTo$geom) 
+transTo$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",transTo$geomTlat)) #TO
+transTo$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",transTo$geomTlat)) #TO
 
+####Create Spatial Data Frame from Points and Overlay on Clipped HUC8 Shapefile####
+####FROM Delivery Transfers####
 #Looks at all FROM delivery transfers with real geometry and creates a spatial dataframe 'dFrom'
 #Spatially overlays HUC boundaries on dFrom such that each FROM transfer is labeled by origin HUC
 dFrom<-transTo[!(is.na(transTo$geomFlat)&is.na(transTo$geomFlon)),]
-dFrom<-SpatialPointsDataFrame(data.frame(lon=dFrom$geomFlon,lat=dFrom$geomFlat),dFrom,proj4string = CRS(ECHOCRS))
-FacHUC<-over(dFrom,HUC8Overlay)#Spatial overlay
-dFrom@data$HUC8<-FacHUC$HUC8
-dFrom@data$HUC8Name<-FacHUC$HUC8Name
+dFrom<-SpatialPointsDataFrame(data.frame(lon=dFrom$geomFlon,lat=dFrom$geomFlat),dFrom,proj4string = CRS("+init=epsg:4269")) #Making data spatial
+HUC8_Facilities<-over(dFrom,HUC8_Overlay)#Spatial overlay
+dFrom@data$HUC8<-HUC8_Facilities$HUC8
+dFrom@data$HUC8Name<-HUC8_Facilities$HUC8Name
 
+####TO Delivery Transfers####
 #Looks at all TO delivery transfers with real geometry and creates a spatial dataframe 'dTo'
 #Spatially overlays HUC boundaries on dTo such that each TO transfer is labeled by origin HUC
 dTo<-transTo[!(is.na(transTo$geomTlat)&is.na(transTo$geomTlon)),]
-dTo<-SpatialPointsDataFrame(data.frame(lon=dTo$geomTlon,lat=dTo$geomTlat),dTo,proj4string = CRS(ECHOCRS))
-FacHUC<-over(dTo,HUC8Overlay)#Spatial overlay
-dTo@data$HUC8<-FacHUC$HUC8
-dTo@data$HUC8Name<-FacHUC$HUC8Name
+dTo<-SpatialPointsDataFrame(data.frame(lon=dTo$geomTlon,lat=dTo$geomTlat),dTo,proj4string = CRS("+init=epsg:4269"))
+HUC8_Facilities<-over(dTo,HUC8_Overlay)#Spatial overlay
+dTo@data$HUC8<-HUC8_Facilities$HUC8
+dTo@data$HUC8Name<-HUC8_Facilities$HUC8Name
 
+####Determine if TO Transfers are leaving watershed boundaries####
 #Need to identify if transfers are leaving and entering the same HUC. If so, these may be ignored
 #We are only concerned with interbasin transfers and need to identify these with the following code
 dTo@data$interbasin<-NA
@@ -74,7 +100,7 @@ for (i in 1:length(dTo@data$hydroid)){
   }
   FromHUC<-as.character(dFrom@data$HUC8[dFrom@data$hydroid==dTo@data$hydroid[i]])
   if(is.na(FromHUC)){
-   FromHUC<-'None' 
+    FromHUC<-'None' 
   }
   interbasin<-0
   if(ToHUC!=FromHUC){
@@ -84,28 +110,27 @@ for (i in 1:length(dTo@data$hydroid)){
   dFrom@data$interbasin[i]<-interbasin
 }
 
-#Sum the water leaving each HUC from interbasin transfers using DPLYR functions
-#Use the FROM transfers to find the water out and store these in a separate dataframe
-delf<-summarize(group_by(dFrom@data,HUC8Name,interbasin),waterout=sum(tsvalue/365,na.rm=T))
+####Sum Net Water In and Out for each HUC8 Watershed####
+###FROM Deliveries###
+delf<-summarize(group_by(dFrom@data,HUC8Name,interbasin),waterout=sum(tsvalue/365,na.rm=T)) #units in MGY need in MGD
 delf<-delf[delf$interbasin==1,]
 delf$HUC8Name<-as.character(delf$HUC8Name)
 delf$HUC8Name[is.na(delf$HUC8Name)]<-'None'
-
-#Sum the water entering each HUC from interbasin transfers using DPLYR functions
-#Use the TO transferts to find the water in and store these in a separate dataframe
+###TO Deliveries###
 delt<-summarize(group_by(dTo@data,HUC8Name,interbasin),waterin=sum(tsvalue/365,na.rm=T))
 delt<-delt[delt$interbasin==1,]
 delt$HUC8Name<-as.character(delt$HUC8Name)
 delt$HUC8Name[is.na(delt$HUC8Name)]<-'None'
-
-######Define FROM transfers##############
+###########################################################################################################################################
+####Release Transfers (FROM)####
 #Ignoring repeat hydroids (same transfer reported from both recieving and transfer facility),
-#repeat the above steps using the remaining FROM transfers avaiable at:
+#repeat the above steps using the remaining FROM transfers available at:
 #http://deq1.bse.vt.edu/d.bet/admin/structure/views/view/vwuds_data_cb/edit/views_data_export_5
 transFrom<-read.csv("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/vahydro_transfer_from.csv")
 transFrom$geom<-as.character(transFrom$geom)
 transFrom<-transFrom[!(transFrom$hydroid%in%transTo$hydroid),]
 
+####Reformat Coordinates####
 #Transfer geometry comes in the form "LINESTRING(TO LONG TO LAT, FROM LONG FROM LAT)
 #The following lines extract the to and from geometry and store them in appropriate columns
 transFrom$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",transFrom$geom)
@@ -115,24 +140,21 @@ transFrom$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",transFrom$geom)
 transFrom$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",transFrom$geomTlat))
 transFrom$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",transFrom$geomTlat))
 
-#Looks at all FROM release transfers with real geometry and creates a spatial dataframe 'rFrom'
-#Spatially overlays HUC boundaries on dFrom such that each FROM transfer is labeled by origin HUC
+####Create Spatial Data Frame from Points and Overlay on Clipped HUC8 Shapefile####
+####FROM Release Transfers####
 rFrom<-transFrom[!(is.na(transFrom$geomFlat)&is.na(transFrom$geomFlon)),]
-rFrom<-SpatialPointsDataFrame(data.frame(lon=rFrom$geomFlon,lat=rFrom$geomFlat),rFrom,proj4string = CRS(ECHOCRS))
-FacHUC<-over(rFrom,HUC8Overlay)
-rFrom@data$HUC8<-FacHUC$HUC8
-rFrom@data$HUC8Name<-FacHUC$HUC8Name
-
-#Looks at all TO release transfers with real geometry and creates a spatial dataframe 'rTo'
-#Spatially overlays HUC boundaries on dTo such that each TO transfer is labeled by origin HUC
+rFrom<-SpatialPointsDataFrame(data.frame(lon=rFrom$geomFlon,lat=rFrom$geomFlat),rFrom,proj4string = CRS("+init=epsg:4269"))
+HUC8_Facilities<-over(rFrom,HUC8_Overlay)
+rFrom@data$HUC8<-HUC8_Facilities$HUC8
+rFrom@data$HUC8Name<-HUC8_Facilities$HUC8Name
+####TO Release Transfers####
 rTo<-transFrom[!(is.na(transFrom$geomTlat)&is.na(transFrom$geomTlon)),]
-rTo<-SpatialPointsDataFrame(data.frame(lon=rTo$geomTlon,lat=rTo$geomTlat),rTo,proj4string = CRS(ECHOCRS))
-FacHUC<-over(rTo,HUC8Overlay)
-rTo@data$HUC8<-FacHUC$HUC8
-rTo@data$HUC8Name<-FacHUC$HUC8Name
+rTo<-SpatialPointsDataFrame(data.frame(lon=rTo$geomTlon,lat=rTo$geomTlat),rTo,proj4string = CRS("+init=epsg:4269"))
+HUC8_Facilities<-over(rTo,HUC8_Overlay)
+rTo@data$HUC8<-HUC8_Facilities$HUC8
+rTo@data$HUC8Name<-HUC8_Facilities$HUC8Name
 
-#Check each transfer in the release VA Hydro transfers to see if its FROM HUC is different than its TO HUC
-#If transfers occurred outside of HUC boundaries, set HUC as "None"
+####Determine if Release FROM Transfers are leaving watershed boundaries####
 rTo@data$interbasin<-NA
 rFrom@data$interbasin<-NA
 for (i in 1:length(rTo@data$hydroid)){
@@ -148,30 +170,29 @@ for (i in 1:length(rTo@data$hydroid)){
   if(ToHUC!=FromHUC){
     interbasin<-1
   }
-  rTo@data$interbasin[i]<-interbasin
+  rTo@data$interbasin[i]<-interbasin #1 indicating transfer is crossing watershed boundaries
   rFrom@data$interbasin[i]<-interbasin
 }
 
-#Sum the water leaving each HUC from interbasin transfers using DPLYR functions
-#Use the FROM transfers to find the water out and store these in a separate dataframe
+####Sum Net Water In and Out for each HUC8 Watershed####
+###FROM Releases###
 relf<-summarize(group_by(rFrom@data,HUC8Name,interbasin),waterout=sum(tsvalue/365,na.rm=T))
 relf<-relf[relf$interbasin==1,]
 relf$HUC8Name<-as.character(relf$HUC8Name)
 relf$HUC8Name[is.na(relf$HUC8Name)]<-'None'
-
-#Sum the water leaving each HUC from interbasin transfers using DPLYR functions
-#Use the TO transfers to find the water out and store these in a separate dataframe
+###TO Releases###
 relt<-summarize(group_by(rTo@data,HUC8Name,interbasin),waterin=sum(tsvalue/365,na.rm=T))
 relt<-relt[relt$interbasin==1,]
 relt$HUC8Name<-as.character(relt$HUC8Name)
 relt$HUC8Name[is.na(relt$HUC8Name)]<-'None'
-
-
-#Find the total amount of water leaving and entering each HUC
+###########################################################################################################################################
+####Calculate Net Transfers for Each HUC8 Watershed####
+#Loop through each HUC 10 and check for summed releases and deliveries
+#Water out is defined as the "from's" and Water in are the "to's"
+#This is net transfer- so negative number means more water is leaving watershed (in terms of transfers)
 HUC8@data$waterin<-NA
 HUC8@data$waterout<-NA
-#Loop through each HUC and check for delivery/releases from each HUC and sum water in/out
-#Then, calculate the net amount of water transferred into the watershed (negative values means more water is leaving than entering)
+
 for (i in 1:length(HUC8@data$HUC8)){
   if(length(delf$waterout[delf$HUC8Name==HUC8@data$Name[i]])>0){
     HUC8@data$waterout[i]<-delf$waterout[delf$HUC8Name==HUC8@data$Name[i]]
@@ -188,47 +209,39 @@ for (i in 1:length(HUC8@data$HUC8)){
   
   HUC8@data$transfer[i]<-plus(c(HUC8@data$waterin[i],-HUC8@data$waterout[i]))
 }
-
-#Store Transfers into a Matrix to examine
 HUC8_Transfers<-data.frame(HUC8_Name=HUC8@data$Name,HUC8=HUC8@data$HUC8,Transfers_MGD=HUC8@data$transfer)
 HUC8_Transfers<-HUC8_Transfers[order(HUC8_Transfers$Transfers_MGD,decreasing=T),]
 
-######Find discharge and withdraw for each watershed to plot consumptive use##############
-#Load in an "AllFacs"/"VPDESvsECHO" data frame from AnalysisCode.R representing  facility discharge.
-#Convert these facilities into a spatial dataframe #and overlay with HUC 8s. Then, summarize the data by HUC 8.
-#This data is NOT VPDES referenced---
+###########################################################################################################################################
+####################################################Calculating Discharges#################################################################
 
-VPDESvsECHO<-read.csv("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/2017 ECHO/VPDESvsECHO_2017.csv")
-#Create VPDESvsECHO spatial dataframe of all facilities with real geometry
-VPDESvsECHO<-VPDESvsECHO[!(is.na(VPDESvsECHO$lat)&is.na(VPDESvsECHO$lon)),]
-VPDESvsECHO<-SpatialPointsDataFrame(data.frame(lon=VPDESvsECHO$lon,lat=VPDESvsECHO$lat),VPDESvsECHO,proj4string = CRS(ECHOCRS))#projecting to NAD83
-VPDESvsECHO@data$FacilityName<-as.character(VPDESvsECHO@data$FacilityName)
-VPDESvsECHO@data$MedFlow.MK_plus<-as.numeric(as.character(VPDESvsECHO@data$MedFlow.MK_plus))
-#Overlay with HUC names
-FacHUC<-over(VPDESvsECHO,HUC8Overlay)
-VPDESvsECHO@data$HUC8<-FacHUC$HUC8
-VPDESvsECHO@data$HUC8Name<-FacHUC$HUC8Name
+#####Load in Discharge Data####
+#Load in .csv file with monthly discharge data from ECHO
+ECHO_Discharge<-read.csv("H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries.csv")
 
-#Summarize by HUC to find the total discharge occurring in each HUC
-c<-as.data.frame(summarize(group_by(VPDESvsECHO@data,HUC8Name),Discharge=plus(MedFlow.MK_plus)))
-#If desired, VPDES reference flow and recreate dataframe 'c'
 
-#Check each facility to see if design flow is violated. If it is, replace it with the design flow
-VPDESvsECHO@data$discharge<-VPDESvsECHO$MedFlow.MK_plus #Using ECHO flows
+#Create ECHO_Discharge spatial dataframe of all facilities with real geometry
+ECHO_Discharge<-ECHO_Discharge[!(is.na(ECHO_Discharge$lat)&is.na(ECHO_Discharge$lon)),]
+ECHO_Discharge<-SpatialPointsDataFrame(data.frame(lon=ECHO_Discharge$lon,lat=ECHO_Discharge$lat),ECHO_Discharge,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+ECHO_Discharge@data$FacilityName<-as.character(ECHO_Discharge@data$FacilityName)
+ECHO_Discharge@data$MedFlow.MK_plus<-as.numeric(as.character(ECHO_Discharge@data$MedFlow.MK_plus))
 
-length(which((VPDESvsECHO@data$MedFlow.MK_plus>VPDESvsECHO@data$VPDES_DesFlow)=="TRUE"))
-##Replace ECHO flow with VPDES Design Flow if ECHO>VPDES
-#for (i in 1:length(VPDESvsECHO@data$SourceData)){
-  #if(!is.na(VPDESvsECHO@data$MedFlow.MK_plus[i])&!is.na(VPDESvsECHO@data$VPDES_DesFlow[i])){
-    #if(VPDESvsECHO@data$MedFlow.MK_plus[i]>VPDESvsECHO@data$VPDES_DesFlow[i]){ #saying if ECHO flow is greater than VPDES, use VPDES*******
-      #VPDESvsECHO@data$discharge[i]<-VPDESvsECHO@data$VPDES_DesFlow[i]
-    #}
-  #}
-#}
+####Overlay with HUC 10 Watershed Shapefile####
+HUC8_Facilities<-over(ECHO_Discharge,HUC8_Overlay)
+ECHO_Discharge@data$HUC8<-HUC8_Facilities$HUC8
+ECHO_Discharge@data$HUC8Name<-HUC8_Facilities$HUC8Name
 
-#c<-as.data.frame(summarize(group_by(VPDESvsECHO@data,HUC8Name),Discharge=plus(discharge)))
+####Sum Discharges in HUC 10 Watersheds####
+HUC8_Discharges<-as.data.frame(summarize(group_by(ECHO_Discharge@data,HUC8Name),Discharge=plus(MedFlow.MK_plus)))
 
-#Load in a "HydroFacs" data frame from AnalysisCode.R representing facility withdrawal.
+#Check to flag ECHO flows that are greater than VPDES Permitted Design Flow 
+length(which((ECHO_Discharge@data$MedFlow.MK_plus>ECHO_Discharge@data$VPDES_DesFlow)=="TRUE"))
+
+###########################################################################################################################################
+####################################################Calculating Withdrawals################################################################
+
+VWUDS<-read.csv("G:/My Drive/GRA/VWUDS Data/")
+
 #Convert these facilities into a spatial dataframe and overlay with HUC 8s. Then, summarize the data by HUC 8.
 VWUDS<-read.csv("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/2017 ECHO/VAHydro_2017FacTable.csv")
 #Create a spatial dataframe of all facilities with real geometry

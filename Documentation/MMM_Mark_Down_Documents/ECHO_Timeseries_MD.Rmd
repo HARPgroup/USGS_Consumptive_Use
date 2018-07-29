@@ -1,0 +1,100 @@
+---
+title: "ECHO_Timeseries_MD"
+author: "Morgan McCarthy"
+date: "July 28, 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+library(dplyr)
+```
+
+## Purpose
+
+The purpose of this script is to utilize the EPA's Enforcement and Compliance Online History (ECHO) database to extract time series discharge monitoring reports (DMR) from facilities regulated under the Clean Water Act (CWA) and managed under the National Pollutant Discharge Elimination System (NPDES) Program. The EPA provides a myriad of REST (Representational State Transfer) services that utlize the internet's HTTP to query this data from simple URL links. Services include a (*Water Facility Search*), (*Detailed Facility Reports*), and (*Effluent Charts*) for discharging facilities in the United States. 
+
+The following code uses these services to:
+
+1. Generate a list of CWA managed facilities (active or not) (*ECHO_Facilities*) (Using *Water Facility Search*). 
+2. Use Discharge Monitoring Reports (DMR's from *Effluent Chart Service*) to indicate active outfalls for each facility that track flow, in conduit or thru treatment plant.
+3. Extract measured effluents over monitoring periods from 2011-present (*Effluent Chart Service*).
+
+The script ultimately produces a dataframe labeled *ECHO_timeseries* that contains:
+
++ The name of each CWA regulated facility with relevant discharge data from 2011-present (*FacilityName*).
++ ID's of the points of discharge attached to each facility (*OutfallID*) that report flow in conduit or through the plant. 
++ The statistic used to report the measured effluent (*Statistic*).
++ The measured effluent for the monitoring period (*Measured_Effluent*). 
++ Units for the measured effluent (*Units*).
++ The permitted effluent limit (*Permitted_Limit*) (disclaimer: not all outfalls have their limit on the ECHO database)
++ Date in which monitoring period began (*MP_Begin_Date*).
++ Date in which monitoring period ended (*MP_End_Date*).
++ A code indicating a DMR violation (*Violation_Code*).
+  * E90: Effluent Violation
+  * D90: DMR overdue, with a numeric limit
+  * D80: DMR overdue, monitoring only required
++ Severity code associated with the violation code (*Violation_Severity*).
+  * 0: No Violation
+  * 1: Monitoring or Reporting Violation
+  * 2: Effluent Violation
+  * 3: Reportable Noncompliance
+  * 5: Significant Noncompliance
+
+Ultimately this time-series discharge data will be combined with time-series withdrawal data to refine State Water Budget estimates. Accurate representations of water supply will fuel more informed policies and management practices.
+
+## ECHO REST Services Resources
+
+The following links include information about the REST services used to query data associated with discharging facilities. 
+
+
+ECHO CWA REST Services: [Facility Search - Water](https://echo.epa.gov/tools/web-services/facility-search-water)
+
+ECHO EFF REST Services: [Effluent Charts-Discharge Monitoring Reports](https://echo.epa.gov/tools/web-services/effluent-charts)
+
+ECHO DFR REST Services: [Detailed Facility Report](https://echo.epa.gov/tools/web-services/detailed-facility-report)
+
+Application Programming Interface (API) [Descriptions](https://www.any-api.com/epa_gov/cwa/docs/API_Description)
+
+## About the Data: ECHO
+
+ECHO displays data as-reported from the original sources; therefore data is typically more complete for major discharging facilities. As for smaller facilities, data can vary widely (i.e., nonexistent, partial, voluntarily entered, etc.)
+
+## Data Dictionary 
+
+The data dictionary for this script can be found [here]
+
+## Dependancy Initilization
+
+*This script was constructed using R 3.4.3 on a Windows platform (64-bit).*
+
+To start off, a clean workspace is required to avoid clutter and potential errors:
+
+```{r,warning=FALSE,message=FALSE}
+rm(list=ls())
+```
+
+The following packages are then loaded:
+
+```{r,warning=FALSE,message=FALSE}
+library(foreign) #allows for easy manipulation of *.dbf file types
+library(rgdal) #download files from file geodatabases-like in ArcMap
+library(dplyr) #data manipulation package that speeds up grouping, summarizing, ordering
+library(XML) #downloads and reads XML file types-used to access ECHORest Services to download facilities
+library(RCurl) #downloads and interacts with web-based content
+library(readxl) #reads excel files
+library(jsonlite) #JSON parser and generator for statistical data and web based data
+library(lubridate) #parses and manipulates dates
+library(httr) #contains useful tools that work with HTTP organised by HTTP verbs. 
+```
+
+Collectively, they allow for the manipulation of data extracted from the ECHO REST Services. Inputs for the REST services include a two letter State abbrievation (*state*) and time range of interest (*startDate* & *endDate*).
+
+```{r,warning=FALSE,message=FALSE}
+state<-"VA" #Input for State of Interest. Must be Inputted as Abreviation 
+startDate<-"01/01/2012" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
+endDate<-Sys.Date()
+endDate<-format(as.Date(endDate), "%m/%d/%Y")
+```
