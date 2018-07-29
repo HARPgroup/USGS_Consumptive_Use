@@ -50,7 +50,7 @@ Application Programming Interface (API) [Descriptions](https://www.any-api.com/e
 
 ## Data Dictionary 
 
-The data dictionary for this script can be found [here](https://github.com/mccartma/USGS_Consumptive_Use/blob/master/Documentation/Data_Dictionaries/Codebook-for-ECHOInterface.md)
+The data dictionary for this script can be found [here](G:\My Drive\USGS_ConsumptiveUse\Summer, 2018\Morgan\Data Dictionaries\Codebook-for-ECHOInterface)
 
 
 ## Dependancy Initilization

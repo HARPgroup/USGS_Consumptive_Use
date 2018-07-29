@@ -34,13 +34,12 @@ rm(list=ls()) #Start with clear environment
 library(XML) #downloads and reads XML file types-used to access ECHORest Services to download facilities
 library(RCurl) #downloads and interacts with web-based content
 library(lubridate) #parses and manipulates dates
-library(dplyr)
 
 #Required Inputs for ECHO REST Query 
 state<-"VA" #Input for State of Interest. Must be Inputted as Abreviation 
 startDate<-"01/01/2012" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
-endDate<-"07/08/2018" #mm/dd/yyyy If date range is not specified, query will include data from last three years
-path<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated"
+endDate<-"12/31/2017" #mm/dd/yyyy If date range is not specified, query will include data from last three years
+path<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code"
 #endDate<-Sys.Date()
 #endDate<-format(as.Date(endDate), "%m/%d/%Y")
 
@@ -80,9 +79,8 @@ CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_
 #Create Variables for Desired Information
 FlowSum<-numeric() #Summed Flow 
 FlowMed<-numeric() #Median Flow
-FlowUnits<-character() #Units reported for Flow
+Units<-character() #Units reported for Flow
 Limit<-numeric() #Limit/permitted amount of discharge for a single facility-not regulary updated in VA
-LimitUnits<-character() #Units reported for Limits
 VPDESID<-character() #Unique ID used in Virginia for a facility's outfall: concatonated facility ID with 3 digit outfall ID
 ECHOID<-character() #Facility ID indicated in ECHO System
 outfall_num<-character() #Outfall ID
@@ -91,6 +89,7 @@ Stat_Description<-character() #Description of Code
 mon_in_year<-data.frame(month=1:12,days=c(31,29,31,30,31,30,31,31,30,31,30,31)) #Months of the year and their days to be used to generate summed discharge over monitoring periods
 
 #This loops through each discharging facility in the State of Virginia to extract associated outfall information
+
 for (i in 1:length(ECHO_Facilities$SourceID)) {
   sourceID<-ECHO_Facilities$SourceID[i]
   print(paste("Processing SourceID: ",sourceID," (",i," of ",length(ECHO_Facilities$SourceID),")", sep=""))
@@ -117,9 +116,8 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
       stats<-unique(outfall_DMR$statistical_base_code)#Determine how many statistics are reported for this outfall
       FlowSumi<-numeric(length(stats))#Create variables to store extracted flows (summed and median for specified date range), units, and limits
       FlowMedi<-numeric(length(stats))
-      FlowUnitsi<-numeric(length(stats))
+      Unitsi<-numeric(length(stats))
       Limiti<-numeric(length(stats))
-      LimitUnitsi<-numeric(length(stats))
       Stat_Descriptioni<-unique(outfall_DMR$statistical_base_code)
       for (j in 1:length(stats)){ #For Each Statistical Code Reported for the Outfall, store the DMR 
         outfall_stat<-outfall_DMR[outfall_DMR$statistical_base_code==stats[j],] #Keeping the reported statistics seperate promotes correct analysis of reported effluent values
@@ -132,9 +130,8 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
         }
         FlowSumi[j]<-sum(outfall_stat$dmr_value_nmbr*nodays,na.rm=T)/sum(nodays)#Store the aggregated sum of all discharge for this outfall. This sheds light on seasonal trends but may be affected by outliers/typos
         FlowMedi[j]<-median(outfall_stat$dmr_value_nmbr,na.rm=T)#Store the median of all discharge records for this outfall. The median helps eliminate the need to spot quarterly vs. annual. monthly data
-        FlowUnitsi[j]<-unique(outfall_stat$standard_unit_desc)#Store the flow units being associated with this particular outfall
+        Unitsi[j]<-unique(outfall_stat$standard_unit_desc)#Store the units being associated with this particular outfall
         LimitswNA<-unique(outfall_stat$limit_value_nmbr)#Store limits and eliminate if NA or take median if multiple
-        LimitUnitsi[j]<-unique(outfall_stat$limit_unit_desc) #Store the limit flow units being associated with this particular outfall
         if(length(LimitswNA)>1){#Occasionally limits report as NA which can alter this code
           if(length(LimitswNA[!is.na(LimitswNA)])>1){ #Remember limits are the permitted amounts of discharge the facility is allowed to release into surface water
             warning("More than one real limit found, only using median")
@@ -149,9 +146,8 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
       }
       FlowSum<-c(FlowSum,FlowSumi)#Store flow, units, limits, and stat codes after every iteration into larger data frames.
       FlowMed<-c(FlowMed,FlowMedi)
-      FlowUnits<-c(FlowUnits,FlowUnitsi)
+      Units<-c(Units,Unitsi)
       Limit<-c(Limit,Limiti)
-      LimitUnits<-c(LimitUnits,LimitUnitsi)
       Stat<-c(Stat,stats)
       Stat_Description<-c(Stat_Description,Stat_Descriptioni)
       outfall_num<-c(outfall_num,rep(outfall,length(stats)))
@@ -161,9 +157,8 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
   }else{ #If the CWA regulated facility did not inlcude relevant DMR data (no recorded monitoring periods within specfied date range), flows, units, limits, and statistical codes are noted as NA values. 
     FlowSum<-c(FlowSum,NA)
     FlowMed<-c(FlowMed,NA)
-    FlowUnits<-c(FlowUnits,NA)
+    Units<-c(Units,NA)
     Limit<-c(Limit,NA)
-    LimitUnits<-c(LimitUnits,NA)
     Stat<-c(Stat,NA)
     Stat_Description<-c(Stat_Description,NA)
     outfall_num<-c(outfall_num,NA)
@@ -176,7 +171,7 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
 #################################################Export Data#################################################################
 
 #These next few lines subset and export the data developed in the above loops
-FlowFrame<-data.frame(ECHOID,VPDESID,outfall_num,FlowSum,FlowMed,FlowUnits,Limit,LimitUnits,Stat,Stat_Description)
+FlowFrame<-data.frame(ECHOID,VPDESID,outfall_num,FlowSum,FlowMed,Units,Limit,Stat,Stat_Description)
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),] #Keep only completed cases
 write.csv(FlowFrame,paste0(path,'/FlowFrame_2012_present.csv'))
 
@@ -186,28 +181,3 @@ write.csv(FlowFrame,paste0(path,'/FlowFrame_2012_present.csv'))
 source(paste0(path,'/ECHOInterface_McCarthy.R'))
 library(knitr)
 knit2html('G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Mark Down Documents/ECHOInterface_MD.Rmd')
-
-#############################################################################################################################
-#############################################Summary of Flow Frame###########################################################
-#Get Longer Description of Statistics in FlowFrame#
-for (i in 1:length(FlowFrame$Stat)){
-  if(FlowFrame$Stat[i] %in% CodeKey$STATISTICAL_BASE_CODE){
-    FlowFrame$Long_Description[i]<-CodeKey$STATISTICAL_BASE_LONG_DESC[CodeKey$STATISTICAL_BASE_CODE==FlowFrame$Stat[i]]
-    FlowFrame$Stat_Type[i]<-CodeKey$STATISTICAL_BASE_TYPE_CODE[CodeKey$STATISTICAL_BASE_CODE==FlowFrame$Stat[i]]
-  }
-}
-  
-#Look at Flows and Limits Seperately#
-
-##Aggregated Reported Discharges##
-FlowFrame_Flows<-subset(FlowFrame, select=-c(Limit))
-FlowFrame_Flows_Summary<-summarize(group_by(FlowFrame_Flows,Statistic=Stat,Description=Long_Description,Stat_Type=Stat_Type), 
-                                   Use_of_Stat=sum(!(is.na(FlowMed))), SummedMedFlows=sum(FlowMed,na.rm = T), Units=unique(FlowUnits)) %>% arrange(desc(Use_of_Stat))
-#write.csv(FlowFrame_Flows_Summary,paste0(path,'/FlowFrame_Flows_Summary_2012toPresent.csv'))
-##Aggregated Reported Limits##
-FlowFrame_Limits<-subset(FlowFrame, select=-c(FlowSum,FlowMed))
-limit_occurance<-count(FlowFrame_Limits, LimitUnits)
-FlowFrame_Limits_Summary<-summarize(group_by(FlowFrame_Limits,Statistic=Stat,Description=Long_Description,Stat_Type),
-                                    Use_of_Stat=sum(!(is.na(Limit))), SummedLimits=sum(Limit,na.rm=T), Units=LimitUnits[max(limit_occurance$n)]) %>% arrange(desc(Use_of_Stat))
-#write.csv(FlowFrame_Limits_Summary,paste0(path,'/FlowFrame_Limits_Summary_2012toPresent.csv'))
-

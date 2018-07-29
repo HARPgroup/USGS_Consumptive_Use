@@ -35,13 +35,11 @@ library(data.table)
     #Withdrawing Facility Information available from DEQ Website
 
 state<-"VA"
-path<-"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated"
+path<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated"
 
 ##################ECHO Discharge Data#####################
 
-FlowFrame<-read.csv(paste0(path,"/FlowFrame_2012_present.csv"),stringsAsFactors = F)
-
-FlowFrame_mon_mgd<-subset(FlowFrame, FlowFrame$Stat=="MK")
+FlowFrame<-read.csv(paste0(path,"/2017 ECHO/FlowFrameMedSumNoDis2017.csv"),stringsAsFactors = F)
 
 #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
 uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
@@ -56,69 +54,52 @@ ECHO_Fac<-read.csv(uri_summary,stringsAsFactors = F)
 CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
 
 #################VPDES Permit Data#######################
-#This section of code retrieves the coordinates and flow limits for each point source discharging facility with an individual VPDES permit. 
-#General permits are written for a general class of discharges, while individual permits are for municipal and industrial facilities with effluent limitations and monitoring requirements.
-#Coordinates for each unique outfall is found in the VDEQ's VEGIS Database ("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/"). 
-#Permitted flow limits are found on the VDEQ website under Permitting & Compliance (https://www.deq.virginia.gov/Programs/Water/PermittingCompliance/PollutionDischargeElimination/PermitsFees.aspx#GGPs)
 
-#######Retrieve Coordinates of VPDES Outfalls#######
-temp<-tempfile(fileext = ".zip")
+#######Retrieve 
+#Download list of active VPDES outfalls and separate individual permits
+temp<-tempfile()
 #Locations and attribute data about active outfalls in the State
-download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip", destfile = temp)
-unzip(temp, exdir = "path")
+download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip",temp)
+unzip(temp, exdir = path)
+
 #Explore what is in VPDES_Geodatabase.gdb
 ogrListLayers(paste0(path,"/VPDES_Geodatabase.gdb")) #Two layers: VPDES Outfalls and OpenFileGDB
-VPDES_Outfalls<-as.data.frame(readOGR(paste0(path,"/VPDES_Geodatabase.gdb"),layer="VPDES_OUTFALLS"))
+VPDES<-as.data.frame(readOGR(paste0(path,"/VPDES_Geodatabase.gdb"),layer="VPDES_OUTFALLS"))
 names(VPDES)[names(VPDES)=="OUTFALL_ID"]<-'VPDESID'
-VPDES_Outfalls<-VPDES[VPDES$VAP_TYPE=='VPDES_IP',] #Narrow down to Individual Permits: which specify effluent limitations for municipal and industrial facilities. 
+VPDES_IP<-VPDES[VPDES$VAP_TYPE=='VPDES_IP',]
 names(ECHO_Fac)[names(ECHO_Fac)=="SourceID"]<-"VAP_PMT_NO"#Need to rename to give a central columnn name for future joins
 
-#######Retrieve VPDES Permit Limits from DEQ Website#######
 #Website that contains VPDES Individual Permits: http://www.deq.virginia.gov/Programs/Water/PermittingCompliance/PollutionDischargeElimination/PermitsFees.aspx#GGPs
 
-#Individual Permits updated as of March 2018
+#IP's updated as of March 2018
 GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20March%202018.xls?ver=2018-03-13-170732-267', write_disk(temp <- tempfile(fileext = ".xls")))
-VPDES_Limits <- read_excel(temp, skip=5)
-VPDES_Limits<-VPDES_Limits[!is.na(VPDES_Limits$Facility),]
-VPDES_Limits$`Design Flow (MGD)`<-as.numeric(VPDES_Limits$`Design Flow (MGD)`)
-length(unique(VPDES_Limits$`Permit Number`))#865 Unique IP's as of March 2018
+VPDESFlows <- read_excel(temp, skip=5)
+VPDESFlows<-VPDESFlows[!is.na(VPDESFlows$Facility),]
+VPDESFlows$`Design Flow (MGD)`<-as.numeric(VPDESFlows$`Design Flow (MGD)`)
+length(unique(VPDESFlows$`Permit Number`))#865 Unique IP's as of March 2018
 
 #However we see we have a lot of duplicate entries for the same permit because of multiple contacts
-duplicated(VPDES_Limits$`Permit Number`)
-length(VPDES_Limits$Facility[duplicated(VPDES_Limits$`Permit Number`)]) #377 duplicates
-VPDES_Limits<-VPDES_Limits[!duplicated(VPDES_Limits$`Permit Number`),] #getting rid of duplicates and looking at unique permits
+duplicated(VPDESFlows$`Permit Number`)
+length(VPDESFlows$Facility[duplicated(VPDESFlows$`Permit Number`)]) #377 duplicates
+VPDESFlows<-VPDESFlows[!duplicated(VPDESFlows$`Permit Number`),]
 
-sum(VPDES_Limits$`Design Flow (MGD)`,na.rm=T)
-max(VPDES_Limits$`Design Flow (MGD)`,na.rm=T)
-length(VPDES_Limits$`Design Flow (MGD)`[is.na(VPDES_Limits$`Design Flow (MGD)`)])
-sum(VPDES_Limits$`Total Flow`,na.rm=T)
-max(VPDES_Limits$`Total Flow`,na.rm=T)
-length(VPDES_Limits$`Total Flow`[is.na(VPDES_Limits$`Total Flow`)])
-length(VPDES_Limits$Facility[VPDES_Limits$`Design Flow (MGD)`==0])
-
-VPDES_Limits_Active<-VPDES_Limits %>% filter(`Date: Permit Expiration`>=as.POSIXct(Sys.Date()))
-sum(VPDES_Limits_Active$`Design Flow (MGD)`,na.rm=T)
-max(VPDES_Limits_Active$`Design Flow (MGD)`,na.rm=T)
-length(VPDES_Limits_Active$`Design Flow (MGD)`[is.na(VPDES_Limits_Active$`Design Flow (MGD)`)])
-sum(VPDES_Limits_Active$`Total Flow`,na.rm=T)
-max(VPDES_Limits_Active$`Total Flow`,na.rm=T)
-length(VPDES_Limits_Active$`Total Flow`[is.na(VPDES_Limits_Active$`Total Flow`)])
-length(VPDES_Limits_Active$Facility[VPDES_Limits_Active$`Design Flow (MGD)`==0])
-
+sum(VPDESFlows$`Design Flow (MGD)`,na.rm=T)
+max(VPDESFlows$`Design Flow (MGD)`,na.rm=T)
+length(VPDESFlows$Facility[VPDESFlows$`Design Flow (MGD)`==0])
 
 rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID,state,temp)#Remove clutter
 
 #############################################################################################################################
 ################################################################################################################################
-#Set initial projections for VPDES coordinates#
-VPDES_Coordinates <- data.frame(x=VPDES_Outfalls$coords.x1, y=VPDES_Outfalls$coords.x2)
+#Set initial projections for VPDES coordinates
+d <- data.frame(x=VPDES_IP$coords.x1, y=VPDES_IP$coords.x2)
 proj4string <- "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
 
-#Transform VPDES data and store within VPDES_Outfalls
-pj <- proj4::project(VPDES_Coordinates, proj4string, inverse=TRUE)
+#Transform VPDES data and store within VPDES_IP
+pj <- proj4::project(d, proj4string, inverse=TRUE)
 latlon <- data.frame(lat=pj$y, lon=pj$x)
-VPDES_Outfalls$coords.x1<-latlon$lon
-VPDES_Outfalls$coords.x2<-latlon$lat
+VPDES_IP$coords.x1<-latlon$lon
+VPDES_IP$coords.x2<-latlon$lat
 
 
 for (i in 1:length(ECHO_Fac$CWPName)){
@@ -137,14 +118,14 @@ for (i in 1:length(ECHO_Fac$CWPName)){
 #Assign design flows to VPDES outfalls using the VPDES information spreadsheet
 #is this a reasonable assumption though?
 #I feel like the values in the VPDES spreadsheet represent the design and total flows for the entire facility. This would multiply the flows by however many outfalls there are. 
-for (i in 1:length(VPDES_Outfalls$VAP_PMT_NO)){
-  VPDES_Outfalls$DesFlow[i]<-NA
-  if (length(VPDES_Limits$`Design Flow Null`[VPDES_Limits$`Permit Number`==VPDES_Outfalls$VAP_PMT_NO[i]])>0){
-    VPDES_Outfalls$DesFlow[i]<-VPDES_Limits$`Design Flow Null`[VPDES_Limits$`Permit Number`==VPDES_Outfalls$VAP_PMT_NO[i]]  
+for (i in 1:length(VPDES_IP$VAP_PMT_NO)){
+  VPDES_IP$DesFlow[i]<-NA
+  if (length(VPDESFlows$`Design Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]])>0){
+    VPDES_IP$DesFlow[i]<-VPDESFlows$`Design Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]]  
   }
-  VPDES_Outfalls$TotalFlow[i]<-NA
-  if (length(VPDES_Limits$`Total Flow Null`[VPDES_Limits$`Permit Number`==VPDES_Outfalls$VAP_PMT_NO[i]])>0){
-    VPDES_Outfalls$TotalFlow[i]<-VPDES_Limits$`Total Flow Null`[VPDES_Limits$`Permit Number`==VPDES_Outfalls$VAP_PMT_NO[i]]  
+  VPDES_IP$TotalFlow[i]<-NA
+  if (length(VPDESFlows$`Total Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]])>0){
+    VPDES_IP$TotalFlow[i]<-VPDESFlows$`Total Flow Null`[VPDESFlows$`Permit Number`==VPDES_IP$VAP_PMT_NO[i]]  
   }
 }
 
@@ -171,7 +152,7 @@ NAcount<-function(x){
 }
 #Use VPDESID to provide a center for an inner join such that 
 #data frame 'All' contains every outfall from ECHO and VPDES
-All<-merge(VPDES_Outfalls,FlowFrameFlipped,by="VPDESID",all=T)
+All<-merge(VPDES_IP,FlowFrameFlipped,by="VPDESID",all=T)
 #Add an identifier so that each outfall's facility ID is held in a single column
 for (i in 1:length(All$VPDESID)){
   if(is.na(All$VAP_PMT_NO[i])){
@@ -249,7 +230,7 @@ order<-grep('plus',colnames(AllFacs))#Only want those that summed data (i.e. not
 PlusFacs<-AllFacs[,order]
 FacSummary<-data.frame(Stat=colnames(PlusFacs),StatCode=character(length(colnames(PlusFacs))),Description=character(length(colnames(PlusFacs))),Present=numeric(length(colnames(PlusFacs))))
 FacSummary$Stat<-as.character(FacSummary$Stat);FacSummary$StatCode<-as.character(FacSummary$StatCode);FacSummary$Description<-as.character(FacSummary$Description)
-#A simple lopp to extract code name and the number/value of facilities collectivley reporting it
+#A simle lopp to extract code name and the number/value of facilities collectivley reporting it
 for (i in 1:length(colnames(PlusFacs))){
   column<-as.vector(PlusFacs[,i])
   FacSummary$StatCode[i]<-gsub(".*[.]([^_]+)[_].*","\\1",FacSummary$Stat[i])#Extract stat using glob notation
@@ -285,7 +266,6 @@ write.csv(AllFacs,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/2017 ECHO
 
 ###########################################################################################################
 ##QA/QC Measures
-
 
 #ECHO Flow > VPDES Flow
 

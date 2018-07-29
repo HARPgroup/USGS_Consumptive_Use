@@ -98,8 +98,8 @@ for (i in 1:length(ECHO_Facilities$CWPName)){
   
 #Extracting logical statement if facilities have combined sewer systems, number of outfalls located upstream, Recieving waterbody name, USGS reach code, and stressors causing impairments. 
   #RadGnisName: name of the waterbody from the Geographic Names Information System (GNIS) databse in which the facility is permitted to dishcarge directly
-  #CWPCsoOutfalls: number of discharge outfalls at points prior to treatment plant
-  #AttainsCauseGroups: lists all groups of polutants/stressors causing impairments in assessed waterbody
+  #CWPCsoOutfalls: number of discharge outalls at points prior to treatment plant
+  #AttainsCauseGroups: lists all groups of poluttants/stressors causing impairments in assessed waterbody
   
   if(length(json_data$Results$WaterQuality$Sources$SourceID)>0){
     ECHO_Facilities$CSOFlg[i]<-json_data$Results$WaterQuality$Sources$CSS

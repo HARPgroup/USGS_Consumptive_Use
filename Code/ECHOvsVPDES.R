@@ -5,7 +5,7 @@
 
 #############################################Purpose#########################################################################
 
-#This script is intended to compare time series flows from CWA regulated facilities in the ECHO Database (ECHOInterface.R) to their respective 
+#This script is intended to compare aggregated flows from CWA regulated facilities in the ECHO Database (ECHOInterface.R) to their respective 
 #VPDES Individual Permits. The Virginia Pollution Discharge Elimination System (VPDES) is administered 
 #by Virginia's Department of Environmental Quality (VDEQ). Specifically, we are looking at Individual Permits 
 #for municipal and industrial discharging facilities. An excel spreadsheet listing active VPDES Individual 
@@ -36,8 +36,14 @@ options(scipen=999) #Disable scientific notation
 #############################################################################################################################
 ##########################################ECHO Discharge Data################################################################
 
+#Aggregated ECHO Discharge Data
+FlowFrame<-read.csv(paste0(path,"/FlowFrame_2012_present.csv"),stringsAsFactors = F)
+FlowFrame_mon_mgd<-subset(FlowFrame, FlowFrame$Stat=="MK")
+#Download statistical codes from ECHO to understand statistics used in FlowFrame
+CodeKey<-read.csv("https://echo.epa.gov/system/files/REF_ICIS-NPDES_STATISTICAL_BASE.csv",stringsAsFactors = F,na.strings = 'BLANK')
+
 #Time series ECHO DMR Data. Monthly, Daily, Weekly, Annual Averages. Rare to see averages other than monthyl average. 
-ECHO_Discharge<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries.txt",header=T, sep="\t")
+ECHO_Discharge<-read.csv("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries.csv")
 
 #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest.
 #Specific parameters can be specified in the query to obtain customized results: qcolumns
@@ -48,7 +54,7 @@ URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and ge
 QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
 QID<-QID$QueryID
 GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&qid=",QID)
-ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
+ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F)
 
 rm(Req_URL,URL_Download,URL_Parse,GET_Facilities,QID,state)#Remove clutter
 
@@ -104,7 +110,7 @@ VPDES_IP%>%
             Sum_TotalFlow=sum(`Total Flow`,na.rm = T),Max_TotalFlow=max(`Total Flow`,na.rm = T),
             NACount_TotalFlow=length(VPDES_IP$`Total Flow`[is.na(VPDES_IP$`Total Flow`)]))
             
-#23 facilities in VPDES IP spreadsheet report having a design flow of 0 MGD
+#23 facilities that report having a design flow of 0 MGD
 
 #############################################################################################################################
 ###############################################Coordinates for Outfalls######################################################
@@ -123,12 +129,13 @@ colnames(VPDES_Coordinates)<-c("OutfallID","FacilityID","Outfall_Longitude","Out
 
 #Attach Outfall Coordinates to ECHO_Discharge 
 ECHO_Discharge$OutfallID<-gsub("echo_","", as.character(ECHO_Discharge$OutfallID))
+ECHO_Discharge<-subset(ECHO_Discharge,select=-c(1))
 ECHO_Discharge<-merge.data.frame(ECHO_Discharge,VPDES_Coordinates,by="OutfallID",all.x=T) #Keeps all outfalls even if doesn't match in VPDES IP
 
 #Attach Facility Coordinates to ECHO_Discharge
 ECHO_Facilities_Coordinates<-subset(ECHO_Facilities, select = c(2,4,5))
 ECHO_Discharge<-merge.data.frame(ECHO_Discharge,ECHO_Facilities_Coordinates,by="FacilityID",all.x=T)
-sum(is.na(ECHO_Discharge$FacilityID))#4607 NA facility ID's because ECHO includes discharging facilities on outskirts of VA, while VPDES IP spreadsheet only contains those in VA
+sum(is.na(ECHO_Discharge$FacilityID))#4463 NA facility ID's because ECHO includes discharging facilities on outskirts of VA, while VPDES IP spreadsheet only contains those in VA
 
 #Now we have a data frame containing time series data for each outfall located in ECHO with outfall and facility coordinates. 
 
@@ -145,30 +152,31 @@ VA_Discharge_DMR<-merge.data.frame(ECHO_Discharge,VPDES_DesignFlow,by="FacilityI
 VA_Discharge_DMR<-subset(VA_Discharge_DMR,select=c(1,3,15,14,2,12,13,16,5,6,7,8,9,10,11))
 
 #Flag facilities that have a design flow of 0 MGD
-VA_Discharge_DMR$fac_flag_zerodesflow<-ifelse(VA_Discharge_DMR$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA)
+VA_Discharge_DMR$VPDES_flag_desflow<-ifelse(VA_Discharge_DMR$DesignFlow_mgd==0,"VPDES_flag_desflow",NA)
 Flagged_Zero_DesFlow<-subset(VA_Discharge_DMR,subset=VA_Discharge_DMR$DesignFlow_mgd==0,
                              select=-c(14,15))%>%arrange(desc(Measured_Effluent-DesignFlow_mgd))
-
 #Summarize time series data by facility 
-Flagged_Zero_DesFlow%>%
+Zero_desflow<-Flagged_Zero_DesFlow%>%
   group_by(FacilityName)%>%
   summarise(Design_Flow=mean(DesignFlow_mgd,na.rm=T), ECHO_Limit=mean(Permitted_Limit,na.rm = T),Max_ME=max(Measured_Effluent,na.rm=T),
             Min_ME=min(Measured_Effluent,na.rm=T),Mean_ME=mean(Measured_Effluent,na.rm = T),
             Median_ME=median(Measured_Effluent,na.rm=T), STD_ME=sd(Measured_Effluent,na.rm=T))
 
-write.table(Flagged_Zero_DesFlow,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging/Flagged_Zero_DesFlow.txt",sep="\t",row.names = F)
+#write.table(Flagged_Zero_DesFlow,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/Flagged_Zero_DesFlow.txt",sep="\t",row.names = F)
 #write.csv(Zero_desflow,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/QA_QC/Zero_desflow.csv")
 
 ##################################################################
 ###########ECHO Measured Effluents > VPDES Design flow###########
 
 #Flag facilities that report measured effluent greater than the design flow 
-VA_Discharge_DMR$dmr_flag_desflow<-ifelse(VA_Discharge_DMR$Measured_Effluent>VA_Discharge_DMR$DesignFlow_mgd & VA_Discharge_DMR$DesignFlow_mgd>0,"dmr_flag_desflow",NA)
-length(which(VA_Discharge_DMR$dmr_flag_desflow=="dmr_flag_desflow")) #2472 flags
+VA_Discharge_DMR$dmr_flag_desflow<-ifelse(VA_Discharge_DMR$Measured_Effluent>VA_Discharge_DMR$DesignFlow_mgd,"dmr_flag_desflow",NA)
+length(which(VA_Discharge_DMR$dmr_flag_desflow=="dmr_flag_desflow")) #2456 flags
 
 #Sort by largest difference between the measured effluent and the design flow
 Flagged_Design_Flow<-subset(VA_Discharge_DMR,subset=VA_Discharge_DMR$dmr_flag_desflow=="dmr_flag_desflow",
                             select=-c(14,15,16))%>%arrange(desc(Measured_Effluent-DesignFlow_mgd)) 
+
+
 
 #Summarize the time series data to see the overall facilties that are reporting larger discharge amounts than their design flow permit
 #Sort by difference between the standard deviation of reported effluent and the supposed Design Flow. 
@@ -179,7 +187,7 @@ MEgreaterDF<-Flagged_Design_Flow%>%
             STD_ME=sd(Measured_Effluent,na.rm = T),Design_Flow=median(DesignFlow_mgd),
             ECHO_Limit=median(Permitted_Limit,na.rm = T))%>%arrange(desc(STD_ME-Design_Flow))
 
-write.table(Flagged_Design_Flow,"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging/Flagged_Exceeds_DesFlow.txt",sep="\t",row.names = F)
+#write.table(Flagged_Design_Flow,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/Flagged_Exceeds_DesFlow.txt",sep="\t",row.names = F)
 #write.csv(MEgreaterDF,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/QA_QC/MEgreaterDF.csv")
 
 ##################################################################
@@ -200,13 +208,14 @@ Flagged_Units<-subset(VA_Discharge_DMR,subset=VA_Discharge_DMR$dmr_flag_units=="
                       select=-c(14,15,16,17))%>%arrange(desc(Measured_Effluent-Median_ME))
 Flagged_Units<-Flagged_Units[,c(2,3,4,5,1,6,7,8,9,11,14,15,16,10,12,13,17)]
 
+
 Flagged_Units_Summarized<-Flagged_Units%>%
   group_by(FacilityName)%>%
   summarise(Max_ME=max(Measured_Effluent,na.rm=T),Min_ME=min(Measured_Effluent,na.rm = T),
             Mean_ME=mean(Measured_Effluent, na.rm = T),Median_ME=median(Measured_Effluent, na.rm = T),
             Std_ME=sd(Measured_Effluent, na.rm = T))%>%arrange(desc(Std_ME))
 
-write.table(Flagged_Units,"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging/Flagged_Exceeds_100Median.txt",sep="\t",row.names = F)
+#write.table(Flagged_Units,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/Flagged_Exceeds_100Median.txt",sep="\t",row.names = F)
 #write.csv(Flagged_Units_Summarized,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/QA_QC/Flagged_Units_Summarized.csv")
 
 ##################################################################
@@ -231,7 +240,9 @@ count(Flagged_ECHO_Violations,Violation_Code)
 #the number of instances where effluent limits have been exceeded in the past 3 years(CWP_E90_CNT), 
 #number of inspections/compliance evaluations, under the corresponding statute, occurring at the facility within the last five years (CWP_INSPECTION_COUNT),
 #and the date on which the most recent inspection of the facility took place (CWP_DATE_LAST_INSPECTION).
+
 ECHO_Facility_Violations<-subset(ECHO_Facilities,select=c(2,13,14,15,16))
+
 Flagged_ECHO_Violations<-merge.data.frame(Flagged_ECHO_Violations,ECHO_Facility_Violations,by='FacilityID',all.x=T)
 
 ECHO_Violations_Summary<-Flagged_ECHO_Violations%>%
@@ -242,80 +253,10 @@ ECHO_Violations_Summary<-Flagged_ECHO_Violations%>%
             LastCWPStatus=last(CWPStatus),ECHO_Limits=median(Permitted_Limit),
             Median_ME=median(Measured_Effluent, na.rm = T), Std_ME=sd(Measured_Effluent, na.rm = T))%>%arrange(desc(Violation_Count))
 
-write.table(Flagged_ECHO_Violations,"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging/Flagged_ECHO_Violations.txt",sep="\t",row.names = F)
+
+#write.table(Flagged_ECHO_Violations,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/Flagged_ECHO_Violations.txt",sep="\t",row.names = F)
 #write.csv(ECHO_Violations_Summary,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/QA_QC/ECHO_Violations_Summary.csv")     
 
-#Compile data frame that includes all violations 
 VA_Discharge_DMR<-VA_Discharge_DMR[,c(2,3,4,5,1,6,7,8,9,18,19,20,11,10,12,13,14,15,16,17,21)]
-write.table(VA_Discharge_DMR,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging/ECHO_Timeseries_Flagged.txt",sep="\t",row.names = F)
 
-flags<-subset(VA_Discharge_DMR,subset= (!is.na(VA_Discharge_DMR$fac_flag_zerodesflow))|
-                  (!is.na(VA_Discharge_DMR$dmr_flag_desflow))|
-                  (!is.na(VA_Discharge_DMR$dmr_flag_units))|
-                  (!(VA_Discharge_DMR$Violation_Code=="")))
-
-subset(flags, subset= !is.na(flags$dmr_flag_units) & !is.na(flags$dmr_flag_desflow)|
-         !is.na(flags$dmr_flag_units) & !is.na(flags$fac_flag_zerodesflow)|
-)
-
-#############################################################################################################################
-#########################################Imports into VAHydro################################################################
-
-#Facilities with a design flow of 0 MGD
-fac_flag_zerodesflow<-subset(Flagged_Zero_DesFlow,select=c(5))
-fac_flag_zerodesflow$varkey<-"fac_flag_zerodesflow"
-fac_flag_zerodesflow$vardesc<-"Suspicious Design Flow. Reported as 0 MGD."
-colnames(fac_flag_zerodesflow)<-c("hydrocode","desflow","tsvalue","limit","tstime","tsendtime","varkey","vardesc")
-fac_flag_zerodesflow$hydrocode<-paste0("echo_",fac_flag_zerodesflow$hydrocode)
-write.table(fac_flag_zerodesflow,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/fac_flag_zerodesflow.txt",sep="\t",row.names = F)
-
-#Outfalls with measured effluents larger than the design flow 
-dmr_flag_desflow<-subset(Flagged_Design_Flow,select=c(5,14))
-dmr_flag_desflow$varcode<-"dmr_flag_desflow"
-dmr_flag_desflow$vardesc<-"Suspected Input Error, flagged when ECHO Measured Effluent > VPDES Design Flow"
-dmr_flag_desflow$propname<-"dmr_flag_desflow"
-dmr_flag_desflow$propvalue<-""
-dmr_flag_desflow$proptext<-""
-dmr_flag_desflow$propcode<-""
-colnames(dmr_flag_desflow)<-c("hydrocode","varkey","varcode","vardesc","propname","propvalue","proptext","propcode")
-dmr_flag_desflow$hydrocode<-paste0("echo_",dmr_flag_desflow$hydrocode)
-write.table(dmr_flag_desflow,"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/dmr_flag_desflow.txt",sep="\t",row.names = F)
-
-#Outfalls with measured effluents exceeding 100 times the median effluent
-dmr_flag_units<-subset(Flagged_Units,select = c(5))
-dmr_flag_units$varkey<-Flagged_Units$dmr_flag_units
-dmr_flag_units$varcode<-"dmr_flag_units"
-dmr_flag_units$vardesc<-c("Suspected Unit Conversion, flagged when ECHO Measured Effluent > 100 * Median")
-dmr_flag_units$propname<-"dmr_flag_units"
-dmr_flag_units$propvalue<-""
-dmr_flag_units$proptext<-""
-dmr_flag_units$propcode<-""
-colnames(dmr_flag_units)<-c("hydrocode","varkey","varcode","vardesc","propname","propvalue","proptext","propcode")
-dmr_flag_units$hydrocode<-paste0("echo_",dmr_flag_units$hydrocode)
-write.table(dmr_flag_units,"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/dmr_flag_units.txt",sep="\t",row.names = F)
-
-#Outfalls with an internal flag from ECHO
-echo_flag<-subset(Flagged_ECHO_Violations,select=c(5))
-echo_flag$varkey<-"echo_flag"
-echo_flag$varcode<-"Violation_Code"
-echo_flag$vardesc<-"ECHO Violation Codes"
-echo_flag$propname<-"echo_flag"
-echo_flag$propvalue<-""
-for(i in 1:length(echo_flag$OutfallID)){
-  if(Flagged_ECHO_Violations$Violation_Code[i]=="E90"){
-    echo_flag$proptext[i]<-"Effluent Violation"
-  }else if(Flagged_ECHO_Violations$Violation_Code[i]=="D90"){
-    echo_flag$proptext[i]<-"DMR Overdue, with a numeric limit"
-  }else if(Flagged_ECHO_Violations$Violation_Code[i]=="D80"){
-    echo_flag$proptext[i]<-"DMR Overdue, monitoring only required"
-    }
-}
-echo_flag$propcode<-Flagged_ECHO_Violations$Violation_Code
-colnames(echo_flag)<-c("hydrocode","varkey","varcode","vardesc","propname","propvalue","proptext","propcode")
-echo_flag$hydrocode<-paste0("echo_",echo_flag$hydrocode)
-write.table(echo_flag,"H:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/echo_flag.txt",sep="\t",row.names = F)
-
-#Save Environment
 save.image("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/ECHOvsVPDES.RData")
-
-
