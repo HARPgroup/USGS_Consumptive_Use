@@ -24,114 +24,28 @@ library(httr)
 
 state<-"VA"
 Inputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated"
-Outputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports"
+Outputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports"
 
-#Use Aggregated Flows generated from ECHOInterface Script for creating release and conveyance points.
-FlowFrame<-read.csv(paste0(Inputpath,"/2017 ECHO/FlowFrameMedSumNoDis2017.csv"),stringsAsFactors = F)
-
-
+#Use Aggregated Flows generated from ECHOInterface Script and list of outfalls for creating release and conveyance points.
+FlowFrame<-read.csv(paste0(Inputpath,"/FlowFrame_2010_present.csv"),stringsAsFactors = F) #contains outfalls reporting flow from 2010-present--has all reported statistics of flow--not just monthly
+VPDES_Outfalls<-read.table(paste0(Inputpath,"/VPDES_Outfalls.txt"),sep="\t",header = T)
 
 #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
-uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
-ECHO_xml<-getURL(uri_query)
-ECHO_query<-xmlParse(ECHO_xml)
-QID<-xmlToList(ECHO_query)
+#Properties and attributes of the facility can be extracted by identifying the column it is located in (qcolumn).
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+URL_Download<-getURL(Req_URL) #Download URL from above
+URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
 QID<-QID$QueryID
-uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qid=",QID)
-ECHO_Facilities<-read.csv(uri_summary,stringsAsFactors = F)
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
+ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
 ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)#Ensure all facility names are in all caps using "toupper" command
+
+rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
 
 ##################################################################################################################################
 ################################################Imports###########################################################################
 
-#First, we must extract attributes from each CWA regulated facility (SourceId's generated above).
-#Create empty vectors in the facility list to store attributes of interested from ECHO's Detailed Facility Report (DFR) database
-ECHO_Facilities$Faclat<-NA
-ECHO_Facilities$Faclong<-NA
-ECHO_Facilities$Status<-NA
-ECHO_Facilities$PermitSrtDate<-NA
-ECHO_Facilities$PermitExpDate<-NA
-ECHO_Facilities$LastInspection<-NA
-ECHO_Facilities$CSOFlg<-NA #Combined Sewer System-logical yes or no
-ECHO_Facilities$CWPCso<-NA #Number of upstream outfalls
-ECHO_Facilities$RecievingWB<-NA #receving water body
-ECHO_Facilities$RecievingReachCode<-NA #USGS reach code
-ECHO_Facilities$WBDesignatedUse<-NA #stressors on waterbody
-
-#Detailed information about the ECHO DFR Rest Services can be found here: https://echo.epa.gov/system/files/ECHO-DFR_Rest_Services.pdf
-
-#Run through each facility in ECHO_Facilities for loop, accessing its detailed facility report and storing data of interest
-#Many if statements are present that check to ensure data is present before having R access it. This prevents empty data from throwing errors in the code
-
-#Here we are pulling information from the Detailed Facility Report (DFR) REST Services:
-for (i in 1:length(ECHO_Facilities$CWPName)){
-  print(paste0("Processing SourceID: ",ECHO_Facilities$VAP_PMT_NO[i]," (",i," of ",length(ECHO_Facilities$CWPName),")"))
-  json_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",ECHO_Facilities$SourceID[i]) #indicates we are pulling information by sourceID, which is facilityID
-  json_data<-fromJSON(txt=json_file)
-  
-  #Extracting Facility Coordinates
-  if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
-    ECHO_Facilities$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
-    ECHO_Facilities$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
-  } else {
-    ECHO_Facilities$Faclat[i]<-NA
-    ECHO_Facilities$Faclong[i]<-NA
-  }
-  
-  #Extracting Facility Status and Expiration Dates
-  if(length(json_data$Results$Permits$Statute[json_data$Results$Permits$Statute=="CWA"])>0){
-    indexCWA<-which(json_data$Results$Permits$Statute=="CWA")
-    ECHO_Facilities$Status[i]<-json_data$Results$Permits$FacilityStatus[indexCWA]
-    ECHO_Facilities$PermitExpDate[i]<-json_data$Results$Permits$ExpDate[indexCWA]
-  } else {
-    ECHO_Facilities$Status[i]<-NA
-    ECHO_Facilities$PermitExpDate[i]<-NA
-  }
-  
-  #Extracting Dates of Last Inspection
-  if(length(json_data$Results$EnforcementComplianceSummaries$Summaries$Statute[json_data$Results$EnforcementComplianceSummaries$Summaries$Statute=="CWA"])>0){
-    indexCWA<-which(json_data$Results$EnforcementComplianceSummaries$Summaries$Statute=="CWA")
-    ECHO_Facilities$LastInspection[i]<-json_data$Results$EnforcementComplianceSummaries$Summaries$LastInspection[indexCWA]
-  } else {
-    ECHO_Facilities$LastInspection[i]<-NA
-  }
-  
-#Extracting logical statement if facilities have combined sewer systems, number of outfalls located upstream, Recieving waterbody name, USGS reach code, and stressors causing impairments. 
-  #RadGnisName: name of the waterbody from the Geographic Names Information System (GNIS) databse in which the facility is permitted to dishcarge directly
-  #CWPCsoOutfalls: number of discharge outfalls at points prior to treatment plant
-  #AttainsCauseGroups: lists all groups of polutants/stressors causing impairments in assessed waterbody
-  
-  if(length(json_data$Results$WaterQuality$Sources$SourceID)>0){
-    ECHO_Facilities$CSOFlg[i]<-json_data$Results$WaterQuality$Sources$CSS
-    ECHO_Facilities$CWPCso[i]<-json_data$Results$WaterQuality$Sources$CWPCsoOutfalls
-    ECHO_Facilities$RecievingWB[i]<-json_data$Results$WaterQuality$Sources$RadGnisName
-    ECHO_Facilities$RecievingReachCode[i]<-json_data$Results$WaterQuality$Sources$RadReachcode
-    ECHO_Facilities$WBDesignatedUse[i]<-paste(json_data$Results$WaterQuality$Sources$AttainsCauseGroups,collapse = '_')
-  } else {
-    ECHO_Facilities$CSOFlg[i]<-NA
-    ECHO_Facilities$CWPCso[i]<-NA
-    ECHO_Facilities$RecievingWB[i]<-NA
-    ECHO_Facilities$RecievingReachCode[i]<-NA
-    ECHO_Facilities$WBDesignatedUse[i]<-NA
-  }
-}
-ECHO_Facilities$address<-paste0(ECHO_Facilities$CWPStreet,'; ',ECHO_Facilities$CWPCity)
-
-#Need to get effective permit date
-#Not to be confused with start date-which is date in which CWA program started
-
-#the qcolumns request in the ECHo query let's us pick out the specific information we want
-#for help with queries from ECHO visit https://echo.epa.gov/tools/web-services/facility-search-water#!/Facility_Information/get_cwa_rest_services_get_facilities
-#qcolumns=65 is the effective date of permit
-
-CWP_file<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=65&passthrough=Y&p_st=",state)
-CWP_xml<-getURL(CWP_file)
-CWP_query<-xmlParse(CWP_xml)
-CWP_QID<-xmlToList(CWP_query)
-CWP_QID<-CWP_QID$QueryID
-CWP_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=65&passthrough=Y&qid=",CWP_QID)
-CWP<-read.csv(CWP_summary,stringsAsFactors = F)
-ECHO_Facilities$PermitSrtDate<-CWP$CWPEffectiveDate
 
 ##################################################################################################################################
 #############################################1: Import Permits####################################################################
@@ -151,33 +65,30 @@ adminreg<-data.frame(bundle='permit', admincode=ECHO_Facilities$SourceID, descri
 adminreg$ftype<-'npdes'
 
 for (i in 1:length(adminreg$admincode)){
-  if (length(grep('Effective',ECHO_Facilities$Status[i]))>0|
-      length(grep('Compliance Tracking Off',ECHO_Facilities$Status[i]))>0|
-      length(grep('Admin Continued',ECHO_Facilities$Status[i]))>0|
-      length(grep('Effective; Compliance Tracking Partially Off',ECHO_Facilities$Status[i]))>0){
+  if (length(grep('Effective',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+      length(grep('Compliance Tracking Off',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+      length(grep('Admin Continued',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+      length(grep('Effective; Compliance Tracking Partially Off',ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
     adminreg$fstatus[i]<-'active'
   }
-  else if (length(grep('Terminated', ECHO_Facilities$Status[i]))>0|
-           length(grep('Terminated; Compliance Tracking Off', ECHO_Facilities$Status[i]))>0){
+  else if (length(grep('Terminated', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+           length(grep('Terminated; Compliance Tracking Off', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
     adminreg$fstatus[i]<-'revoked'
   }
-  else if (length(grep('Not Needed', ECHO_Facilities$Status[i]))>0|
-           length(grep('NA', ECHO_Facilities$Status[i]))>0){
+  else if (length(grep('Not Needed', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+           length(grep('NA', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
     adminreg$fstatus[i]<-'unknown'
   }
-  else if (length(grep('Expired', ECHO_Facilities$Status[i]))>0){
+  else if (length(grep('Expired', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
     adminreg$fstatus[i]<-'expired'
   }
 }
 
-adminreg$startdate<-ECHO_Facilities$PermitSrtDate
+adminreg$startdate<-ECHO_Facilities$CWPEffectiveDate
 
 #end date is permit expiration date rather than limit_end_date
-adminreg$enddate<-ECHO_Facilities$PermitExpDate
-
+adminreg$enddate<-ECHO_Facilities$CWPExpirationDate
 adminreg$permit_id<-ECHO_Facilities$SourceID
-
-
 adminreg$dh_link_admin_reg_issuer<-'epa'
 
 write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
@@ -288,14 +199,14 @@ for (i in 1:length(facilities$hydrocode)){
     facilities$ftype[i]<-'manufacturing'
   }
   facilities$fstatus[i]<-'inactive'
-  if (ECHO_Facilities$SourceID[i]%in%FlowFrameFlipped$ECHOID){
+  if (ECHO_Facilities$SourceID[i]%in%FlowFrame$ECHOID){ #if it is reporting flow for ECHO, it is most liekly active. Also check status of permit.
     facilities$fstatus[i]<-'active'
   }
-  if(!is.na(ECHO_Facilities$Faclat[i]) & !is.na(ECHO_Facilities$Faclong[i])){
-    facilities$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$Faclong[ECHO_Facilities$SourceID==ECHO_Facilities$SourceID[i]],' ',ECHO_Facilities$Faclat[ECHO_Facilities$SourceID==ECHO_Facilities$SourceID[i]],')')
+  if(!is.na(ECHO_Facilities$FacLat[i]) & !is.na(ECHO_Facilities$FacLong[i])){
+    facilities$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$SourceID==ECHO_Facilities$SourceID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$SourceID==ECHO_Facilities$SourceID[i]],')')
   } else {
-    lat<-All$coords.x2[All$FacilityID==All$FacilityID[i]]
-    long<-All$coords.x1[All$FacilityID==All$FacilityID[i]]
+    lat<-VPDES_Outfalls$Latitude[VPDES_Outfalls$FacilityID==VPDES_Outfalls$FacilityID[i]]
+    long<-VPDES_Outfalls$Longitude[VPDES_Outfalls$FacilityID==VPDES_Outfalls$FacilityID[i]]
     for (i in 1:length(lat)){
       if(!is.na(lat[i]) & !is.na(long[i])){
         facilities$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
@@ -316,27 +227,26 @@ write.table(facilities,paste0(Outputpath,"/facilities.txt"),sep="\t",row.names =
 ##################################################################################################################################
 ###########################################3 Release Point Generation#############################################################
 
-
 #Generation of the release point imports. In essence, this portion just formats various data from both the facility
-#and the outfall list (All) to create the release point attributes and geometry.
+#and the outfall list (VPDES_Outfalls) to create the release point attributes and geometry.
 
-All$VPDESID<-as.character(All$VPDESID)
-All$FacilityID<-as.character(All$FacilityID)
-releasepoint<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
+VPDES_Outfalls$VPDESID<-as.character(VPDES_Outfalls$VPDESID)
+VPDES_Outfalls$FacilityID<-as.character(VPDES_Outfalls$FacilityID)
+releasepoint<-data.frame(bundle=rep('transfer',length(VPDES_Outfalls$VPDESID)))
 for (i in 1:length(releasepoint$bundle)){
-  releasepoint$name[i]<-paste0('TO ',All$VPDESID[i])
+  releasepoint$name[i]<-paste0('TO ',VPDES_Outfalls$VPDESID[i])
   releasepoint$ftype[i]<-'release'
-  releasepoint$hydrocode[i]<-paste0('vahydro_',All$VPDESID[i])
-  if(All$VPDESID[i]%in%FlowFrame$VPDESID){
+  releasepoint$hydrocode[i]<-paste0('vahydro_',VPDES_Outfalls$VPDESID[i])
+  if(VPDES_Outfalls$VPDESID[i]%in%FlowFrame$VPDESID){
     releasepoint$fstatus[i]<-'active'  
   } else {
     releasepoint$fstatus[i]<-'inactive'
   }
-  if(!is.na(ECHO_Facilities$Faclat[ECHO_Facilities$SourceID==All$FacilityID[i]]) & !is.na(ECHO_Facilities$Faclong[ECHO_Facilities$SourceID==All$FacilityID[i]])){
-    releasepoint$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$Faclong[ECHO_Facilities$SourceID==All$FacilityID[i]],' ',ECHO_Facilities$Faclat[ECHO_Facilities$SourceID==All$FacilityID[i]],')')
+  if(!is.na(ECHO_Facilities$FacLat[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]]) & !is.na(ECHO_Facilities$FacLong[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]])){
+    releasepoint$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]],')')
   } else {
-    lat<-All$coords.x2[All$FacilityID==All$FacilityID[i]]
-    long<-All$coords.x1[All$FacilityID==All$FacilityID[i]]
+    lat<-VPDES_Outfalls$Latitude[VPDES_Outfalls$FacilityID==VPDES_Outfalls$FacilityID[i]]
+    long<-VPDES_Outfalls$Longitude[VPDES_Outfalls$FacilityID==VPDES_Outfalls$FacilityID[i]]
     for (i in 1:length(lat)){
       if(!is.na(lat[i]) & !is.na(long[i])){
         releasepoint$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
@@ -346,49 +256,49 @@ for (i in 1:length(releasepoint$bundle)){
       }
     }
   }
-  releasepoint$dh_link_facility_mps[i]<-paste0('echo_',All$FacilityID[i])
+  releasepoint$dh_link_facility_mps[i]<-paste0('echo_',VPDES_Outfalls$FacilityID[i])
 }
 write.table(releasepoint,paste0(Outputpath,"/releasepoint.txt"),sep="\t",row.names = F)
 
 ########################################################################################################################
 #Conveyance Generation
 
-#Generates the conveyance import using the outfall list in 'All'
-conveyance<-data.frame(bundle=rep('conveyance',length(All$VPDESID)))
+#Generates the conveyance import using the outfall list in 'VPDES_Outfalls'
+conveyance<-data.frame(bundle=rep('conveyance',length(VPDES_Outfalls$VPDESID)))
 for (i in 1:length(conveyance$bundle)){
-  conveyance$name[i]<-paste0(All$FacilityID[i],' TO ',All$VPDESID[i])
+  conveyance$name[i]<-paste0(VPDES_Outfalls$FacilityID[i],' TO ',VPDES_Outfalls$VPDESID[i])
   conveyance$ftype[i]<-'water_transfer'
-  conveyance$hydrocode[i]<-paste0('vahydro_',All$FacilityID[i],'_',All$VPDESID[i])
-  if(All$VPDESID[i]%in%FlowFrame$VPDESID){
+  conveyance$hydrocode[i]<-paste0('vahydro_',VPDES_Outfalls$FacilityID[i],'_',VPDES_Outfalls$VPDESID[i])
+  if(VPDES_Outfalls$VPDESID[i]%in%FlowFrame$VPDESID){
     conveyance$fstatus[i]<-'active'  
   } else {
     conveyance$fstatus[i]<-'inactive'
   }
-  conveyance$field_dh_from_entity[i]<-paste0('vahydro_',All$VPDESID[i])
-  conveyance$field_dh_to_entity[i]<-paste0('echo_',All$VPDESID[i])
+  conveyance$field_dh_from_entity[i]<-paste0('vahydro_',VPDES_Outfalls$VPDESID[i])
+  conveyance$field_dh_to_entity[i]<-paste0('echo_',VPDES_Outfalls$VPDESID[i])
 }
 write.table(conveyance,paste0(Outputpath,"/conveyance.txt"),sep="\t",row.names = F)
 
-#Outfall Generation
-#Reformats 'All' using available VPDES or ECHO geometry data and ECHO attributes
-outfalls<-data.frame(bundle=rep('transfer',length(All$VPDESID)))
+#Outfall_Outfalls Generation
+#Reformats 'VPDES_Outfalls' using available VPDES or ECHO geometry data and ECHO attributes
+outfalls<-data.frame(bundle=rep('transfer',length(VPDES_Outfalls$VPDESID)))
 for (i in 1:length(outfalls$bundle)){
-  outfalls$name[i]<-paste0('FROM ',All$FacilityID[i])
+  outfalls$name[i]<-paste0('FROM ',VPDES_Outfalls$FacilityID[i])
   outfalls$ftype[i]<-'outfall'
-  outfalls$hydrocode[i]<-paste0('echo_',All$VPDESID[i])
-  if(All$VPDESID[i]%in%FlowFrame$VPDESID){
+  outfalls$hydrocode[i]<-paste0('echo_',VPDES_Outfalls$VPDESID[i])
+  if(VPDES_Outfalls$VPDESID[i]%in%FlowFrame$VPDESID){
     outfalls$fstatus[i]<-'active'  
   } else {
     outfalls$fstatus[i]<-'inactive'
   }
-  if(!is.na(All$coords.x2[All$VPDESID==All$VPDESID[i]]) & !is.na(All$coords.x1[All$VPDESID==All$VPDESID[i]])){
-    outfalls$dh_geofield[i]<-paste0('POINT (',All$coords.x1[All$VPDESID==All$VPDESID[i]],' ',All$coords.x2[All$VPDESID==All$VPDESID[i]],')')  
-    } else if (!is.na(ECHO_Facilities$Faclat[ECHO_Facilities$SourceID==All$FacilityID[i]]) & !is.na(ECHO_Facilities$Faclong[ECHO_Facilities$SourceID==All$FacilityID[i]])) {
-      outfalls$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$Faclong[ECHO_Facilities$SourceID==All$FacilityID[i]],' ',ECHO_Facilities$Faclat[ECHO_Facilities$SourceID==All$FacilityID[i]])
+  if(!is.na(VPDES_Outfalls$Latitude[VPDES_Outfalls$VPDESID==VPDES_Outfalls$VPDESID[i]]) & !is.na(VPDES_Outfalls$Longitude[VPDES_Outfalls$VPDESID==VPDES_Outfalls$VPDESID[i]])){
+    outfalls$dh_geofield[i]<-paste0('POINT (',VPDES_Outfalls$Longitude[VPDES_Outfalls$VPDESID==VPDES_Outfalls$VPDESID[i]],' ',VPDES_Outfalls$Latitude[VPDES_Outfalls$VPDESID==VPDES_Outfalls$VPDESID[i]],')')  
+    } else if (!is.na(ECHO_Facilities$FacLat[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]]) & !is.na(ECHO_Facilities$FacLong[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]])) {
+      outfalls$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$SourceID==VPDES_Outfalls$FacilityID[i]])
     } else {
       outfalls$dh_geofield[i]<-'NULL'
   }
-  outfalls$dh_link_facility_mps[i]<-paste0('echo_',All$FacilityID[i])
+  outfalls$dh_link_facility_mps[i]<-paste0('echo_',VPDES_Outfalls$FacilityID[i])
 }
 write.table(outfalls,paste0(Outputpath,"/outfalls.txt"),sep="\t",row.names = F)
 
@@ -400,26 +310,28 @@ write.table(outfalls,paste0(Outputpath,"/outfalls.txt"),sep="\t",row.names = F)
 
 #hydrocode, varkey, propname, propvalue, proptext, propcode, startdate, enddate
 
-last_inspect<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='last_inspect', propname='last_inspect', propvalue='',proptext='',propcode='',startdate=ECHO_Facilities$LastInspection,enddate='')
+last_inspect<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='last_inspect', propname='last_inspect', propvalue='',proptext='',propcode='',startdate=ECHO_Facilities$CWPDateLastInspection,enddate='')
 write.table(last_inspect,paste0(Outputpath,"/last_inspect.txt"),sep="\t",row.names = F)
 
-css<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='css', propname='css', propvalue='',proptext='',propcode=ECHO_Facilities$CSOFlg, startdate='',enddate='')
+css<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='css', propname='css', propvalue='',proptext='',propcode=ECHO_Facilities$CWPCsoFlag, startdate='',enddate='')
 write.table(css,paste0(Outputpath,"/css.txt"),sep="\t",row.names = F)
 
-cwp_cso_outfalls<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='cwp_cso_outfalls', propname='cwp_cso_outfalls', propvalue=ECHO_Facilities$CWPCso,proptext='',propcode='', startdate='',enddate='')
+cwp_cso_outfalls<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='cwp_cso_outfalls', propname='cwp_cso_outfalls', propvalue=ECHO_Facilities$CWPCsoOutfalls,proptext='',propcode='', startdate='',enddate='')
 write.table(cwp_cso_outfalls,paste0(Outputpath,"/cwp_cso_outfalls.txt"),sep="\t",row.names = F)
 
-wb_gnis_name<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='wb_gnis_name', propname='wb_gnis_name', propvalue='', proptext='',propcode=ECHO_Facilities$RecievingWB, startdate='',enddate='')
+wb_gnis_name<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='wb_gnis_name', propname='wb_gnis_name', propvalue='', proptext='',propcode=ECHO_Facilities$RadGnisName, startdate='',enddate='')
 write.table(wb_gnis_name,paste0(Outputpath,"/wb_gnis_name.txt"),sep="\t",row.names = F)
 
-reachcode_rad<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='reachcode_rad', propname='reachcode_rad', propvalue='', proptext='',propcode=ECHO_Facilities$RecievingReachCode, startdate='',enddate='')
+reachcode_rad<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='reachcode_rad', propname='reachcode_rad', propvalue='', proptext='',propcode=ECHO_Facilities$RadReachcode, startdate='',enddate='')
 write.table(reachcode_rad,paste0(Outputpath,"/reachcode_rad.txt"),sep="\t",row.names = F)
 
-impair_cause<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='impair_cause', propname='impair_cause', propvalue='', proptext=ECHO_Facilities$WBDesignatedUse,propcode='', startdate='',enddate='')
+impair_cause<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='impair_cause', propname='impair_cause', propvalue='', proptext=ECHO_Facilities$AttainsCauseGroups,propcode='', startdate='',enddate='')
 write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.names = F)
 
 ###################################################################################
 #4 Import Outfall Timeseries Data
+
+rm(list = ls())  #clear variables for new start
 
 #Outfall dH Timeseries Mapping
 
@@ -441,9 +353,11 @@ write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.nam
 #DMR data can be found from the following base URL query: 
 #https://ofmpub.epa.gov/echo/eff_rest_services.get_effluent_chart?
 
-  state<-"VA" 
-  startDate<-"01/01/2011"
-  endDate<-"6/20/2018"
+  state<-"VA"
+  startDate<-"01/01/2010" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
+  endDate<-Sys.Date()
+  endDate<-format(as.Date(endDate), "%m/%d/%Y")
+  options(scipen=999) #Disable scientific notation
   
   #Create Place Holders for Desired Variables
   hydrocode<-character()
@@ -455,14 +369,16 @@ write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.nam
   VPDESID<-character()
   
   #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
-  uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
-  ECHO_xml<-getURL(uri_query)
-  ECHO_query<-xmlParse(ECHO_xml)
-  QID<-xmlToList(ECHO_query)
+  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+  URL_Download<-getURL(Req_URL) #Download URL from above
+  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
   QID<-QID$QueryID
-  uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qid=",QID)
-  ECHO_Facilities<-read.csv(uri_summary,stringsAsFactors = F)
-  ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)
+  GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
+  ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
+  ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)#Ensure all facility names are in all caps using "toupper" command
+  
+  rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
   
   #This loop goes through each CWA regulated facility one by one to extract reported discharges 
   #from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
@@ -547,7 +463,49 @@ write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.nam
     }
   }
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode)
-  timeseries<-timeseries[complete.cases(timeseries),]#returns outfalls that have data
+  timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
   timeseries$tstime<-format(ymd(timeseries$tstime), "%m/%d/%Y")
 
   write.table(timeseries,paste0(Outputpath,"/timeseries.txt"),sep="\t",row.names = F)
+  save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries.RData")
+##################################################################################################################################
+###########################################Pushing DMR timeseries Data to VAHydro#################################################
+  
+  site <- "http://deq1.bse.vt.edu/d.bet"    #Specify the site of interest, either d.bet OR d.dh
+  hydro_tools <- 'G:\\My Drive\\HARP' #location of hydro-tools repo
+  
+  #----------------------------------------------
+  
+  #Generate REST token              
+  rest_uname = 'restws_echo'
+  rest_pw = 'USG$Restech0'
+  source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
+  source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
+  token <- rest_token(site, token, rest_uname, rest_pw)
+
+  # ---------------------------------------------
+  # Get hydroids from VAHydro using hydrocode in timeseries data frame
+  for (i in 1:length(timeseries$hydrocode)){
+  inputs[i] <- list (
+    bundle = 'transfer',
+    ftype = 'outfall',
+    hydrocode[i] = timeseries$hydrocode[i]
+  )
+  
+  dataframe[i] <- getFeature(inputs[i], token, site)
+  hydroid <- as.character(dataframe$hydroid)
+  }
+  
+  dataframe <- getFeature(inputs, token, site)
+  hydroid <- as.character(dataframe$hydroid)
+  
+  
+  ts_post_inputs<-list(
+    featureid = timeseries$hydrocode,
+    varkey = timeseries$varkey,
+    entity_type = 'dh_feature',
+    tsvalue = timeseries$tstime,
+    tsendtime = timeseries$tsendtime,
+    tscode = timeseries$tscode
+  )
+  

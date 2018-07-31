@@ -1,6 +1,6 @@
 # Data Dictionary for ECHOInterface.R
 
-## Varibales in Script
+## Variables in Script
 
 **ECHO_Facilities** - List of facilities regulated under the Clean Water Act (CWA) and managed uner the National Pollutant Discharge Elimination System (NPDES) Program.
 
