@@ -7,7 +7,6 @@ hydro_tools <- 'G:\\My Drive\\HARP' #location of hydro-tools repo
 
 #Generate REST token              
 
-
 rest_uname = FALSE
 rest_pw = FALSE
 source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
