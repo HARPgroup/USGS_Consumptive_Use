@@ -50,7 +50,7 @@ Application Programming Interface (API) [Descriptions](https://www.any-api.com/e
 
 ## Data Dictionary 
 
-The data dictionary for this script can be found [here](G:\My Drive\USGS_ConsumptiveUse\Summer, 2018\Morgan\Data Dictionaries\Codebook-for-ECHOInterface)
+The data dictionary for this script can be found [here](https://github.com/mccartma/USGS_Consumptive_Use/blob/mccartma/Documentation/Data_Dictionaries/Codebook-for-ECHOInterface.md)
 
 
 ## Dependancy Initilization
@@ -138,7 +138,7 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
 ```
 
 
-Next, the length of data within a single DMR is evaluated (*data_length*. This checks for the number of submissions/monitoring periods within the designated date range. If the facility is not active during the date range, all reported variables are set to *NA*. Otherwise, if the *data_length* is greater than 0, it will enter the rest of the for loop. 
+Next, the length of data within a single DMR is evaluated (*data_length*). This checks for the number of submissions/monitoring periods within the designated date range. If the facility is not active during the date range, all reported variables are set to *NA*. Otherwise, if the *data_length* is greater than 0, it will enter the rest of the for loop. 
 
 ```{r,warning=FALSE,message=FALSE,eval=FALSE}
 data_length<-length(unique(DMR_Data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
@@ -264,4 +264,4 @@ FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),] #Keep only completed cases
 
 ## Conclusion
 
-Ultimately, the **ECHOInterface.R** script uses ECHO's REST Services to query CWA regulated facilities within a state of interest and summarize their measured effluents (by reported statistic) for a specified data range. These summarized discharges will be compared to their NPDES Permits maintained by the Virginia Department of Environmental Quality and analyzed for trends, and suspicious/erroneous data in **AnalysisCode.R** as a QA/QC measure. The discharges will then be combined with state maintained withdrawal data and transfer data to calculate consumptive water use over several spatial scales (**VA_HUC_8_Consumptive_Use.R**,**VA_HUC_10_Consumptive_Use.R**, & **VA_HUC_12_Consumptive_Use.R**). Accurate estimates of consumptive water use in Virginia will aid the DEQ's capacity to improve permitting, plan for water scarce scenarios, and model stream flows and water availability. Indicating hot spots of consumtpive use over spatial scales will also fuel more informed water supply management plans. 
+Ultimately, the **ECHOInterface.R** script uses ECHO's REST Services to query CWA regulated facilities within a state of interest and summarize their measured effluents (by reported statistic) for a specified data range. These summarized discharges will be compared to their NPDES Permits maintained by the Virginia Department of Environmental Quality and analyzed for trends, and suspicious/erroneous data in **AnalysisCode.R** as a QA/QC measure. The discharges will then be combined with state maintained withdrawal data and transfer data to calculate consumptive water use over several spatial scales (**VA_HUC_8_Consumptive_Use.R**,**VA_HUC_10_Consumptive_Use.R**, & **VA_HUC_12_Consumptive_Use.R**). Accurate estimates of consumptive water use in Virginia will aid the DEQ's capacity to improve permitting, plan for water scarce scenarios, and model stream flows and water availability. Indicating hot spots of consumptive use over spatial scales will also fuel more informed water supply management plans. 

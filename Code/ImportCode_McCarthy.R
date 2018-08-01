@@ -464,10 +464,10 @@ rm(list = ls())  #clear variables for new start
   }
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode)
   timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
-  timeseries$tstime<-format(ymd(timeseries$tstime), "%m/%d/%Y")
+  timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
 
   write.table(timeseries,paste0(Outputpath,"/timeseries.txt"),sep="\t",row.names = F)
-  save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries.RData")
+  save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries_2010_present.RData")
 ##################################################################################################################################
 ###########################################Pushing DMR timeseries Data to VAHydro#################################################
   
@@ -476,36 +476,62 @@ rm(list = ls())  #clear variables for new start
   
   #----------------------------------------------
   
-  #Generate REST token              
-  rest_uname = 'restws_echo'
-  rest_pw = 'USG$Restech0'
-  source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
+  #Generate REST token for authentication              
+  rest_uname = FALSE
+  rest_pw = FALSE
+  source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
   source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
   token <- rest_token(site, token, rest_uname, rest_pw)
 
   # ---------------------------------------------
   # Get hydroids from VAHydro using hydrocode in timeseries data frame
+  
   for (i in 1:length(timeseries$hydrocode)){
-  inputs[i] <- list (
-    bundle = 'transfer',
-    ftype = 'outfall',
-    hydrocode[i] = timeseries$hydrocode[i]
-  )
-  
-  dataframe[i] <- getFeature(inputs[i], token, site)
-  hydroid <- as.character(dataframe$hydroid)
-  }
-  
-  dataframe <- getFeature(inputs, token, site)
-  hydroid <- as.character(dataframe$hydroid)
-  
-  
-  ts_post_inputs<-list(
-    featureid = timeseries$hydrocode,
-    varkey = timeseries$varkey,
-    entity_type = 'dh_feature',
-    tsvalue = timeseries$tstime,
-    tsendtime = timeseries$tsendtime,
-    tscode = timeseries$tscode
-  )
-  
+    print(paste("PROCESSING TIMESERIES ",i," OF ",length(timeseries$hydrocode)," - ",
+                "HYDROCODE = ",timeseries$hydrocode[i],sep=""))
+    
+    inputs <- list (
+      bundle = 'transfer',
+      ftype = 'outfall',
+      hydrocode = as.character(unique(timeseries$hydrocode[i]))
+    )
+    
+    dataframe <- getFeature(inputs, token, site)
+    hydroid <- as.character(dataframe$hydroid)
+    
+    print(paste("OUTFALL FEATURE FOUND! HYDROID = ", hydroid,sep=""))
+    
+    # --------------------------------------------
+    #Retrieve Timeseries from VAHydro
+    ts_inputs<- list (
+      featureid= hydroid,
+      varkey= as.character(timeseries$varkey[i]),
+      entity_type = 'dh_feature',
+      tstime =   as.numeric(as.POSIXct(timeseries$tstime[i])),
+      tsendtime =   as.numeric(as.POSIXct(timeseries$tsendtime[i]))
+    )
+    
+    timeseries.df<-getTimeseries(ts_inputs, site, ts)
+    print(paste("TID = ",  timeseries.df$tid,sep=""))
+    
+    # --------------------------------------------
+    #Update Timeseries Data in VAHydro
+    
+    ts_post_inputs<-list(
+      tid = as.character(timeseries.df$tid),
+      featureid = hydroid,
+      varkey = as.character(timeseries$varkey[i]),
+      entity_type = 'dh_feature',
+      tsvalue = timeseries$tsvalue[i],
+      tscode = timeseries$tscode[i],
+      tstime = format(as.POSIXlt(timeseries$tstime[i]),"%s"),
+      tsendtime = format(as.POSIXlt(timeseries$tsendtime[i]),"%s")
+      
+    )
+    
+    postTimeseries(ts_post_inputs,site,ts)
+    
+    }
+    
+    
+    
