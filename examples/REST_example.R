@@ -6,19 +6,11 @@ hydro_tools <- 'G:\\My Drive\\HARP' #location of hydro-tools repo
 #----------------------------------------------
 
 #Generate REST token              
-<<<<<<< HEAD
-rest_uname = 'FALSE'
-rest_pw = 'FALSE'
-source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
-||||||| merged common ancestors
-rest_uname = 'restws_echo'
-rest_pw = 'USG$Restech0'
-source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
-=======
+
+
 rest_uname = FALSE
 rest_pw = FALSE
 source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
->>>>>>> 958857995bfffda7c357bef4007e74b5e8d3649e
 source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
 token <- rest_token(site, token, rest_uname, rest_pw)
 
