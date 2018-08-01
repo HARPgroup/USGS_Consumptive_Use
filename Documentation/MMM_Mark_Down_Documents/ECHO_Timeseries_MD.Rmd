@@ -178,7 +178,7 @@ data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there i
 
 If the DMR meets the condition, the facility's outfalls (*outfall_nmbr*) and their ID's (*outfall_ID*) are extracted. The outfall ID is a three character code assigned by NPDES to track the permannent points of discharge in the state. If the *outfall_ID* in the DMR is less than three characters, the next section of code assigns leading zeros (*leadingzeros*).
 
-``````{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls which are called permanent features in the DMR
           outfall_ID<-unique(DMR_data$perm_feature_nmbr) #perm_feature_nmbr is a three-character code in ICIS-NPDES that identifies the point of discharge
           for(j in 1:length(outfall_ID)){ #If the code is less than three characters in the .CSV, append zeros to the beginning of the number (e.g., 1 is equivalent to 001)

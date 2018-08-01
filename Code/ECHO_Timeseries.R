@@ -39,11 +39,13 @@ library(readxl) #reads excel files
 library(jsonlite)
 library(lubridate)
 library(httr)
+library(daff)#helps calculate the differences between two dataframes
 
 state<-"VA"
-startDate<-"01/01/2011" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
+startDate<-"01/01/2010" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
 endDate<-Sys.Date()
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
+options(scipen=999) #Disable scientific notation
 
 ##################################################################################################################################
 ###########################################CWA Facility Download##################################################################
@@ -55,15 +57,18 @@ endDate<-format(as.Date(endDate), "%m/%d/%Y")
 #This particular query is created in two-steps. An XML document of all CWA facilities in VA is first downloaded (uri_query and ECHO_xml).
 #Then the XML is parsed (ECHO_query) to generate a query ID (QID) that can be used to access summary data for each facility (uri_summary).
 
-uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state)
-ECHO_xml<-getURL(uri_query) #this function downloads the URL from above, which creates an XML of facilities with CWA permit
-ECHO_query<-xmlParse(ECHO_xml) #parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to see query ID or QID
-QID<-xmlToList(ECHO_query) #Converts parsed query to a more R-like list and stores it as a variable
-QID<-QID$QueryID #Extracts Query ID 
-uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qid=",QID) #Uses QID to extract facility summary data
-ECHO_Facilities<-read.csv(uri_summary,stringsAsFactors = F)
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&p_st=",state)
+URL_Download<-getURL(Req_URL) #Download URL from above
+URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
+QID<-QID$QueryID
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&qid=",QID)
+ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
 ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)
-rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID) #Clear unnecessary variables
+ECHO_Facilities_IP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
+ECHO_Facilities_activeIP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit" &
+                                   ECHO_Facilities$CWPPermitStatusDesc=="Effective")
+rm(Req_URL,URL_Download,URL_Parse,GET_Facilities,QID) #Clear unnecessary variables
 
 ##################################################################################################################################
 #########################################Extract Time Series Data#################################################################
@@ -82,9 +87,9 @@ mon_in_mp<-numeric() #number of months included in monitoring period
 violation<-character() #Code identifying if a Violation has occurred  (e.g., D80 = Required Monitoring DMR Value Non-Receipt, E90 = Effluent Violation, C20 = Schedule Event Achieved Late).
 violation_severity<-numeric() #Severity of any alleged violation caused by the reported value: 5 = significant noncompliance; 3 = reportable noncompliance; 2 = effluent violation, i.e., discharge in excess of permitted limit; 1 = monitoring or reporting violation; 0 = no violation.
 
-for (i in 1:length(ECHO_Facilities$SourceID)){
+for (i in 1:length(ECHO_Facilities_IP$SourceID)){
     sourceID<-ECHO_Facilities$SourceID[i]
-    print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities$SourceID),")", sep=""))
+    print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities_IP$SourceID),")", sep=""))
     DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe
     DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
     DMR_data<-DMR_data[DMR_data$parameter_code==50050,]#only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
@@ -208,10 +213,29 @@ for (i in 1:length(ECHO_Facilities$SourceID)){
         ECHO_timeseries$MP_Begin_Date<-format(ymd(ECHO_timeseries$MP_Begin_Date), "%m/%d/%Y")
         save.image("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/ECHO_Timeseries.RData") #Save the global environment for future reference
         
-        write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries.txt",sep="\t",row.names = F)
+        #In personal file
+        write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_7_31.txt",sep="\t",row.names = F)
+       
+        #For repository
         write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO_timeseries.txt",sep="\t",row.names = F)
       
 ##################################################################################################################################
 ###################################################Analysis#######################################################################
-
         
+        #Track the changes between weekly runs here
+        ECHO_timeseries_pre<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_7_28.txt",header=T)
+        ECHO_timeseries_pre%>%
+          summarise(Outfalls=n_distinct(OutfallID),Facilities=n_distinct(FacilityName),
+                    sum=sum(Measured_Effluent,na.rm=T),median=median(Measured_Effluent,na.rm=T),mean=
+                    mean(Measured_Effluent,na.rm=T))
+        
+        ECHO_timeseries_post<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_7_31.txt",header=T)
+        ECHO_timeseries_post%>%
+          summarise(Outfalls=n_distinct(OutfallID),Facilities=n_distinct(FacilityName),
+                    sum=sum(Measured_Effluent,na.rm=T),median=median(Measured_Effluent,na.rm=T),mean=
+                      mean(Measured_Effluent,na.rm=T))
+        
+        difference<-diff_data(ECHO_timeseries_pre,ECHO_timeseries_post)
+        summary(difference)
+
+      
