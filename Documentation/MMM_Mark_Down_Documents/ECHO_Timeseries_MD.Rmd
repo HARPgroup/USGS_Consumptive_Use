@@ -60,7 +60,22 @@ Application Programming Interface (API) [Descriptions](https://www.any-api.com/e
 
 ## About the Data: ECHO
 
-ECHO displays data as-reported from the original sources; therefore data is typically more complete for major discharging facilities. As for smaller facilities, data can vary widely (i.e., nonexistent, partial, voluntarily entered, etc.)
+ECHO is a tool developed by the EPA that provides data on over 900,000 regulated facilities and their integrated compliance and enforcement history with environmental regulations. RESTlike (REpresentational State Transfer) services support customizable retrieval of this data through simple URL HTTP links. 
+
+Web Services available for data retrieval include: 
+  + All Data Facility Search
+  + Air Facility Search
+  + Drinking Water System Search
+  + Hazardous Waste Facility Search
+  + Water Facility Search
+  + Enforcement Case Search and Reports
+  + Air Pollutant Report
+  + Detailed Facility Report
+  + Effluent Charts
+
+Specifically, the water facility search, detailed facility report, and effluent chart REST services return data for Clean Water Act regulated facilities, managed under the NPDES program. 
+
+Data in the CWA search services is as-reported from the original sources; therefore data is typically more complete for major discharging facilities. As for smaller facilities, data can vary widely (i.e., nonexistent, partial, voluntarily entered, etc.). Data are typically refreshed on a weekly basis. Therefore, this script should be run ona weekly basis as well to maintain up-to-date information. 
 
 ## Data Dictionary 
 
@@ -90,11 +105,31 @@ library(lubridate) #parses and manipulates dates
 library(httr) #contains useful tools that work with HTTP organised by HTTP verbs. 
 ```
 
-Collectively, they allow for the manipulation of data extracted from the ECHO REST Services. Inputs for the REST services include a two letter State abbrievation (*state*) and time range of interest (*startDate* & *endDate*).
+Collectively, they allow for the manipulation of data extracted from the ECHO REST Services. Inputs for the REST services include a two letter State abbrievation (*state*) and time range of interest (*startDate* & *endDate*). It is important to note that data on ECHO often limited to 2012 for most sites and 2009 for a few. 
 
 ```{r,warning=FALSE,message=FALSE}
 state<-"VA" #Input for State of Interest. Must be Inputted as Abreviation 
 startDate<-"01/01/2012" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
 endDate<-Sys.Date()
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
+```
+
+## CWA Facility Download
+
+After defining the inputs, they can be used in the *Water Facility Search REST Services* to query discharging facilities in Virginia . The base URL for performing this query: https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?. By default, the query returns a set list of attributes for each facility. These can be customized by passing through parameters found in the facility metadata (noted as *qcolumns*).
+
+In R, this query can completed in two steps. First an XML document containing the customized query is downloaded (*URL_Download*). Then it is parsed into an R structure (*URL_Parse*) to isolate a query ID (*QID*) to resubmit into the *Water Facility Search* Service (*GET_Facilities*). This results in a .csv file containing all of the CWA Facilities in the state of interest (*ECHO_Facilities*). It is important to note that this contains all facilities, regardless of permit type and status. *ECHO_Facilities_IP* shows the facilities with an individual permit, while *ECHO_Facilities_activeIP* shows *active* individual permits. 
+
+```{r,warning=FALSE,message=FALSE}
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&p_st=",state)
+URL_Download<-getURL(Req_URL) #Download URL from above
+URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
+QID<-QID$QueryID
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&qid=",QID)
+ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
+ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)
+ECHO_Facilities_IP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
+ECHO_Facilities_activeIP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit" & ECHO_Facilities$CWPPermitStatusDesc=="Effective")
+rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID) #Clear unnecessary variables
 ```

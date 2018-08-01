@@ -37,11 +37,11 @@ library(lubridate) #parses and manipulates dates
 
 #Required Inputs for ECHO REST Query 
 state<-"VA" #Input for State of Interest. Must be Inputted as Abreviation 
-startDate<-"01/01/2012" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
-endDate<-"12/31/2017" #mm/dd/yyyy If date range is not specified, query will include data from last three years
-path<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code"
-#endDate<-Sys.Date()
-#endDate<-format(as.Date(endDate), "%m/%d/%Y")
+startDate<-"01/01/2009" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
+endDate<-Sys.Date() #mm/dd/yyyy If date range is not specified, query will include data from last three years
+endDate<-format(as.Date(endDate), "%m/%d/%Y")
+options(scipen=999) #Disable scientific notation 
+path<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/"
 
 #############################################################################################################################
 ###########################################CWA Facility Download##################################################################
@@ -173,7 +173,7 @@ for (i in 1:length(ECHO_Facilities$SourceID)) {
 #These next few lines subset and export the data developed in the above loops
 FlowFrame<-data.frame(ECHOID,VPDESID,outfall_num,FlowSum,FlowMed,Units,Limit,Stat,Stat_Description)
 FlowFrame<-FlowFrame[!is.na(FlowFrame$VPDESID),] #Keep only completed cases
-write.csv(FlowFrame,paste0(path,'/FlowFrame_2012_present.csv'))
+write.csv(FlowFrame,paste0(path,'/FlowFrame_2009_present.csv'))
 
 #############################################################################################################################
 ###This block of code calls this script so that we can reference it in a seperate R markdown file.

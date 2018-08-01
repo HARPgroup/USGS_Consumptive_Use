@@ -75,6 +75,7 @@ names(VPDES_Outfalls)[names(VPDES_Outfalls)=="VAP_PMT_NO"]<-'FacilityID'
 VPDES_Outfalls<-VPDES_Outfalls[VPDES_Outfalls$VAP_TYPE=='VPDES_IP',] #Narrow down to Individual Permits: which specify effluent limitations for municipal and industrial facilities. 
 names(ECHO_Facilities)[names(ECHO_Facilities)=="SourceID"]<-"FacilityID"#Need to rename to give a central columnn name for future joins
 
+write.table(VPDES_Outfalls,paste0(path,"/VPDES_Outfalls.txt"),sep="\t",row.names = F)
 #######Retrieve VPDES Individual Permit Info from DEQ Website#######
 #Website that contains VPDES Individual Permits: 
 #http://www.deq.virginia.gov/Programs/Water/PermittingCompliance/PollutionDischargeElimination/PermitsFees.aspx#GGPs
