@@ -1,0 +1,51 @@
+# Data Dictionary for ECHO_vsVPDES_Timeseries.R
+
+## Variables in Script
+
+Variable | Description
+--- | --------------------------------------------------------------------------------------------------------
+**state** | Two letter abbreviation of State of interest (input for REST service)
+**startDate** | Beginning of time range desired used in Effluent Chart REST Service. Format=mm/dd/yyyy
+**endDate** | End of time range desired used in Effluent Chart REST Service. Format=mm/dd/yyyy
+**ECHO_Facilities** | List of facilities and attributes regulated under the Clean Water Act (CWA) and managed uner the National Pollutant Discharge Elimination System (NPDES) Program. Parameters included in this data frame are described below (**ECHO_Facilities** Parameters)
+**Facility_Name** | Name of the CWA regulated discharging facility
+**VPDESID** | Unique ID used in Virginia for a facility's outfall: concatonated facility ID with 3 digit outfall ID
+**eff_limit** | numerical limit for measured effluent through the facility
+**eff_limit_units** | units of measure applicable to effluent quantity limit
+**dmr_value** | measured effluent through outfall. Refers to the Facility's Discharge Monitoring Reports (DMRs)
+**dmr_units** | units for measured effluent
+**statistic** | indicates the statistic analysis used for the measured effluent. This script is interested in monthly averages
+**mp_begin** | beginning date of monitoring period (mp)
+**mp_end** | end data of monitoring period (mp)
+**mon_in_mp** | number of months included in monitoring period. Referred to as number of submissions in ECHO database
+**violation** | Code identifying if a Violation has occurred  (e.g., D80 = Required Monitoring DMR Value Non-Receipt, E90 = Effluent Violation, C20 = Schedule Event Achieved Late).
+**violation_severity** | Severity of any alleged violation caused by the reported value: 5 = significant noncompliance; 3 = reportable noncompliance; 2 = effluent violation, i.e., discharge in excess of permitted limit; 1 = monitoring or reporting violation; 0 = no violation
+**DMR_data** | Data frame that contains effluent chart with Discharge Monitoring Report for each point of discharge (outfall)
+**ECHO_timeseries** | Final data frame containing every active outfall reporting effluent from 2010-present
+
+## ECHO_Facilities Parameters 
+
+Parameter | Description | qcolumn ID
+--- | -----------------------------------------------------------------------------| ---
+**CWP_Name** | Facility or permit holder name as found in NPDES | 1
+**SourceID** | Unique Identifier assigned by EPA | 2
+**FAC_Derived_HUC** | The 8-digit Hydrologic Unit Code (HUC) of the watershed in which the facility resides. A HUC number is assigned to every watershed in the nation and uniquely identifies the watershed | 14
+**FAC_LAT** | The latitude of the facility in decimal degrees expressed using the NAD83 horizontal datum. The coordinate comes from the FRS EPA Locational Reference Tables (LRT) file which represents the most accurate value for the facility based on the available spatial metadata | 23
+**FAC_LONG** | The longitude of the facility in decimal degrees expressed using the NAD83 horizontal datum. The coordinate comes from the FRS EPA Locational Reference Tables (LRT) file which represents the most accurate value for the facility based on the available spatial metadata | 24
+**CWPTotalDesignFlowNmbr** | The amount of wastewater flow in MGD that the facility is designed for | 25
+**CWP_ACTUAL_AVERAGE_FLOW_NMBR** | The actual amount of the facility's wastewater flow measured in MGD | 26
+**CWP_FACILITY_TYPE_INDICATOR** | Each NPDES permit is defined by the program office as a Major or non-major discharger. This field also indicates the permit type. POTW: Publicly Owned Treatment Works | 27
+**CWP_PERMIT_STATUS_DESC** | The current stage/status in the NPDES permit life cycle | 60
+**CWP_PERMIT_TYPE_DESC** | NPDES facility permit classification:- NPDES Individual Permit- General Permit Covered Facility- NPDES Master General Permit- Associated Permit Record- Individual Industrial User Permit- Individual State Issued Permit- State Issued Master General Permit- Unpermitted Facility | 63
+**CWP_EFFECTIVE_DATE** | Date in which NPDES permit effectively started | 65
+**CWP_EXPIRATION_DATE** | Date in which NPDES permit expires | 67
+**CWP_STATUS** | An indication of the facility's current compliance status under the Clean Water Act:- Significant Violation- Noncompliance- No Violation- Unknown | 84
+**CWP_E90_CNT** | Displays the number of instances where effluent limits have been exceeded in the past 3 years (E90 compliance code), based on monthly Discharge Monitoring Reports (DMRs) submitted by facilities | 91
+**CWP_INSPECTION_COUNT** | The number of inspections/compliance evaluations, under the corresponding statute, occurring at the facility within the last five years | 95
+**CWP_DATE_LAST_INSPECTION** | The date on which the most recent inspection of the facility took place (qcolumn=97).
+**CWP_CSO_FLAG** | The discharge from a Combined Sewer System at a point prior to the treatment plant. CSOs are point sources subject to NPDES permit requirements including both technology-based and water quality-based requirements of the Clean Water Act | 204
+**CWP_CSO_OUTFALLS** | The number of discharge outfalls at points prior to the treatment plant | 205
+**CWP_STATE_WATER_BODY_CODE** | Code from the Assessment TMDL Tracking & Implementation System (ATTAINS) database, assigned by the US Geological Survey, used to classify watersheds in the United States and the Caribbean. The code consists of twelve digits which correspond to six levels of classification:- Region (first-level, 2-digit HUC)- Subregion (second-level, 4-digit HUC)- Accounting unit (third-level, 6-digit HUC)- Cataloguing unit (fourth-level, 8-digit HUC)- Watershed (fifth-level, 10-digit HUC)- Subwatershed (sixth-level, 12-digit HUC) | 206
+**CWP_STATE_WATER_BODY_NAME** | The name of the watershed from the ATTAINS database in which the facility resides | 207
+**RAD_GNIS_NAME** | The name of the waterbody from the Geographic Names Information System (GNIS) database in which the facility is permitted to discharge directly (RAD: Reach Address Database) | 209
+**RAD_REACHCODE** | A nationally unique and permanent identifier for the waterbody, assigned by the US Geological Survey | 210
