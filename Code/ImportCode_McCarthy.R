@@ -476,16 +476,29 @@ rm(list = ls())  #clear variables for new start
   
   #----------------------------------------------
   
+<<<<<<< HEAD
   #Generate REST token for authentication              
   rest_uname = FALSE
   rest_pw = FALSE
   source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
+||||||| merged common ancestors
+  #Generate REST token              
+  rest_uname = 'restws_echo'
+  rest_pw = 'USG$Restech0'
+  source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
+=======
+  #Generate REST token              
+  rest_uname = '*************'
+  rest_pw = '*************'
+  source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
+>>>>>>> 958857995bfffda7c357bef4007e74b5e8d3649e
   source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
   token <- rest_token(site, token, rest_uname, rest_pw)
 
   # ---------------------------------------------
   # Get hydroids from VAHydro using hydrocode in timeseries data frame
   
+<<<<<<< HEAD
   for (i in 1:length(timeseries$hydrocode)){
     print(paste("PROCESSING TIMESERIES ",i," OF ",length(timeseries$hydrocode)," - ",
                 "HYDROCODE = ",timeseries$hydrocode[i],sep=""))
@@ -535,3 +548,26 @@ rm(list = ls())  #clear variables for new start
     
     
     
+||||||| merged common ancestors
+  
+  ts_post_inputs<-list(
+    featureid = timeseries$hydrocode,
+    varkey = timeseries$varkey,
+    entity_type = 'dh_feature',
+    tsvalue = timeseries$tstime,
+    tsendtime = timeseries$tsendtime,
+    tscode = timeseries$tscode
+  )
+  
+=======
+  
+  ts_post_inputs<-list(
+    featureid = timeseries$hydrocode,
+    varkey = timeseries$varkey,
+    entity_type = 'dh_feature',
+    tsvalue = timeseries$tstime,
+    tsendtime = timeseries$tsendtime,
+    tscode = timeseries$tscode
+  )
+  
+>>>>>>> 958857995bfffda7c357bef4007e74b5e8d3649e
