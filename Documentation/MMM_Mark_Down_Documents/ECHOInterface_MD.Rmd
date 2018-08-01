@@ -1,14 +1,9 @@
 
-title: "ECHOInterface.R"
-authors: "Originally Drafted by Connor Brogan. Adapted by Morgan McCarthy"
-output: github_document
-
+# ECHOInterface.R Mark Down
+### Authors: Originally Drafted by Connor Brogan. Adapted by Morgan McCarthy
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-library(dplyr)
 ```
 
 ## Purpose

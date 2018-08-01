@@ -1,15 +1,9 @@
 
-title: "ECHO_Timeseries_MD"
-author: "Morgan McCarthy"
-date: "July 28, 2018"
-output: github_document
-
+# ECHO_Timeseries.R Mark Down 
+### Author: Morgan McCarthy
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-library(dplyr)
 ```
 
 ## Purpose
