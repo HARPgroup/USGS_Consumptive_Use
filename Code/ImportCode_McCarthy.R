@@ -477,8 +477,8 @@ rm(list = ls())  #clear variables for new start
   #----------------------------------------------
   
   #Generate REST token              
-  rest_uname = 'restws_echo'
-  rest_pw = 'USG$Restech0'
+  rest_uname = '*************'
+  rest_pw = '*************'
   source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
   source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
   token <- rest_token(site, token, rest_uname, rest_pw)
