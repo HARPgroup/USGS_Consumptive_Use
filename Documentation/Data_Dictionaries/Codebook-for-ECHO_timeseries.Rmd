@@ -1,4 +1,4 @@
-# Data Dictionary for ECHO_vsVPDES_Timeseries.R
+# Data Dictionary for ECHO__Timeseries.R
 
 ## Variables in Script
 
