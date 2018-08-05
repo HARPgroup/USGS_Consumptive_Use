@@ -472,25 +472,15 @@ rm(list = ls())  #clear variables for new start
 ###########################################Pushing DMR timeseries Data to VAHydro#################################################
   
   site <- "http://deq1.bse.vt.edu/d.bet"    #Specify the site of interest, either d.bet OR d.dh
-  hydro_tools <- 'G:\\My Drive\\HARP' #location of hydro-tools repo
   
-  #----------------------------------------------
+  hydro_tools <- 'C:\\Users\\mccartma\\Documents\\HARP' #location of hydro-tools repo
   
-
-  #Generate REST token for authentication              
-  rest_uname = FALSE
-  rest_pw = FALSE
-  source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
-
-  #Generate REST token              
-  rest_uname = 'restws_echo'
-  rest_pw = 'USG$Restech0'
-  source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
-
+  #---------------------------------------------
+  
   #Generate REST token              
   rest_uname = '*************'
   rest_pw = '*************'
-  source(paste(hydro_tools,"config.local.private.example", sep = "\\")); #load rest username and password, contained in auth.private file
+  source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
 
   source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
   token <- rest_token(site, token, rest_uname, rest_pw)
@@ -525,13 +515,13 @@ rm(list = ls())  #clear variables for new start
     )
     
     timeseries.df<-getTimeseries(ts_inputs, site, ts)
-    print(paste("TID = ",  timeseries.df$tid,sep=""))
+    print(paste("TID = ", timeseries.df["tid"],sep=""))
     
     # --------------------------------------------
     #Update Timeseries Data in VAHydro
     
     ts_post_inputs<-list(
-      tid = as.character(timeseries.df$tid),
+      tid = as.character(timeseries.df["tid"]),
       featureid = hydroid,
       varkey = as.character(timeseries$varkey[i]),
       entity_type = 'dh_feature',
@@ -546,28 +536,4 @@ rm(list = ls())  #clear variables for new start
     
     }
     
-    
-    
-
-  
-  ts_post_inputs<-list(
-    featureid = timeseries$hydrocode,
-    varkey = timeseries$varkey,
-    entity_type = 'dh_feature',
-    tsvalue = timeseries$tstime,
-    tsendtime = timeseries$tsendtime,
-    tscode = timeseries$tscode
-  )
-  
-
-  
-  ts_post_inputs<-list(
-    featureid = timeseries$hydrocode,
-    varkey = timeseries$varkey,
-    entity_type = 'dh_feature',
-    tsvalue = timeseries$tstime,
-    tsendtime = timeseries$tsendtime,
-    tscode = timeseries$tscode
-  )
-  
-
+ 
