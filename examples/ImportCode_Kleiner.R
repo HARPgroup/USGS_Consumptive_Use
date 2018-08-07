@@ -179,4 +179,4 @@
   flag.dataframe <- getProperty(flag_inputs, site, prop)
   flag.pid <- as.character(flag.dataframe$pid)
 
- 
+  # This is where the other flagging properites will be attached
