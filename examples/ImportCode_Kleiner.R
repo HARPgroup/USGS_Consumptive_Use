@@ -24,7 +24,7 @@
   agency.adminid <- as.character(agency.dataframe$adminid)
   
   ############################################################################################
-  # RETRIEVE/CREATE PERMIT ADMINREG FEATURE
+  # RETRIEVE/CREATE/UPDATE PERMIT ADMINREG FEATURE
   ############################################################################################  
   permit_inputs <- list(
     bundle = 'permit',
@@ -44,7 +44,7 @@
   permit.adminid <- as.character(permit.dataframe$adminid)
   
   ############################################################################################
-  # RETRIEVE/CREATE FACILITY DH FEATURE
+  # RETRIEVE/CREATE/UPDATE FACILITY DH FEATURE
   ############################################################################################  
   facility_inputs <- list(
     bundle = 'facility',
@@ -63,7 +63,7 @@
   facility.hydroid <- as.character(facility.dataframe$hydroid)
   
   ############################################################################################
-  # RETRIEVE/CREATE FACILITY METADATA PROPERTIES
+  # RETRIEVE/CREATE/UPDATE FACILITY METADATA PROPERTIES
   ############################################################################################   
   # Waterbody Name (GNIS)
   prop_inputs <-list(
@@ -84,7 +84,7 @@
   # This is where all the other facility properites will be attached
   
   ############################################################################################
-  # RETRIEVE/CREATE RELEASE DH FEATURE
+  # RETRIEVE/CREATE/UPDATE RELEASE DH FEATURE
   ############################################################################################  
   release_inputs <- list(
     bundle = 'transfer',
@@ -101,7 +101,7 @@
   release.hydroid <- as.character(release.dataframe$hydroid)
 
   ############################################################################################
-  # RETRIEVE/CREATE OUTFALL DH FEATURE
+  # RETRIEVE/CREATE/UPDATE OUTFALL DH FEATURE
   ############################################################################################   
   outfall_inputs <- list(
     bundle = 'transfer',
@@ -118,7 +118,7 @@
   outfall.hydroid <- as.character(outfall.dataframe$hydroid)
   
   ############################################################################################
-  # RETRIEVE/CREATE CONVEYANCE DH FEATURE
+  # RETRIEVE/CREATE/UPDATE CONVEYANCE DH FEATURE
   ############################################################################################  
   # Format conveyance geom from release and outfall geoms 
   release.geofield <- substring(release.dataframe$dh_geofield, 8)
@@ -143,7 +143,7 @@
   conveyance.hydroid <- as.character(conveyance.dataframe$hydroid)
 
   ############################################################################################
-  # RETRIEVE/CREATE TIMESERIES
+  # RETRIEVE/CREATE/UPDATE TIMESERIES
   ############################################################################################  
   timeseries <- data.frame(hydrocode = 'echo_VA0091529001', 
                            varkey = 'dmr_mon_mgd', 
@@ -166,7 +166,7 @@
   timeseries.tid <- as.character(timeseries.dataframe$tid)
   
   ############################################################################################
-  # RETRIEVE/CREATE FLAGGING PROPERTIES OF TIMESERIES
+  # RETRIEVE/CREATE/UPDATE FLAGGING PROPERTIES OF TIMESERIES
   ############################################################################################   
   flag_inputs <-list(
     featureid = timeseries.tid,
