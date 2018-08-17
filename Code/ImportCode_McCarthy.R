@@ -2,9 +2,9 @@
 ###########################################VAHydro to ECHO Import#################################################################
 
 #This code serves to extract data about NPDES permitted facilities in Virginia from the EPA's ECHO REST Services.
-#The metadata is then reformatted to fit the mapping structure of the VDEQ's surface and ground water modeling platform, VAHydro
+#The metadata is then reformatted to fit the mapping structure of the VDEQ's surface and ground water modeling platform, VAHydro.
 
-#This requires flow frame flipped to be generated from ECHOInterface.R script
+#The second half of the script serves to import formatted data into VAHydro using Drupal REST Services. 
 
 ##################################################################################################################################
 ##################################################Library Initialization##########################################################
@@ -18,6 +18,8 @@ library(readxl)
 library(jsonlite)
 library(lubridate)
 library(httr)
+library(stringr)
+library(RCurl)
 
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
@@ -27,7 +29,6 @@ Inputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated"
 Outputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports"
 
 #Use Aggregated Flows generated from ECHOInterface Script and list of outfalls for creating release and conveyance points.
-FlowFrame<-read.csv(paste0(Inputpath,"/FlowFrame_2010_present.csv"),stringsAsFactors = F) #contains outfalls reporting flow from 2010-present--has all reported statistics of flow--not just monthly
 VPDES_Outfalls<-read.table(paste0(Inputpath,"/VPDES_Outfalls.txt"),sep="\t",header = T)
 
 #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
@@ -46,7 +47,159 @@ rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
 ##################################################################################################################################
 ################################################Imports###########################################################################
 
+#1 Import Outfall Timeseries Data
 
+#Outfall dH Timeseries Mapping
+
+#hydrocode, varkey, tsvalue, tstime, tsendtime, tscode
+#hydrocode is for each unique outfall not facility--maybe include potential flag for virtual outfalls???
+
+#tsvalue is the dmr_value_nmbr
+#tsendtime is the monitoring_period_end_date
+#tstime is the period end date minus the number of submissions-always the first of the month 
+#Need to configure number of submissions based on limit set
+#Number of submissions is the number of months of discharges represented
+#1-monthly
+#2-bi-monthly
+#3-quarterly
+#4-triannual
+#6-semi-annual
+#12-annual 
+
+#DMR data can be found from the following base URL query: 
+#https://ofmpub.epa.gov/echo/eff_rest_services.get_effluent_chart?
+
+state<-"VA"
+startDate<-"01/01/2010" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
+endDate<-Sys.Date()
+endDate<-format(as.Date(endDate), "%m/%d/%Y")
+options(scipen=999) #Disable scientific notation
+
+#Create Place Holders for Desired Variables
+hydrocode<-character()
+varkey<-character()
+tsvalue<-numeric()
+tstime<-character()
+tsendtime<-character()
+tscode<-numeric()
+VPDESID<-character()
+nodi<-character()
+
+#Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+URL_Download<-getURL(Req_URL) #Download URL from above
+URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
+QID<-QID$QueryID
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
+ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
+ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)#Ensure all facility names are in all caps using "toupper" command
+
+rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
+
+#This loop goes through each CWA regulated facility one by one to extract reported discharges 
+#from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
+#outfall located in VA. 
+for (i in 1:length(ECHO_Facilities$SourceID)){
+  sourceID<-ECHO_Facilities$SourceID[i]
+  print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities$SourceID),")", sep=""))
+  DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe
+  DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  DMR_data<-DMR_data[DMR_data$parameter_code==50050,]#only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+  DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
+  data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
+  if(data_length>0){ #if the value is NOT NA, enter loop
+    outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls which are called permanent features in the DMR
+    outfall_ID<-unique(DMR_data$perm_feature_nmbr) #perm_feature_nmbr is a three-character code in ICIS-NPDES that identifies the point of discharge
+    for(j in 1:length(outfall_ID)){ #If the code is less than three characters in the .CSV, append zeros to the beginning of the number (e.g., 1 is equivalent to 001)
+      if(!is.na(as.numeric(outfall_ID[j]))){
+        leadingzeros<-paste(rep(0,3-nchar(outfall_ID[j])),collapse= '')
+        outfall_ID[j]<-paste0(leadingzeros,as.character(outfall_ID[j]))
+      }else{
+        outfall_ID[j]<-as.character(outfall_ID[j])#if the outfall number is already three digits, no reformatting needed
+      }
+    }
+    for(k in 1:length(outfall_ID)){ #Now we go through the DMR attached to each unique individual outfall and extract the information we would like
+      outfall<-as.character(outfall_ID[k])
+      outfall_DMR<-DMR_data[DMR_data$perm_feature_nmbr==outfall_nmbr[k],]#specifies that we want to go through each unique outfall
+      unique_stat_codes<-unique(outfall_DMR$statistical_base_code)#collects the unique statistical codes reported for this specific outfall
+      tsvalue_i<-numeric(length(outfall_DMR$perm_feature_nmbr)) #Create variables that will store DMR data for each outfall
+      tsendtime_i<-character()
+      tscode_i<-numeric(length(outfall_DMR$perm_feature_nmbr))
+      tstime_i<-character()
+      varkey_i<-character(length(outfall_DMR$perm_feature_nmbr))
+      nodi_i<-character()
+      for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average.
+        if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
+          tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
+          tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
+          tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
+          tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
+          varkey_i[l]<-"dmr_mon_mgd"
+          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l] 
+          
+        }else if(!is.na(outfall_DMR$statistical_base_code[l]=="DB")){ #if it is missing a monthly average, look at daily average in MGD
+          tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="DB"])[l]  
+          tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="DB"][l] #character class
+          tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="DB"])[l]
+          tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month")) 
+          varkey_i[l]<-"dmr_day_mgd"
+          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="DB"][l] 
+          
+        }else if(!is.na(outfall_DMR$statistical_base_code[l]=="WA")){ #if it is also missing a daily average, look at weekly average in MGD
+          tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="WA"])[l] 
+          tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="WA"][l] 
+          tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="WA"])[l]
+          tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month")) 
+          varkey_i[l]<-"dmr_wk_mgd"
+          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="WA"][l] 
+          
+        }else if(!is.na(outfall_DMR$statistical_base_code[l]=="AB")){ #if it is also missing this, look at annual average in MGD
+          tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="AB"])[l]  
+          tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="AB"][l] 
+          tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="AB"])[l]
+          tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month")) 
+          varkey_i[l]<-"dmr_yr_mgd"
+          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="AB"][l] 
+        }
+        
+      }
+      #Now we store the values we get from each outfall in each facility[i] in a larger matrix
+      #We do this so that results are not over written after each iteration
+      tsvalue<-c(tsvalue,tsvalue_i) 
+      tsendtime<-c(tsendtime,tsendtime_i)
+      tscode<-c(tscode,tscode_i)
+      tstime<-c(tstime,tstime_i)
+      varkey<-c(varkey,varkey_i)
+      nodi<-c(nodi,nodi_i)
+      VPDESID<-c(VPDESID,paste0(sourceID,rep(outfall,length((tsvalue_i)))))
+      hydrocode<-paste0('echo_',VPDESID)
+    }
+  }else{ #if the DMR contains no data, set variables to NA
+    hydrocode<-c(hydrocode,NA)
+    VPDESID<-c(VPDESID,NA)
+    varkey<-c(varkey,NA)
+    tsvalue<-c(tsvalue,NA)
+    tstime<-c(tstime,NA)
+    tsendtime<-c(tsendtime,NA)
+    tscode<-c(tscode,NA)
+    nodi<-c(nodi,NA)
+  }
+}
+timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode,nodi=nodi)
+timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
+timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
+nodi<-timeseries
+
+timeseries<-subset(timeseries,select=-c(7))
+write.table(timeseries,paste0(Outputpath,"/timeseries.txt"),sep="\t",row.names = F)
+write.table(timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/timeseries.txt",sep="\t",row.names = F)
+save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries_2010_present.RData")
+
+timeseries$facilityID<-gsub("echo_","", as.character(timeseries$hydrocode))
+timeseries$facilityID<-substr(timeseries$facilityID,1,nchar(timeseries$facilityID)-3)
+#timeseries<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/timeseries.txt",sep='\t',header=T)
+#timeseriesNA<-subset(timeseries,subset=is.na(timeseries$tsvalue)) #599 NA Values
 ##################################################################################################################################
 #############################################1: Import Permits####################################################################
 #Purpose: Extract all NPDES Permits in VA to import into VAHydro. This includes active and inactive. 
@@ -90,8 +243,9 @@ adminreg$startdate<-ECHO_Facilities$CWPEffectiveDate
 adminreg$enddate<-ECHO_Facilities$CWPExpirationDate
 adminreg$permit_id<-ECHO_Facilities$SourceID
 adminreg$dh_link_admin_reg_issuer<-'epa'
-
-write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
+adminreg$startdate<-as.Date(adminreg$startdate,format="%m/%d/%Y")
+adminreg$enddate<-as.Date(adminreg$enddate,format="%m/%d/%Y")
+#write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
 
 ##################################################################################################################################
 ###################################################2 Import Facilities############################################################
@@ -199,7 +353,7 @@ for (i in 1:length(facilities$hydrocode)){
     facilities$ftype[i]<-'manufacturing'
   }
   facilities$fstatus[i]<-'inactive'
-  if (ECHO_Facilities$SourceID[i]%in%FlowFrame$ECHOID){ #if it is reporting flow for ECHO, it is most liekly active. Also check status of permit.
+  if (ECHO_Facilities$SourceID[i]%in%timeseries$facilityID){ #if it is reporting flow for ECHO, it is most likely active. Also check status of permit.
     facilities$fstatus[i]<-'active'
   }
   if(!is.na(ECHO_Facilities$FacLat[i]) & !is.na(ECHO_Facilities$FacLong[i])){
@@ -222,7 +376,7 @@ facilities$address1<-ECHO_Facilities$CWPStreet
 facilities$city<-ECHO_Facilities$CWPCity
 facilities$dh_link_admin_location<-ECHO_Facilities$SourceID
 
-write.table(facilities,paste0(Outputpath,"/facilities.txt"),sep="\t",row.names = F)
+#write.table(facilities,paste0(Outputpath,"/facilities.txt"),sep="\t",row.names = F)
 
 ##################################################################################################################################
 ###########################################3 Release Point Generation#############################################################
@@ -237,7 +391,7 @@ for (i in 1:length(releasepoint$bundle)){
   releasepoint$name[i]<-paste0('TO ',VPDES_Outfalls$VPDESID[i])
   releasepoint$ftype[i]<-'release'
   releasepoint$hydrocode[i]<-paste0('vahydro_',VPDES_Outfalls$VPDESID[i])
-  if(VPDES_Outfalls$VPDESID[i]%in%FlowFrame$VPDESID){
+  if(VPDES_Outfalls$VPDESID[i]%in%gsub("echo_","", as.character(timeseries$hydrocode))){
     releasepoint$fstatus[i]<-'active'  
   } else {
     releasepoint$fstatus[i]<-'inactive'
@@ -258,7 +412,7 @@ for (i in 1:length(releasepoint$bundle)){
   }
   releasepoint$dh_link_facility_mps[i]<-paste0('echo_',VPDES_Outfalls$FacilityID[i])
 }
-write.table(releasepoint,paste0(Outputpath,"/releasepoint.txt"),sep="\t",row.names = F)
+#write.table(releasepoint,paste0(Outputpath,"/releasepoint.txt"),sep="\t",row.names = F)
 
 ########################################################################################################################
 #Conveyance Generation
@@ -269,7 +423,7 @@ for (i in 1:length(conveyance$bundle)){
   conveyance$name[i]<-paste0(VPDES_Outfalls$FacilityID[i],' TO ',VPDES_Outfalls$VPDESID[i])
   conveyance$ftype[i]<-'water_transfer'
   conveyance$hydrocode[i]<-paste0('vahydro_',VPDES_Outfalls$FacilityID[i],'_',VPDES_Outfalls$VPDESID[i])
-  if(VPDES_Outfalls$VPDESID[i]%in%FlowFrame$VPDESID){
+  if(VPDES_Outfalls$VPDESID[i]%in%gsub("echo_","", as.character(timeseries$hydrocode))){
     conveyance$fstatus[i]<-'active'  
   } else {
     conveyance$fstatus[i]<-'inactive'
@@ -277,7 +431,7 @@ for (i in 1:length(conveyance$bundle)){
   conveyance$field_dh_from_entity[i]<-paste0('vahydro_',VPDES_Outfalls$VPDESID[i])
   conveyance$field_dh_to_entity[i]<-paste0('echo_',VPDES_Outfalls$VPDESID[i])
 }
-write.table(conveyance,paste0(Outputpath,"/conveyance.txt"),sep="\t",row.names = F)
+#write.table(conveyance,paste0(Outputpath,"/conveyance.txt"),sep="\t",row.names = F)
 
 #Outfall_Outfalls Generation
 #Reformats 'VPDES_Outfalls' using available VPDES or ECHO geometry data and ECHO attributes
@@ -286,7 +440,7 @@ for (i in 1:length(outfalls$bundle)){
   outfalls$name[i]<-paste0('FROM ',VPDES_Outfalls$FacilityID[i])
   outfalls$ftype[i]<-'outfall'
   outfalls$hydrocode[i]<-paste0('echo_',VPDES_Outfalls$VPDESID[i])
-  if(VPDES_Outfalls$VPDESID[i]%in%FlowFrame$VPDESID){
+  if(VPDES_Outfalls$VPDESID[i]%in%gsub("echo_","", as.character(timeseries$hydrocode))){
     outfalls$fstatus[i]<-'active'  
   } else {
     outfalls$fstatus[i]<-'inactive'
@@ -300,7 +454,7 @@ for (i in 1:length(outfalls$bundle)){
   }
   outfalls$dh_link_facility_mps[i]<-paste0('echo_',VPDES_Outfalls$FacilityID[i])
 }
-write.table(outfalls,paste0(Outputpath,"/outfalls.txt"),sep="\t",row.names = F)
+#write.table(outfalls,paste0(Outputpath,"/outfalls.txt"),sep="\t",row.names = F)
 
 
 #################################################################################
@@ -317,223 +471,210 @@ css<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='css'
 write.table(css,paste0(Outputpath,"/css.txt"),sep="\t",row.names = F)
 
 cwp_cso_outfalls<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='cwp_cso_outfalls', propname='cwp_cso_outfalls', propvalue=ECHO_Facilities$CWPCsoOutfalls,proptext='',propcode='', startdate='',enddate='')
+cwp_cso_outfalls$propvalue[is.na(cwp_cso_outfalls$propvalue)]<-""
 write.table(cwp_cso_outfalls,paste0(Outputpath,"/cwp_cso_outfalls.txt"),sep="\t",row.names = F)
 
 wb_gnis_name<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='wb_gnis_name', propname='wb_gnis_name', propvalue='', proptext='',propcode=ECHO_Facilities$RadGnisName, startdate='',enddate='')
 write.table(wb_gnis_name,paste0(Outputpath,"/wb_gnis_name.txt"),sep="\t",row.names = F)
 
 reachcode_rad<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='reachcode_rad', propname='reachcode_rad', propvalue='', proptext='',propcode=ECHO_Facilities$RadReachcode, startdate='',enddate='')
+reachcode_rad$propcode[is.na(reachcode_rad$propcode)]<-""
 write.table(reachcode_rad,paste0(Outputpath,"/reachcode_rad.txt"),sep="\t",row.names = F)
 
 impair_cause<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='impair_cause', propname='impair_cause', propvalue='', proptext=ECHO_Facilities$AttainsCauseGroups,propcode='', startdate='',enddate='')
 write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.names = F)
 
 ###################################################################################
-#4 Import Outfall Timeseries Data
 
-rm(list = ls())  #clear variables for new start
-
-#Outfall dH Timeseries Mapping
-
-#hydrocode, varkey, tsvalue, tstime, tsendtime, tscode
-#hydrocode is for each unique outfall not facility--maybe include potential flag for virtual outfalls???
-
-#tsvalue is the dmr_value_nmbr
-#tsendtime is the monitoring_period_end_date
-#tstime is the period end date minus the number of submissions-always the first of the month 
-#Need to configure number of submissions based on limit set
-#Number of submissions is the number of months of discharges represented
-#1-monthly
-#2-bi-monthly
-#3-quarterly
-#4-triannual
-#6-semi-annual
-#12-annual 
-
-#DMR data can be found from the following base URL query: 
-#https://ofmpub.epa.gov/echo/eff_rest_services.get_effluent_chart?
-
-  state<-"VA"
-  startDate<-"01/01/2010" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
-  endDate<-Sys.Date()
-  endDate<-format(as.Date(endDate), "%m/%d/%Y")
-  options(scipen=999) #Disable scientific notation
-  
-  #Create Place Holders for Desired Variables
-  hydrocode<-character()
-  varkey<-character()
-  tsvalue<-numeric()
-  tstime<-character()
-  tsendtime<-character()
-  tscode<-numeric()
-  VPDESID<-character()
-  
-  #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
-  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
-  URL_Download<-getURL(Req_URL) #Download URL from above
-  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
-  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
-  QID<-QID$QueryID
-  GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
-  ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
-  ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)#Ensure all facility names are in all caps using "toupper" command
-  
-  rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
-  
-  #This loop goes through each CWA regulated facility one by one to extract reported discharges 
-  #from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
-  #outfall located in VA. 
-  for (i in 1:length(ECHO_Facilities$SourceID)){
-    sourceID<-ECHO_Facilities$SourceID[i]
-    print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities$SourceID),")", sep=""))
-    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe
-    DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-    DMR_data<-DMR_data[DMR_data$parameter_code==50050,]#only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
-    DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted, C and 7 means no influent. So set to 0.
-    data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
-    if(data_length>0){ #if the value is NOT NA, enter loop
-      outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls which are called permanent features in the DMR
-      outfall_ID<-unique(DMR_data$perm_feature_nmbr) #perm_feature_nmbr is a three-character code in ICIS-NPDES that identifies the point of discharge
-      for(j in 1:length(outfall_ID)){ #If the code is less than three characters in the .CSV, append zeros to the beginning of the number (e.g., 1 is equivalent to 001)
-        if(!is.na(as.numeric(outfall_ID[j]))){
-          leadingzeros<-paste(rep(0,3-nchar(outfall_ID[j])),collapse= '')
-          outfall_ID[j]<-paste0(leadingzeros,as.character(outfall_ID[j]))
-        }else{
-          outfall_ID[j]<-as.character(outfall_ID[j])#if the outfall number is already three digits, no reformatting needed
-        }
-      }
-      for(k in 1:length(outfall_ID)){ #Now we go through the DMR attached to each unique individual outfall and extract the information we would like
-        outfall<-as.character(outfall_ID[k])
-        outfall_DMR<-DMR_data[DMR_data$perm_feature_nmbr==outfall_nmbr[k],]#specifies that we want to go through each unique outfall
-        unique_stat_codes<-unique(outfall_DMR$statistical_base_code)#collects the unique statistical codes reported for this specific outfall
-        tsvalue_i<-numeric(length(outfall_DMR$perm_feature_nmbr)) #Create variables that will store DMR data for each outfall
-        tsendtime_i<-character()
-        tscode_i<-numeric(length(outfall_DMR$perm_feature_nmbr))
-        tstime_i<-character()
-        varkey_i<-character(length(outfall_DMR$perm_feature_nmbr))
-        for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average.
-          if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
-            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
-            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
-            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
-            tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
-            varkey_i[l]<-"dmr_mon_mgd"
-            
-          }else if(!is.na(outfall_DMR$statistical_base_code[l]=="DB")){ #if it is missing a monthly average, look at daily average in MGD
-            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="DB"])[l]  
-            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="DB"][l] #character class
-            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="DB"])[l]
-            tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month")) 
-            varkey_i[l]<-"dmr_day_mgd"
-            
-          }else if(!is.na(outfall_DMR$statistical_base_code[l]=="WA")){ #if it is also missing a daily average, look at weekly average in MGD
-            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="WA"])[l] 
-            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="WA"][l] 
-            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="WA"])[l]
-            tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month")) 
-            varkey_i[l]<-"dmr_wk_mgd"
-            
-          }else if(!is.na(outfall_DMR$statistical_base_code[l]=="AB")){ #if it is also missing this, look at annual average in MGD
-            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="AB"])[l]  
-            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="AB"][l] 
-            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="AB"])[l]
-            tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month")) 
-            varkey_i[l]<-"dmr_yr_mgd"
-          }
-          
-        }
-        #Now we store the values we get from each outfall in each facility[i] in a larger matrix
-        #We do this so that results are not over written after each iteration
-        tsvalue<-c(tsvalue,tsvalue_i) 
-        tsendtime<-c(tsendtime,tsendtime_i)
-        tscode<-c(tscode,tscode_i)
-        tstime<-c(tstime,tstime_i)
-        varkey<-c(varkey,varkey_i)
-        VPDESID<-c(VPDESID,paste0(sourceID,rep(outfall,length((tsvalue_i)))))
-        hydrocode<-paste0('echo_',VPDESID)
-      }
-    }else{ #if the DMR contains no data, set variables to NA
-      hydrocode<-c(hydrocode,NA)
-      VPDESID<-c(VPDESID,NA)
-      varkey<-c(varkey,NA)
-      tsvalue<-c(tsvalue,NA)
-      tstime<-c(tstime,NA)
-      tsendtime<-c(tsendtime,NA)
-      tscode<-c(tscode,NA)
-    }
-  }
-  timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode)
-  timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
-  timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
-
-  write.table(timeseries,paste0(Outputpath,"/timeseries.txt"),sep="\t",row.names = F)
-  save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries_2010_present.RData")
 ##################################################################################################################################
 ###########################################Pushing DMR timeseries Data to VAHydro#################################################
+
   
   site <- "http://deq1.bse.vt.edu/d.bet"    #Specify the site of interest, either d.bet OR d.dh
+  hydro_tools <- 'G:\\My Drive\\hydro-tools' #location of hydro-tools repo
   
-  hydro_tools <- 'C:\\Users\\mccartma\\Documents\\HARP' #location of hydro-tools repo
+  #----------------------------------------------
   
-  #---------------------------------------------
-  
-  #Generate REST token              
-  rest_uname = '*************'
-  rest_pw = '*************'
+  #Generate REST token for authentication              
+  rest_uname = FALSE
+  rest_pw = FALSE
   source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
-
   source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
   token <- rest_token(site, token, rest_uname, rest_pw)
 
-  # ---------------------------------------------
-  # Get hydroids from VAHydro using hydrocode in timeseries data frame
+  ############################################################################################
+  # RETRIEVE EPA AGENCY ADMINREG FEATURE
+  ############################################################################################
   
+  agency_inputs <- list(
+    bundle = 'authority',
+    ftype = 'federal_enviro_agency',
+    admincode = 'epa',
+    stringsAsFactors = FALSE
+  ) 
+  agency.dataframe <- getAdminregFeature(agency_inputs, site, adminreg_feature)
+  agency.adminid <- as.character(agency.dataframe$adminid)
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE PERMIT ADMINREG FEATURE
+  ############################################################################################  
+  #1943 Permits
 
-  for (i in 1:length(timeseries$hydrocode)){
-    print(paste("PROCESSING TIMESERIES ",i," OF ",length(timeseries$hydrocode)," - ",
-                "HYDROCODE = ",timeseries$hydrocode[i],sep=""))
-    
-    inputs <- list (
-      bundle = 'transfer',
-      ftype = 'outfall',
-      hydrocode = as.character(unique(timeseries$hydrocode[i]))
-    )
-    
-    dataframe <- getFeature(inputs, token, site)
-    hydroid <- as.character(dataframe$hydroid)
-    
-    print(paste("OUTFALL FEATURE FOUND! HYDROID = ", hydroid,sep=""))
-    
-    # --------------------------------------------
-    #Retrieve Timeseries from VAHydro
-    ts_inputs<- list (
-      featureid= hydroid,
-      varkey= as.character(timeseries$varkey[i]),
-      entity_type = 'dh_feature',
-      tstime =   as.numeric(as.POSIXct(timeseries$tstime[i])),
-      tsendtime =   as.numeric(as.POSIXct(timeseries$tsendtime[i]))
-    )
-    
-    timeseries.df<-getTimeseries(ts_inputs, site, ts)
-    print(paste("TID = ", timeseries.df["tid"],sep=""))
-    
-    # --------------------------------------------
-    #Update Timeseries Data in VAHydro
-    
-    ts_post_inputs<-list(
-      tid = as.character(timeseries.df["tid"]),
-      featureid = hydroid,
-      varkey = as.character(timeseries$varkey[i]),
-      entity_type = 'dh_feature',
-      tsvalue = timeseries$tsvalue[i],
-      tscode = timeseries$tscode[i],
-      tstime = format(as.POSIXlt(timeseries$tstime[i]),"%s"),
-      tsendtime = format(as.POSIXlt(timeseries$tsendtime[i]),"%s")
-      
-    )
-    
-    postTimeseries(ts_post_inputs,site,ts)
-    
-    }
-    
- 
+  for (i in 1:length(adminreg$admincode)){
+  permit_inputs <- list(
+    bundle = as.character(adminreg$bundle[i]),
+    ftype = as.character(adminreg$ftype[i]),
+    admincode = as.character(adminreg$admincode[i]),
+    name = as.character(adminreg$name[i]),
+    fstatus = as.character(adminreg$fstatus[i]),
+    description = as.character(adminreg$description[i]),
+    startdate = format(as.POSIXlt(adminreg$startdate[i]),"%s"), 
+    enddate = format(as.POSIXlt(adminreg$enddate[i]),"%s"),
+    permit_id = as.character(adminreg$admincode[i]),
+    dh_link_admin_reg_issuer = as.character(adminreg$dh_link_admin_reg_issuer[i]),
+    stringsAsFactors = FALSE
+  ) 
+  permit.dataframe <- postAdminregFeature(permit_inputs[i], site, adminreg_feature)
+  permit.dataframe <- getAdminregFeature(permit_inputs[i], site, adminreg_feature)
+  permit.adminid <- as.character(permit.dataframe$adminid)
+  
+  print(paste("Processing Admincode ",i," of ", length(adminreg$admincode)))
+  }
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE FACILITY DH FEATURE
+  ############################################################################################  
+  facility_inputs <- list(
+    bundle = 'facility',
+    ftype = 'wwtp',
+    hydrocode = 'echo_TEST_100',
+    name = "JK_TEST",
+    fstatus = 'active',
+    address1 = '123 JK Road',
+    city = 'JKburg',
+    dh_link_admin_location =  permit.adminid, 
+    dh_geofield = 'POINT (-77 38)',
+    stringsAsFactors=FALSE
+  ) 
+  facility.dataframe <- postFeature(facility_inputs, site, feature)
+  facility.dataframe <- getFeature(facility_inputs, site, feature)
+  facility.hydroid <- as.character(facility.dataframe$hydroid)
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE FACILITY METADATA PROPERTIES
+  ############################################################################################   
+  # Waterbody Name (GNIS)
+  prop_inputs <-list(
+    featureid = facility.hydroid,
+    varkey = 'wb_gnis_name',
+    entity_type = 'dh_feature',
+    propname = 'wb_gnis_name',
+    propvalue = NULL,
+    proptext = NULL,
+    propcode = 'James River',
+    startdate = NULL,
+    enddate = NULL
+  )
+  property.dataframe <- postProperty(prop_inputs, fxn_locations, site, prop)
+  property.dataframe <- getProperty(prop_inputs, site, prop)
+  property.pid <- as.character(property.dataframe$pid)
+  
+  # This is where all the other facility properites will be attached
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE RELEASE DH FEATURE
+  ############################################################################################  
+  release_inputs <- list(
+    bundle = 'transfer',
+    ftype = 'release',
+    hydrocode = 'vahydro_JK_RELEASE_100',
+    name = "JK RELEASE",
+    fstatus = 'active',
+    dh_link_facility_mps =  facility.hydroid, 
+    dh_geofield = 'POINT (-77 38)',
+    stringsAsFactors=FALSE
+  ) 
+  release.dataframe <- postFeature(release_inputs, site, feature)
+  release.dataframe <- getFeature(release_inputs, site, feature)
+  release.hydroid <- as.character(release.dataframe$hydroid)
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE OUTFALL DH FEATURE
+  ############################################################################################   
+  outfall_inputs <- list(
+    bundle = 'transfer',
+    ftype = 'outfall',
+    hydrocode = 'echo_JK_OUTFALL_100',
+    name = "JK OUTFALL",
+    fstatus = 'active',
+    dh_link_facility_mps =  facility.hydroid, 
+    dh_geofield = 'POINT (-77.5 38.5)',
+    stringsAsFactors=FALSE
+  ) 
+  outfall.dataframe <- postFeature(outfall_inputs, site, feature)
+  outfall.dataframe <- getFeature(outfall_inputs, site, feature)
+  outfall.hydroid <- as.character(outfall.dataframe$hydroid)
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE CONVEYANCE DH FEATURE
+  ############################################################################################  
+  # Format conveyance geom from release and outfall geoms 
+  release.geofield <- substring(release.dataframe$dh_geofield, 8)
+  release.geofield <-substr(release.geofield, 1, nchar(release.geofield)-1) 
+  outfall.geofield <- substring(outfall.dataframe$dh_geofield, 8)
+  outfall.geofield <-substr(outfall.geofield, 1, nchar(outfall.geofield)-1) 
+  conveyance.geofield <- paste('LINESTRING (',release.geofield,', ',outfall.geofield,')',sep="")
+  
+  conveyance_inputs <- list(
+    bundle = 'conveyance',
+    ftype = 'water_transfer',
+    hydrocode = 'vahydro_JK_OUTFALL_CONVEYANCE_100',
+    name = "JK CONVEYANCE",
+    fstatus = 'active',
+    field_dh_from_entity =  release.hydroid, 
+    field_dh_to_entity =  outfall.hydroid,
+    dh_geofield = conveyance.geofield,
+    stringsAsFactors=FALSE
+  ) 
+  conveyance.dataframe <- postFeature(conveyance_inputs, site, feature)
+  conveyance.dataframe <- getFeature(conveyance_inputs, site, feature)
+  conveyance.hydroid <- as.character(conveyance.dataframe$hydroid)
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE TIMESERIES
+  ############################################################################################  
+  timeseries <- data.frame(hydrocode = 'echo_VA0091529001', 
+                           varkey = 'dmr_mon_mgd', 
+                           tsvalue = 999, 
+                           tstime = '2016-04-01', 
+                           tsendtime = '2016-04-30', 
+                           tscode = 1)
+  
+  ts_inputs<-list(
+    featureid = outfall.hydroid,
+    varkey = as.character(timeseries$varkey),
+    entity_type = 'dh_feature',
+    tsvalue = timeseries$tsvalue,
+    tscode = timeseries$tscode,
+    tstime = format(as.POSIXlt(timeseries$tstime),"%s"),
+    tsendtime = format(as.POSIXlt(timeseries$tsendtime),"%s")
+  )
+  timeseries.dataframe <- postTimeseries(ts_inputs,site,ts)
+  timeseries.dataframe <- getTimeseries(ts_inputs, site, ts)
+  timeseries.tid <- as.character(timeseries.dataframe$tid)
+  
+  ############################################################################################
+  # RETRIEVE/CREATE/UPDATE FLAGGING PROPERTIES OF TIMESERIES
+  ############################################################################################   
+  flag_inputs <-list(
+    featureid = timeseries.tid,
+    varkey = 'echo_flag',
+    entity_type = 'dh_timeseries',
+    propname = 'echo_flag',
+    propcode = 'E90'
+  )
+  flag.dataframe <- postProperty(flag_inputs, fxn_locations, site, prop)
+  flag.dataframe <- getProperty(flag_inputs, site, prop)
+  flag.pid <- as.character(flag.dataframe$pid)
+  
+  
+  # This is where the other flagging properites will be attached
