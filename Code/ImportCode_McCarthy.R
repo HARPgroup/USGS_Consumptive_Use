@@ -20,6 +20,7 @@ library(lubridate)
 library(httr)
 library(stringr)
 library(RCurl)
+library(xml2)
 
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
@@ -31,18 +32,36 @@ Outputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/
 #Use Aggregated Flows generated from ECHOInterface Script and list of outfalls for creating release and conveyance points.
 VPDES_Outfalls<-read.table(paste0(Inputpath,"/VPDES_Outfalls.txt"),sep="\t",header = T)
 
+
+
 #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
 #Properties and attributes of the facility can be extracted by identifying the column it is located in (qcolumn).
-Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
 URL_Download<-getURL(Req_URL) #Download URL from above
 URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
 QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
 QID<-QID$QueryID
-GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
 ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
 ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)#Ensure all facility names are in all caps using "toupper" command
 
-rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
+
+#Individual Permits updated as of March 2018---contains design flow for facilities
+#Warnings about unknown or uninitiliased columns: previous IP contact sheets named the columns differently. It doesn't hinder any processes though. 
+GET('http://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20March%202018.xls?ver=2018-03-13-170732-267', 
+    write_disk(temp <- tempfile(fileext = ".xls")))
+VPDES_IP <- read_excel(temp, skip=5)
+VPDES_IP<-VPDES_IP[!is.na(VPDES_IP$Facility),]
+VPDES_IP$`Design Flow (MGD)`<-as.numeric(VPDES_IP$`Design Flow (MGD)`)
+VPDES_IP<-VPDES_IP[!duplicated(VPDES_IP$`Permit Number`),] #getting rid of duplicates and looking at unique permits
+VPDES_DesignFlow<-subset(VPDES_IP,select=c(3,15))
+colnames(VPDES_DesignFlow)<-c("Facility.ID","DesignFlow_mgd")
+ECHO_Facilities<-merge(ECHO_Facilities,VPDES_DesignFlow,by="Facility.ID",all.x=T) #put design flow in facility spreadsheet
+design_flow<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/design_flow.txt", sep="\t", header=T)
+
+rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities,VPDES_IP)
+
+
 
 ##################################################################################################################################
 ################################################Imports###########################################################################
@@ -86,12 +105,12 @@ VPDESID<-character()
 nodi<-character()
 
 #Query from CWA ECHO REST Services to obtain all discharging facilities within state of interest
-Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
 URL_Download<-getURL(Req_URL) #Download URL from above
 URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
 QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
 QID<-QID$QueryID
-GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
 ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
 ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)#Ensure all facility names are in all caps using "toupper" command
 
@@ -192,8 +211,8 @@ timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
 nodi<-timeseries
 
 timeseries<-subset(timeseries,select=-c(7))
-write.table(timeseries,paste0(Outputpath,"/timeseries.txt"),sep="\t",row.names = F)
-write.table(timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/timeseries.txt",sep="\t",row.names = F)
+#write.table(timeseries,paste0(Outputpath,"/timeseries.txt"),sep="\t",row.names = F)
+#write.table(timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/timeseries.txt",sep="\t",row.names = F)
 save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries_2010_present.RData")
 
 timeseries$facilityID<-gsub("echo_","", as.character(timeseries$hydrocode))
@@ -465,24 +484,29 @@ for (i in 1:length(outfalls$bundle)){
 #hydrocode, varkey, propname, propvalue, proptext, propcode, startdate, enddate
 
 last_inspect<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='last_inspect', propname='last_inspect', propvalue='',proptext='',propcode='',startdate=ECHO_Facilities$CWPDateLastInspection,enddate='')
-write.table(last_inspect,paste0(Outputpath,"/last_inspect.txt"),sep="\t",row.names = F)
+#write.table(last_inspect,paste0(Outputpath,"/last_inspect.txt"),sep="\t",row.names = F)
 
 css<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='css', propname='css', propvalue='',proptext='',propcode=ECHO_Facilities$CWPCsoFlag, startdate='',enddate='')
-write.table(css,paste0(Outputpath,"/css.txt"),sep="\t",row.names = F)
+#write.table(css,paste0(Outputpath,"/css.txt"),sep="\t",row.names = F)
 
 cwp_cso_outfalls<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='cwp_cso_outfalls', propname='cwp_cso_outfalls', propvalue=ECHO_Facilities$CWPCsoOutfalls,proptext='',propcode='', startdate='',enddate='')
 cwp_cso_outfalls$propvalue[is.na(cwp_cso_outfalls$propvalue)]<-""
-write.table(cwp_cso_outfalls,paste0(Outputpath,"/cwp_cso_outfalls.txt"),sep="\t",row.names = F)
+#write.table(cwp_cso_outfalls,paste0(Outputpath,"/cwp_cso_outfalls.txt"),sep="\t",row.names = F)
 
 wb_gnis_name<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='wb_gnis_name', propname='wb_gnis_name', propvalue='', proptext='',propcode=ECHO_Facilities$RadGnisName, startdate='',enddate='')
-write.table(wb_gnis_name,paste0(Outputpath,"/wb_gnis_name.txt"),sep="\t",row.names = F)
+#write.table(wb_gnis_name,paste0(Outputpath,"/wb_gnis_name.txt"),sep="\t",row.names = F)
 
 reachcode_rad<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='reachcode_rad', propname='reachcode_rad', propvalue='', proptext='',propcode=ECHO_Facilities$RadReachcode, startdate='',enddate='')
 reachcode_rad$propcode[is.na(reachcode_rad$propcode)]<-""
-write.table(reachcode_rad,paste0(Outputpath,"/reachcode_rad.txt"),sep="\t",row.names = F)
+#write.table(reachcode_rad,paste0(Outputpath,"/reachcode_rad.txt"),sep="\t",row.names = F)
 
 impair_cause<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='impair_cause', propname='impair_cause', propvalue='', proptext=ECHO_Facilities$AttainsCauseGroups,propcode='', startdate='',enddate='')
-write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.names = F)
+#write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.names = F)
+
+
+
+
+design_flow<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), varkey='design_flow', propname='design_flow', propvalue=)
 
 ###################################################################################
 
@@ -518,7 +542,10 @@ write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.nam
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE PERMIT ADMINREG FEATURE
   ############################################################################################  
-  #1943 Permits
+  #1943 Permits use sappply
+
+  permit.adminid<-character()#to store all iterations in one big dataframe 
+  permit.dataframe<-data.frame()
 
   for (i in 1:length(adminreg$admincode)){
   permit_inputs <- list(
@@ -531,150 +558,476 @@ write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.nam
     startdate = format(as.POSIXlt(adminreg$startdate[i]),"%s"), 
     enddate = format(as.POSIXlt(adminreg$enddate[i]),"%s"),
     permit_id = as.character(adminreg$admincode[i]),
-    dh_link_admin_reg_issuer = as.character(adminreg$dh_link_admin_reg_issuer[i]),
+    dh_link_admin_reg_issuer = agency.adminid, #actual id and not "epa"
     stringsAsFactors = FALSE
   ) 
-  permit.dataframe <- postAdminregFeature(permit_inputs[i], site, adminreg_feature)
-  permit.dataframe <- getAdminregFeature(permit_inputs[i], site, adminreg_feature)
-  permit.adminid <- as.character(permit.dataframe$adminid)
+  permit.dataframe_i <- postAdminregFeature(permit_inputs, site, adminreg_feature)
+  print(permit.dataframe_i) #print status of updating: error 403 means administration block
+  permit.dataframe_i <- getAdminregFeature(permit_inputs, site, adminreg_feature)
+  permit.dataframe<-rbind(permit.dataframe,permit.dataframe_i)
   
-  print(paste("Processing Admincode ",i," of ", length(adminreg$admincode)))
+  permit.adminid_i <- as.character(permit.dataframe_i$adminid) #store each adminid into larger data frame
+  permit.adminid<-c(permit.adminid,permit.adminid_i)
+  
+  print(paste("Processing Permit ",i," of ", length(adminreg$admincode)))
   }
+  
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE FACILITY DH FEATURE
   ############################################################################################  
+  #1943 Facilities
+  facility.dataframe <- data.frame()
+  facility.hydroid <- character()
+  
+  for (i in 1:length(facilities$hydrocode)){
   facility_inputs <- list(
-    bundle = 'facility',
-    ftype = 'wwtp',
-    hydrocode = 'echo_TEST_100',
-    name = "JK_TEST",
-    fstatus = 'active',
-    address1 = '123 JK Road',
-    city = 'JKburg',
-    dh_link_admin_location =  permit.adminid, 
-    dh_geofield = 'POINT (-77 38)',
+    bundle = as.character(facilities$bundle[i]),
+    ftype = as.character(facilities$ftype[i]),
+    hydrocode = as.character(facilities$hydrocode[i]),
+    name = as.character(facilities$name[i]),
+    fstatus = as.character(facilities$fstatus[i]),
+    address1 = as.character(facilities$address1[i]),
+    city = as.character(facilities$city[i]),
+    dh_link_admin_location =  permit.adminid[permit.dataframe$admincode%in%facilities$dh_link_admin_location[i]], #%in% operator looks for matches in left operand and returns permit.adminid if there is one
+    dh_geofield = as.character(facilities$dh_geofield[i]),
     stringsAsFactors=FALSE
   ) 
-  facility.dataframe <- postFeature(facility_inputs, site, feature)
-  facility.dataframe <- getFeature(facility_inputs, site, feature)
-  facility.hydroid <- as.character(facility.dataframe$hydroid)
+  facility.dataframe_i <- postFeature(facility_inputs, site, feature)
+  print(facility.dataframe_i)
+  facility.dataframe_i <- getFeature(facility_inputs, token, site, feature) #need token now for access
+  facility.dataframe<-rbind(facility.dataframe,facility.dataframe_i)
   
+  facility.hydroid_i <- as.character(facility.dataframe_i$hydroid)
+  facility.hydroid<-c(facility.hydroid,facility.hydroid_i) #store each hydroid into larger dataframe
+  
+  print(paste("Processing Facility ",i," of ", length(facilities$dh_link_admin_location)))
+  }
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE FACILITY METADATA PROPERTIES
+  # Make sure hydrocodes are in same order as in the facility data frame as well
   ############################################################################################   
-  # Waterbody Name (GNIS)
+  # Waterbody Name (GNIS): Name of waterbody from the Geographic Names Information System database where the facility is permitted to discharge directly
+  
+  property.pid_wbgnis<-character()
+  property.dataframe<-data.frame()
+  
+  for (i in 1:length(wb_gnis_name$hydrocode)){
   prop_inputs <-list(
-    featureid = facility.hydroid,
-    varkey = 'wb_gnis_name',
+    featureid = facility.hydroid[facility.dataframe$hydrocode%in%wb_gnis_name$hydrocode[i]],
+    varkey = as.character(wb_gnis_name$varkey[i]),
     entity_type = 'dh_feature',
-    propname = 'wb_gnis_name',
+    propname = as.character(wb_gnis_name$propname[i]),
     propvalue = NULL,
     proptext = NULL,
-    propcode = 'James River',
+    propcode = as.character(wb_gnis_name$propcode[i]),
     startdate = NULL,
     enddate = NULL
   )
-  property.dataframe <- postProperty(prop_inputs, fxn_locations, site, prop)
-  property.dataframe <- getProperty(prop_inputs, site, prop)
-  property.pid <- as.character(property.dataframe$pid)
+  property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+  print(property.dataframe_i)
+  property.dataframe_i <- getProperty(prop_inputs, site, prop)
+  property.dataframe<-rbind(property.dataframe,property.dataframe_i) #store all properties in same large dataframe to double check quality of script
   
-  # This is where all the other facility properites will be attached
+  property.pid_i <- as.character(property.dataframe$pid)
+  property.pid_wbgnis<-c(property.pid_wbgnis,property.pid_i)
+  
+  print(paste("Processing Hydrocode ",i," of ", length(wb_gnis_name$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  #Combined Sewer System (CWPCsoFlag): The discharge from a combined sewer system at a point prior to a treatment plant
+  
+  property.pid_css<-character()
+  
+  for (i in 1:length(css$hydrocode)){
+    prop_inputs <-list(
+      featureid = facility.hydroid[facility.dataframe$hydrocode%in%css$hydrocode[i]],
+      varkey = as.character(css$varkey[i]),
+      entity_type = 'dh_feature',
+      propname = as.character(css$propname[i]),
+      propvalue = NULL,
+      proptext = NULL,
+      propcode = as.character(css$propcode[i]),
+      startdate = NULL,
+      enddate = NULL
+    )
+    property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+    print(property.dataframe_i)
+    property.dataframe_i <- getProperty(prop_inputs, site, prop)
+    property.dataframe<-rbind(property.dataframe,property.dataframe_i)
+    
+    property.pid_i <- as.character(property.dataframe$pid)
+    property.pid_css<-c(property.pid_css,property.pid_i)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(css$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  #Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
+  
+  property.pid_cso<-character()
+  
+  for (i in 1:length(cwp_cso_outfalls$hydrocode)){
+    prop_inputs <-list(
+      featureid = facility.hydroid[facility.dataframe$hydrocode%in%cwp_cso_outfalls$hydrocode[i]],
+      varkey = as.character(cwp_cso_outfalls$varkey[i]),
+      entity_type = 'dh_feature',
+      propname = as.character(cwp_cso_outfalls$propname[i]),
+      propvalue = as.numeric(cwp_cso_outfalls$propvalue[i]),
+      proptext = NULL,
+      propcode = NULL,
+      startdate = NULL,
+      enddate = NULL
+    )
+    property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+    print(property.dataframe_i)
+    property.dataframe_i <- getProperty(prop_inputs, site, prop)
+    property.dataframe<-rbind(property.dataframe,property.dataframe_i)
+    
+    property.pid_i <- as.character(property.dataframe$pid)
+    property.pid_cso<-c(property.pid_cso,property.pid_i) #unique pids for combined sewer outfall property
+    
+    print(paste("Processing Hydrocode ",i," of ", length(cwp_cso_outfalls$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  #Impairment Class or Category of the Waterbody (impair_cause)
+  
+  property.pid_impair<-character()
+  
+  for (i in 1:length(impair_cause$hydrocode)){
+    prop_inputs <-list(
+      featureid = facility.hydroid[facility.dataframe$hydrocode%in%impair_cause$hydrocode[i]],
+      varkey = as.character(impair_cause$varkey[i]),
+      entity_type = 'dh_feature',
+      propname = as.character(impair_cause$propname[i]),
+      propvalue = NULL,
+      proptext = as.character(impair_cause$proptext[i]),
+      propcode = NULL,
+      startdate = NULL,
+      enddate = NULL
+    )
+    property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+    print(property.dataframe_i)
+    property.dataframe_i <- getProperty(prop_inputs, site, prop)
+    property.dataframe<-rbind(property.dataframe,property.dataframe_i)
+    
+    property.pid_i <- as.character(property.dataframe$pid)
+    property.pid_impair<-c(property.pid_impair,property.pid_i)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(impair_cause$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  #Date of most recent inspection of the facility (last_inspect)
+  
+  property.pid_inspect<-character()
+  
+  for (i in 1:length(last_inspect$hydrocode)){
+    prop_inputs <-list(
+      featureid = facility.hydroid[facility.dataframe$hydrocode%in%last_inspect$hydrocode[i]],
+      varkey = as.character(last_inspect$varkey[i]),
+      entity_type = 'dh_feature',
+      propname = as.character(last_inspect$propname[i]),
+      propvalue = NULL,
+      proptext = NULL,
+      propcode = NULL,
+      startdate = format(as.POSIXlt(last_inspect$startdate[i]),"%s"),
+      enddate = NULL
+    )
+    property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+    print(property.dataframe_i)
+    property.dataframe_i <- getProperty(prop_inputs, site, prop)
+    property.dataframe<-rbind(property.dataframe,property.dataframe_i)
+    
+    property.pid_i <- as.character(property.dataframe$pid)
+    property.pid_inspect<-c(property.pid_inspect,property.pid_i)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(last_inspect$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  #Unique ID for Waterbody (reachcode_rad)
+  
+  for (i in 1:length(reachcode_rad$hydrocode)){
+    prop_inputs <-list(
+      featureid = facility.hydroid[facility.dataframe$hydrocode%in%reachcode_rad$hydrocode[i]],
+      varkey = as.character(reachcode_rad$varkey[i]),
+      entity_type = 'dh_feature',
+      propname = as.character(reachcode_rad$propname[i]),
+      propvalue = NULL,
+      proptext = NULL,
+      propcode = as.character(reachcode_rad$propcode[i]),
+      startdate = NULL,
+      enddate = NULL
+    )
+    property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+    print(property.dataframe_i)
+    property.dataframe_i <- getProperty(prop_inputs, site, prop)
+    property.dataframe<-rbind(property.dataframe,property.dataframe_i)
+    
+    
+    property.pid <- as.character(property.dataframe$pid)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(reachcode_rad$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  # Facility Design Flow in MGD (design_flow)
+  
+  property.pid_desflow<-character()
+  property.dataframe<-data.frame()
+  
+  for (i in 1:length(design_flow$hydrocode)){
+    prop_inputs <-list(
+      featureid = facility.hydroid[facility.dataframe$hydrocode%in%design_flow$hydrocode[i]],
+      varkey = as.character(design_flow$varkey[i]),
+      entity_type = 'dh_feature',
+      propname = as.character(design_flow$propname[i]),
+      propvalue = as.numeric(design_flow$propvalue[i]),
+      proptext = NULL,
+      propcode = as.character(design_flow$propcode[i]),
+      startdate = NULL,
+      enddate = NULL
+    )
+    property.dataframe_i <- postProperty(prop_inputs, fxn_locations, site, prop)
+    print(property.dataframe_i)
+    property.dataframe_i <- getProperty(prop_inputs, site, prop)
+    property.dataframe<-rbind(property.dataframe,property.dataframe_i) #store all properties in same large dataframe to double check quality of script
+    
+    property.pid_i <- as.character(property.dataframe$pid)
+    property.pid_desflow<-c(property.pid_desflow,property.pid_i)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(design_flow$hydrocode)))
+  }
   
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE RELEASE DH FEATURE
   ############################################################################################  
+  #2,895 release points
+  release.hydroid<-character()
+  release.dataframe<-data.frame()
+  
+  for (i in 1:length(releasepoint$hydrocode)){
   release_inputs <- list(
-    bundle = 'transfer',
-    ftype = 'release',
-    hydrocode = 'vahydro_JK_RELEASE_100',
-    name = "JK RELEASE",
-    fstatus = 'active',
-    dh_link_facility_mps =  facility.hydroid, 
-    dh_geofield = 'POINT (-77 38)',
+    bundle = as.character(releasepoint$bundle[i]),
+    ftype = as.character(releasepoint$ftype[i]),
+    hydrocode = as.character(releasepoint$hydrocode[i]),
+    name = as.character(releasepoint$name[i]),
+    fstatus = as.character(releasepoint$fstatus[i]),
+    dh_link_facility_mps =  facility.hydroid[facility.dataframe$hydrocode%in%releasepoint$dh_link_facility_mps[i]], #dependent on facility import
+    dh_geofield = as.character(releasepoint$dh_geofield[i]),
     stringsAsFactors=FALSE
   ) 
-  release.dataframe <- postFeature(release_inputs, site, feature)
-  release.dataframe <- getFeature(release_inputs, site, feature)
-  release.hydroid <- as.character(release.dataframe$hydroid)
+  release.dataframe_i <- postFeature(release_inputs, site, feature)
+  print(release.dataframe_i)
+  release.dataframe_i <- getFeature(release_inputs, token, site, feature)
+  release.dataframe<-rbind(release.dataframe,release.dataframe_i)
+  
+  
+  release.hydroid_i <- as.character(release.dataframe_i$hydroid)
+  release.hydroid<-c(release.hydroid,release.hydroid_i)
+  
+  print(paste("Processing Hydrocode ",i," of ", length(releasepoint$hydrocode)))
+  }
   
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE OUTFALL DH FEATURE
   ############################################################################################   
+  #2,895 outfalls
+  outfall.hydroid<-character()
+  outfall.dataframe<-data.frame()
+  
+  for (i in 1:length(outfalls$hydrocode)){
   outfall_inputs <- list(
-    bundle = 'transfer',
-    ftype = 'outfall',
-    hydrocode = 'echo_JK_OUTFALL_100',
-    name = "JK OUTFALL",
-    fstatus = 'active',
-    dh_link_facility_mps =  facility.hydroid, 
-    dh_geofield = 'POINT (-77.5 38.5)',
+    bundle = as.character(outfalls$bundle[i]),
+    ftype = as.character(outfalls$ftype[i]),
+    hydrocode = as.character(outfalls$hydrocode[i]),
+    name = as.character(outfalls$name[i]),
+    fstatus = as.character(outfalls$fstatus[i]),
+    dh_link_facility_mps =  facility.hydroid[facility.dataframe$hydrocode%in%outfalls$dh_link_facility_mps[i]], #dependent on facility import
+    dh_geofield = as.character(outfalls$dh_geofield[i]),
     stringsAsFactors=FALSE
   ) 
-  outfall.dataframe <- postFeature(outfall_inputs, site, feature)
-  outfall.dataframe <- getFeature(outfall_inputs, site, feature)
-  outfall.hydroid <- as.character(outfall.dataframe$hydroid)
+  outfall.dataframe_i <- postFeature(outfall_inputs, site, feature)
+  print(outfall.dataframe_i)
+  outfall.dataframe_i <- getFeature(outfall_inputs, token, site, feature)
+  outfall.dataframe<-rbind(outfall.dataframe,outfall.dataframe_i)
+  
+  outfall.hydroid_i <- as.character(outfall.dataframe$hydroid)
+  outfall.hydroid<-c(outfall.hydroid,outfall.hydroid_i)
+  
+  print(paste("Processing Hydrocode ",i," of ", length(outfalls$hydrocode)))
+  }
   
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE CONVEYANCE DH FEATURE
   ############################################################################################  
+  #2,895 conveyance features
+  
   # Format conveyance geom from release and outfall geoms 
+  
   release.geofield <- substring(release.dataframe$dh_geofield, 8)
   release.geofield <-substr(release.geofield, 1, nchar(release.geofield)-1) 
+  
   outfall.geofield <- substring(outfall.dataframe$dh_geofield, 8)
   outfall.geofield <-substr(outfall.geofield, 1, nchar(outfall.geofield)-1) 
   conveyance.geofield <- paste('LINESTRING (',release.geofield,', ',outfall.geofield,')',sep="")
   
+  conveyance.hydroid<-character()
+  conveyance.dataframe<-data.frame()
+  
+  for (i in 1:length(conveyance$hydrocode)){
   conveyance_inputs <- list(
-    bundle = 'conveyance',
-    ftype = 'water_transfer',
-    hydrocode = 'vahydro_JK_OUTFALL_CONVEYANCE_100',
-    name = "JK CONVEYANCE",
-    fstatus = 'active',
-    field_dh_from_entity =  release.hydroid, 
-    field_dh_to_entity =  outfall.hydroid,
-    dh_geofield = conveyance.geofield,
+    bundle = as.character(conveyance$bundle[i]),
+    ftype = as.character(conveyance$ftype[i]),
+    hydrocode = as.character(conveyance$hydrocode[i]),
+    name = as.character(conveyance$name[i]),
+    fstatus = as.character(conveyance$fstatus[i]),
+    field_dh_from_entity =  release.hydroid[release.dataframe$hydrocode%in%conveyance$field_dh_from_entity[i]], 
+    field_dh_to_entity =  outfall.hydroid_i[outfall.dataframe$hydrocode%in%conveyance$field_dh_to_entity[i]],
+    dh_geofield = conveyance.geofield[i],
     stringsAsFactors=FALSE
   ) 
-  conveyance.dataframe <- postFeature(conveyance_inputs, site, feature)
-  conveyance.dataframe <- getFeature(conveyance_inputs, site, feature)
-  conveyance.hydroid <- as.character(conveyance.dataframe$hydroid)
+  conveyance.dataframe_i <- postFeature(conveyance_inputs, site, feature)
+  print(conveyance.dataframe_i)
+  conveyance.dataframe_i <- getFeature(conveyance_inputs, token, site, feature)
+  conveyance.dataframe<- rbind(conveyance.dataframe, conveyance.dataframe_i)
+  
+  conveyance.hydroid_i <- as.character(conveyance.dataframe$hydroid)
+  conveyance.hydroid<-c(conveyance.hydroid,conveyance.hydroid_i)
+  
+  print(paste("Processing Hydrocode ",i," of ", length(conveyance$hydrocode)))
+  }
   
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE TIMESERIES
   ############################################################################################  
-  timeseries <- data.frame(hydrocode = 'echo_VA0091529001', 
-                           varkey = 'dmr_mon_mgd', 
-                           tsvalue = 999, 
-                           tstime = '2016-04-01', 
-                           tsendtime = '2016-04-30', 
-                           tscode = 1)
+  #44,386 timeseries entries: processing speed is about 1,000 entries every 5-6 minutes
+  timeseries.tid<-character()
+  timeseries.dataframe<-data.frame()
   
+  for (i in 9321:length(timeseries$hydrocode)){
   ts_inputs<-list(
-    featureid = outfall.hydroid,
-    varkey = as.character(timeseries$varkey),
+    featureid = outfall.hydroid[outfall.dataframe$hydrocode%in%timeseries$hydrocode[i]],
+    varkey = as.character(timeseries$varkey[i]),
     entity_type = 'dh_feature',
-    tsvalue = timeseries$tsvalue,
-    tscode = timeseries$tscode,
-    tstime = format(as.POSIXlt(timeseries$tstime),"%s"),
-    tsendtime = format(as.POSIXlt(timeseries$tsendtime),"%s")
+    tsvalue = timeseries$tsvalue[i],
+    tscode = timeseries$tscode[i],
+    tstime = format(as.POSIXlt(timeseries$tstime[i]),"%s"),
+    tsendtime = format(as.POSIXlt(timeseries$tsendtime[i]),"%s")
   )
-  timeseries.dataframe <- postTimeseries(ts_inputs,site,ts)
-  timeseries.dataframe <- getTimeseries(ts_inputs, site, ts)
-  timeseries.tid <- as.character(timeseries.dataframe$tid)
+  timeseries.dataframe_i <- postTimeseries(ts_inputs,site,ts)
+  print(timeseries.dataframe_i)
+  timeseries.dataframe_i <- getTimeseries(ts_inputs, site, ts)
+  timeseries.dataframe<-rbind(timeseries.dataframe,timeseries.dataframe_i)
+  
+  timeseries.tid_i <- as.character(timeseries.dataframe$tid)
+  timeseries.tid<-c(timeseries.tid,timeseries.tid_i) #put into larger dataframe
+  
+  print(paste("Processing Hydrocode ",i," of ", length(timeseries$hydrocode)))
+  }
   
   ############################################################################################
   # RETRIEVE/CREATE/UPDATE FLAGGING PROPERTIES OF TIMESERIES
   ############################################################################################   
+  
+  ############################################################################################ 
+  # ECHO Adminstered Flag 
+  echo_flag<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/echo_flag.txt",sep="\t",header=T)
+  
+  for (i in 1:length(echo_flag$hydrocode)){
   flag_inputs <-list(
-    featureid = timeseries.tid,
+    featureid = timeseries.tid[timeseries.dataframe$%in%],
     varkey = 'echo_flag',
     entity_type = 'dh_timeseries',
     propname = 'echo_flag',
-    propcode = 'E90'
+    proptext= echo_flag$proptext[i]
+    propcode = echo_flag$propcode[i]
   )
-  flag.dataframe <- postProperty(flag_inputs, fxn_locations, site, prop)
-  flag.dataframe <- getProperty(flag_inputs, site, prop)
+  flag.dataframe_i <- postProperty(flag_inputs, fxn_locations, site, prop)
+  print(flag.dataframe_i)#print import status
+  flag.dataframe_i <- getProperty(flag_inputs, site, prop)
+  flag.dataframe<-rbind(flag.dataframe,flag.dataframe_i)
+  
   flag.pid <- as.character(flag.dataframe$pid)
+  flag.pid_echo<-c(flag.pid_echo,flag.pid)
+  
+  print(paste("Processing Hydrocode ",i," of ", length(echo_flag$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  # Entries that exceed the faiclity's design flow (dmr_flag_desflow)
+  
+  dmr_flag_desflow<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/dmr_flag_desflow.txt",sep="\t",header=T)
+  
+  for (i in 1:length(dmr_flag_desflow$hydrocode)){
+    flag_inputs <-list(
+      featureid = timeseries.tid[timeseries.dataframe$%in%],
+      varkey = 'dmr_flag_desflow',
+      entity_type = 'dh_timeseries',
+      propname = 'dmr_flag_desflow',
+      proptext= dmr_flag_desflow$proptext[i]
+      propcode = dmr_flag_desflow$propcode[i]
+    )
+    flag.dataframe_i <- postProperty(flag_inputs, fxn_locations, site, prop)
+    print(flag.dataframe_i)#print import status
+    flag.dataframe_i <- getProperty(flag_inputs, site, prop)
+    flag.dataframe<-rbind(flag.dataframe,flag.dataframe_i)
+    
+    flag.pid <- as.character(flag.dataframe$pid)
+    flag.pid_MEgreaterDF<-c(flag.pid_echo,flag.pid)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(dmr_flag_desflow$hydrocode)))
+  }
+  
+  ############################################################################################ 
+  # DMR entries that exceed 100 times the median outfall discharge
+  dmr_flag_units_100<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/dmr_flag_units_100.txt",sep="\t",header=T)
+  
+  for (i in 1:length(dmr_flag_units_100$hydrocode)){
+    flag_inputs <-list(
+      featureid = timeseries.tid[timeseries.dataframe$%in%],
+      varkey = 'dmr_flag_units_100',
+      entity_type = 'dh_timeseries',
+      propname = 'dmr_flag_units_100',
+      proptext= dmr_flag_units_100$proptext[i]
+      propcode = dmr_flag_units_100$propcode[i]
+    )
+    flag.dataframe_i <- postProperty(flag_inputs, fxn_locations, site, prop)
+    print(flag.dataframe_i)#print import status
+    flag.dataframe_i <- getProperty(flag_inputs, site, prop)
+    flag.dataframe<-rbind(flag.dataframe,flag.dataframe_i)
+    
+    flag.pid <- as.character(flag.dataframe$pid)
+    flag.pid_units100<-c(flag.pid_echo,flag.pid)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(dmr_flag_units_100$hydrocode)))
+  }
   
   
-  # This is where the other flagging properites will be attached
+  ############################################################################################ 
+  # DMR entries that exceed 1,000,000 times the median outfall discharge
+  dmr_flag_units_1000000<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO Flagging for VAHydro/dmr_flag_units_1000000.txt",sep="\t",header=T)
+  
+  for (i in 1:length(dmr_flag_units_1000000$hydrocode)){
+    flag_inputs <-list(
+      featureid = timeseries.tid[timeseries.dataframe$%in%],
+      varkey = 'dmr_flag_units_1000000',
+      entity_type = 'dh_timeseries',
+      propname = 'dmr_flag_units_1000000',
+      proptext= dmr_flag_units_1000000$proptext[i]
+      propcode = dmr_flag_units_1000000$propcode[i]
+    )
+    flag.dataframe_i <- postProperty(flag_inputs, fxn_locations, site, prop)
+    print(flag.dataframe_i)#print import status
+    flag.dataframe_i <- getProperty(flag_inputs, site, prop)
+    flag.dataframe<-rbind(flag.dataframe,flag.dataframe_i)
+    
+    flag.pid <- as.character(flag.dataframe$pid)
+    flag.pid_units1000000<-c(flag.pid_echo,flag.pid)
+    
+    print(paste("Processing Hydrocode ",i," of ", length(dmr_flag_units_1000000$hydrocode)))
+  }
+  
+  
