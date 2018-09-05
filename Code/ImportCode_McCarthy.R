@@ -907,7 +907,7 @@ design_flow<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$SourceID), vark
   timeseries.tid<-character()
   timeseries.dataframe<-data.frame()
   
-  for (i in 9321:length(timeseries$hydrocode)){
+  for (i in 1:length(timeseries$hydrocode)){
   ts_inputs<-list(
     featureid = outfall.hydroid[outfall.dataframe$hydrocode%in%timeseries$hydrocode[i]],
     varkey = as.character(timeseries$varkey[i]),
