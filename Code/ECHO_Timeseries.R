@@ -44,8 +44,10 @@ library(daff)#helps calculate the differences between two dataframes
 state<-"VA"
 startDate<-"01/01/2010" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
 endDate<-Sys.Date()
+#endDate<-"12/31/2016"
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
 options(scipen=999) #Disable scientific notation
+options(digits = 9)
 
 ##################################################################################################################################
 ###########################################CWA Facility Download##################################################################
@@ -57,17 +59,17 @@ options(scipen=999) #Disable scientific notation
 #This particular query is created in two-steps. An XML document of all CWA facilities in VA is first downloaded (uri_query and ECHO_xml).
 #Then the XML is parsed (ECHO_query) to generate a query ID (QID) that can be used to access summary data for each facility (uri_summary).
 
-Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&p_st=",state)
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&p_st=",state)
 URL_Download<-getURL(Req_URL) #Download URL from above
 URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
 QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
 QID<-QID$QueryID
-GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&qid=",QID)
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&qid=",QID)
 ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
 ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)
-ECHO_Facilities_IP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
-ECHO_Facilities_activeIP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit" &
-                                   ECHO_Facilities$CWPPermitStatusDesc=="Effective")
+#ECHO_Facilities_IP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
+#ECHO_Facilities_activeIP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit" &
+                                   #ECHO_Facilities$CWPPermitStatusDesc=="Effective")
 rm(Req_URL,URL_Download,URL_Parse,GET_Facilities,QID) #Clear unnecessary variables
 
 ##################################################################################################################################
@@ -75,6 +77,7 @@ rm(Req_URL,URL_Download,URL_Parse,GET_Facilities,QID) #Clear unnecessary variabl
 
 #Create Variables for Desired Information
 Facility_Name<-character() #Name of the CWA regulated discharging facility
+FacilityID<-character() #Facility ID 
 VPDESID<-character() #Unique ID used in Virginia for a facility's outfall: concatonated facility ID with 3 digit outfall ID
 eff_limit<-numeric() #numerical limit for flow 
 eff_limit_units<-character() #units of measure applicable to effluent quantity limit
@@ -84,12 +87,13 @@ statistic<-character() #indicates the statistic analysis used for the measured e
 mp_begin<-character() #beginning date of monitoring period (mp)
 mp_end<-character() #end data of monitoring period (mp)
 mon_in_mp<-numeric() #number of months included in monitoring period
+nodi<-character() #if the DMR value is NA, the no data indicator code describes why that is the case
 violation<-character() #Code identifying if a Violation has occurred  (e.g., D80 = Required Monitoring DMR Value Non-Receipt, E90 = Effluent Violation, C20 = Schedule Event Achieved Late).
 violation_severity<-numeric() #Severity of any alleged violation caused by the reported value: 5 = significant noncompliance; 3 = reportable noncompliance; 2 = effluent violation, i.e., discharge in excess of permitted limit; 1 = monitoring or reporting violation; 0 = no violation.
 
-for (i in 1:length(ECHO_Facilities_IP$SourceID)){
+for (i in 1:length(ECHO_Facilities$SourceID)){
     sourceID<-ECHO_Facilities$SourceID[i]
-    print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities_IP$SourceID),")", sep=""))
+    print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities$SourceID),")", sep=""))
     DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe
     DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
     DMR_data<-DMR_data[DMR_data$parameter_code==50050,]#only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
@@ -119,6 +123,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
             mp_begin_i<-character()
             violation_i<-character()
             violation_severity_i<-numeric()
+            nodi_i<-character()
             
             for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average.
               if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
@@ -132,6 +137,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
                 mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month"))
                 violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
                 violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
+                nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l] 
                 
               }else if(!is.na(outfall_DMR$statistical_base_code[l]=="DB")){ #if it is missing a monthly average, look at daily average in MGD
                 statistic_i[l]<-"day_ave"
@@ -144,6 +150,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
                 mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month")) 
                 violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="DB"][l]
                 violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="DB"][l]
+                nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="DB"][l] 
                 
               }else if(!is.na(outfall_DMR$statistical_base_code[l]=="WA")){ #if it is also missing a daily average, look at weekly average in MGD
                 statistic_i[l]<-"wk_ave"
@@ -156,6 +163,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
                 mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month"))
                 violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="WA"][l]
                 violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="WA"][l]
+                nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="WA"][l] 
                 
               }else if(!is.na(outfall_DMR$statistical_base_code[l]=="AB")){ #if it is also missing this, look at annual average in MGD
                 statistic_i[l]<-"yr_ave"
@@ -168,6 +176,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
                 mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month")) 
                 violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="AB"][l]
                 violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="AB"][l]
+                nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="AB"][l] 
               }
               
             }
@@ -176,6 +185,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
             Facility_Name<-c(Facility_Name,rep(paste0(ECHO_Facilities$CWPName[ECHO_Facilities$SourceID==sourceID]),length(dmr_value_i)))
             statistic<-c(statistic,statistic_i)
             VPDESID<-c(VPDESID,paste0(sourceID,rep(outfall,length(dmr_value_i))))
+            FacilityID<-c(FacilityID,paste0(rep(sourceID, length(dmr_value_i))))
             dmr_value<-c(dmr_value,dmr_value_i)
             dmr_units<-c(dmr_units,dmr_units_i)
             eff_limit<-c(eff_limit,eff_limit_i)
@@ -185,12 +195,14 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
             mp_begin<-c(mp_begin,mp_begin_i)
             violation<-c(violation,violation_i)
             violation_severity<-c(violation_severity,violation_severity_i)
+            nodi<-c(nodi,nodi_i)
             
           }
         }else{ #if the DMR contains no data, set variables to NA
           Facility_Name<-c(Facility_Name,NA)
           statistic<-c(statistic,NA)
           VPDESID<-c(VPDESID,NA)
+          FacilityID<-c(FacilityID,NA)
           dmr_value<-c(dmr_value,NA)
           dmr_units<-c(dmr_units,NA)
           eff_limit<-c(eff_limit,NA)
@@ -200,6 +212,7 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
           mp_begin<-c(mp_begin,NA)
           violation<-c(violation,NA)
           violation_severity<-c(violation_severity,NA)
+          nodi<-c(nodi,NA)
           
         }
 }
@@ -207,35 +220,46 @@ for (i in 1:length(ECHO_Facilities_IP$SourceID)){
 ##################################################################################################################################
 ################################################Compile Data######################################################################
 
-        ECHO_timeseries_wNAs<-data.frame(FacilityName=Facility_Name,OutfallID=VPDESID,Statistic=statistic,Measured_Effluent=dmr_value,Units=dmr_units,Permitted_Limit=eff_limit,
-                               MP_Begin_Date=mp_begin,MP_End_Date=mp_end,Violation_Code=violation,Violation_Severity=violation_severity)
+        ECHO_timeseries_wNAs<-data.frame(FacilityName=Facility_Name,Facility.ID=FacilityID,OutfallID=VPDESID,Statistic=statistic,Measured_Effluent=dmr_value,Units=dmr_units,Permitted_Limit=eff_limit,
+                               MP_Begin_Date=mp_begin,MP_End_Date=mp_end,Violation_Code=violation,Violation_Severity=violation_severity,NODI=nodi)
         ECHO_timeseries<-ECHO_timeseries_wNAs[!(is.na(ECHO_timeseries_wNAs$MP_End_Date)),] #remove if a monitoring period end date is missing 
-        ECHO_timeseries$MP_Begin_Date<-format(ymd(ECHO_timeseries$MP_Begin_Date), "%m/%d/%Y")
+        ECHO_timeseries$MP_Begin_Date<-as.Date(ECHO_timeseries$MP_Begin_Date, format="%Y-%m-%d")
+        ECHO_timeseries$MP_End_Date<-as.Date(ECHO_timeseries$MP_End_Date, format="%m/%d/%Y")
+        
+        
+        NODI<-subset(ECHO_timeseries,subset=!(ECHO_timeseries$NODI==""))
+        NODI<-data.frame(hydrocode=paste0("echo_",NODI$OutfallID), varkey="NODI",entity_type="dh_timeseries",
+                         propname="NODI", propvalue="", proptext=as.character(NODI$NODI), propcode="",
+                         startdate=NODI$MP_Begin_Date,enddate=NODI$MP_End_Date)
+        
+        NULLDMR<-subset(ECHO_timeseries,is.na(ECHO_timeseries$Measured_Effluent))
+        
+        write.csv(NULLDMR,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/QA_QC/NULLDMR.csv")
         save.image("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/ECHO_Timeseries.RData") #Save the global environment for future reference
         
         #In personal file
-        write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_7_31.txt",sep="\t",row.names = F)
+        write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_8_23.txt",sep="\t",row.names = F)
        
         #For repository
         write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/ECHO_timeseries.txt",sep="\t",row.names = F)
-      
+        write.table(NODI,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/QAQC/NODI.txt",sep="\t",row.names = F)      
 ##################################################################################################################################
 ###################################################Analysis#######################################################################
         
         #Track the changes between weekly runs here
-        ECHO_timeseries_pre<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_7_28.txt",header=T)
+        ECHO_timeseries_pre<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_8_13.txt",header=T)
         ECHO_timeseries_pre%>%
           summarise(Outfalls=n_distinct(OutfallID),Facilities=n_distinct(FacilityName),
                     sum=sum(Measured_Effluent,na.rm=T),median=median(Measured_Effluent,na.rm=T),mean=
                     mean(Measured_Effluent,na.rm=T))
         
-        ECHO_timeseries_post<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_7_31.txt",header=T)
+        ECHO_timeseries_post<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_8_23.txt",header=T)
         ECHO_timeseries_post%>%
           summarise(Outfalls=n_distinct(OutfallID),Facilities=n_distinct(FacilityName),
                     sum=sum(Measured_Effluent,na.rm=T),median=median(Measured_Effluent,na.rm=T),mean=
                       mean(Measured_Effluent,na.rm=T))
         
-        difference<-diff_data(ECHO_timeseries_pre,ECHO_timeseries_post)
-        summary(difference)
-
-      
+        ECHO_difference<-diff_data(ECHO_timeseries_pre,ECHO_timeseries_post)
+        write_diff(ECHO_difference, "ECHO_difference.csv")
+        summary(ECHO_difference)
+        render_diff(ECHO_difference, title="Difference in Flagged Coordinates", view=interactive(),pretty=T)
