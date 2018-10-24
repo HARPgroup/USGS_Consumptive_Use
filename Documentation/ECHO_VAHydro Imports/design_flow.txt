@@ -1,1944 +1,1461 @@
-"hydrocode"	"varkey"	"propname"	"propvalue"	"propcode"	"startdate"	"enddate"
-"echo_DC0022004"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_DCNOE3034"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_ILG870595"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_ILR007054"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MD0056464"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MD0064556"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MD0066184"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MD0066427"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MD0067598"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MD0068187"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_MDL066184"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_NCG210111"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0000213"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0000248"	"design_flow"	"design_flow"	1.07	""	""	""
-"echo_VA0000281"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0000299"	"design_flow"	"design_flow"	70	""	""	""
-"echo_VA0000370"	"design_flow"	"design_flow"	357	""	""	""
-"echo_VA0000523"	"design_flow"	"design_flow"	5.25	""	""	""
-"echo_VA0001015"	"design_flow"	"design_flow"	4.84	""	""	""
-"echo_VA0001201"	"design_flow"	"design_flow"	0.13	""	""	""
-"echo_VA0001309"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0001333"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0001431"	"design_flow"	"design_flow"	5.32	""	""	""
-"echo_VA0001449"	"design_flow"	"design_flow"	0.0195	""	""	""
-"echo_VA0001473"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0001490"	"design_flow"	"design_flow"	0.054	""	""	""
-"echo_VA0001554"	"design_flow"	"design_flow"	0.464	""	""	""
-"echo_VA0001589"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0001597"	"design_flow"	"design_flow"	0.043	""	""	""
-"echo_VA0001678"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0001767"	"design_flow"	"design_flow"	2.93	""	""	""
-"echo_VA0001872"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0001945"	"design_flow"	"design_flow"	0.054	""	""	""
-"echo_VA0001961"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0001988"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0002071"	"design_flow"	"design_flow"	300	""	""	""
-"echo_VA0002151"	"design_flow"	"design_flow"	0.0033	""	""	""
-"echo_VA0002160"	"design_flow"	"design_flow"	4.51	""	""	""
-"echo_VA0002178"	"design_flow"	"design_flow"	7.54	""	""	""
-"echo_VA0002194"	"design_flow"	"design_flow"	0.242	""	""	""
-"echo_VA0002283"	"design_flow"	"design_flow"	0.18	""	""	""
-"echo_VA0002313"	"design_flow"	"design_flow"	1.52	""	""	""
-"echo_VA0002402"	"design_flow"	"design_flow"	0.216	""	""	""
-"echo_VA0002585"	"design_flow"	"design_flow"	5.8	""	""	""
-"echo_VA0002623"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0002631"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0002666"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0002674"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0002771"	"design_flow"	"design_flow"	0.136	""	""	""
-"echo_VA0002780"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0002925"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0003018"	"design_flow"	"design_flow"	6.3	""	""	""
-"echo_VA0003026"	"design_flow"	"design_flow"	12	""	""	""
-"echo_VA0003077"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0003115"	"design_flow"	"design_flow"	19	""	""	""
-"echo_VA0003255"	"design_flow"	"design_flow"	0.1866	""	""	""
-"echo_VA0003263"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0003344"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0003387"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0003409"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0003433"	"design_flow"	"design_flow"	6.4	""	""	""
-"echo_VA0003450"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0003492"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0003646"	"design_flow"	"design_flow"	35	""	""	""
-"echo_VA0003654"	"design_flow"	"design_flow"	0.002	""	""	""
-"echo_VA0003697"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0003808"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0003867"	"design_flow"	"design_flow"	4.5	""	""	""
-"echo_VA0004031"	"design_flow"	"design_flow"	1.4	""	""	""
-"echo_VA0004049"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0004081"	"design_flow"	"design_flow"	483	""	""	""
-"echo_VA0004090"	"design_flow"	"design_flow"	2170	""	""	""
-"echo_VA0004103"	"design_flow"	"design_flow"	971	""	""	""
-"echo_VA0004138"	"design_flow"	"design_flow"	4.59	""	""	""
-"echo_VA0004146"	"design_flow"	"design_flow"	1089	""	""	""
-"echo_VA0004162"	"design_flow"	"design_flow"	146	""	""	""
-"echo_VA0004189"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0004383"	"design_flow"	"design_flow"	0.144	""	""	""
-"echo_VA0004391"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0004421"	"design_flow"	"design_flow"	2.7	""	""	""
-"echo_VA0004448"	"design_flow"	"design_flow"	0.301	""	""	""
-"echo_VA0004642"	"design_flow"	"design_flow"	6.5	""	""	""
-"echo_VA0004669"	"design_flow"	"design_flow"	43.67	""	""	""
-"echo_VA0004677"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0004774"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0004791"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0004804"	"design_flow"	"design_flow"	30	""	""	""
-"echo_VA0004880"	"design_flow"	"design_flow"	3.63	""	""	""
-"echo_VA0005215"	"design_flow"	"design_flow"	2.03	""	""	""
-"echo_VA0005266"	"design_flow"	"design_flow"	0.045	""	""	""
-"echo_VA0005291"	"design_flow"	"design_flow"	157.89	""	""	""
-"echo_VA0005312"	"design_flow"	"design_flow"	41.36	""	""	""
-"echo_VA0005487"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0005657"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0005720"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0005819"	"design_flow"	"design_flow"	3.3	""	""	""
-"echo_VA0005827"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0005835"	"design_flow"	"design_flow"	0.0504	""	""	""
-"echo_VA0005851"	"design_flow"	"design_flow"	0.22	""	""	""
-"echo_VA0005860"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0005975"	"design_flow"	"design_flow"	1.65	""	""	""
-"echo_VA0006076"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0006149"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0006203"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0006220"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0006254"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0006262"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0006301"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0006335"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0006408"	"design_flow"	"design_flow"	5.44	""	""	""
-"echo_VA0006483"	"design_flow"	"design_flow"	0.452	""	""	""
-"echo_VA0006513"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0020168"	"design_flow"	"design_flow"	0.55	""	""	""
-"echo_VA0020176"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0020184"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0020222"	"design_flow"	"design_flow"	0.016	""	""	""
-"echo_VA0020249"	"design_flow"	"design_flow"	0.17	""	""	""
-"echo_VA0020257"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0020281"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0020303"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0020311"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0020320"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0020346"	"design_flow"	"design_flow"	1.5	""	""	""
-"echo_VA0020354"	"design_flow"	"design_flow"	1.2	""	""	""
-"echo_VA0020362"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0020451"	"design_flow"	"design_flow"	3.6	""	""	""
-"echo_VA0020460"	"design_flow"	"design_flow"	0.95	""	""	""
-"echo_VA0020508"	"design_flow"	"design_flow"	0.175	""	""	""
-"echo_VA0020524"	"design_flow"	"design_flow"	0.45	""	""	""
-"echo_VA0020532"	"design_flow"	"design_flow"	0.7	""	""	""
-"echo_VA0020630"	"design_flow"	"design_flow"	0.019	""	""	""
-"echo_VA0020656"	"design_flow"	"design_flow"	0.09	""	""	""
-"echo_VA0020664"	"design_flow"	"design_flow"	0.0347	""	""	""
-"echo_VA0020672"	"design_flow"	"design_flow"	0.021	""	""	""
-"echo_VA0020681"	"design_flow"	"design_flow"	0.216	""	""	""
-"echo_VA0020699"	"design_flow"	"design_flow"	0.465	""	""	""
-"echo_VA0020702"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0020729"	"design_flow"	"design_flow"	0.15	""	""	""
-"echo_VA0020737"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0020745"	"design_flow"	"design_flow"	0.999	""	""	""
-"echo_VA0020761"	"design_flow"	"design_flow"	0.16	""	""	""
-"echo_VA0020788"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0020818"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0020826"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0020842"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0020851"	"design_flow"	"design_flow"	0.0045	""	""	""
-"echo_VA0020869"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0020877"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0020940"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0020974"	"design_flow"	"design_flow"	0.16	""	""	""
-"echo_VA0020982"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0020991"	"design_flow"	"design_flow"	2.25	""	""	""
-"echo_VA0021016"	"design_flow"	"design_flow"	0.0399	""	""	""
-"echo_VA0021041"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0021067"	"design_flow"	"design_flow"	0.72	""	""	""
-"echo_VA0021083"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0021105"	"design_flow"	"design_flow"	0.667	""	""	""
-"echo_VA0021113"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0021130"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0021148"	"design_flow"	"design_flow"	0.0088	""	""	""
-"echo_VA0021172"	"design_flow"	"design_flow"	2.5	""	""	""
-"echo_VA0021199"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0021253"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0021261"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0021288"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0021318"	"design_flow"	"design_flow"	0.0096	""	""	""
-"echo_VA0021326"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0021342"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0021385"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0021733"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0021750"	"design_flow"	"design_flow"	0.0063	""	""	""
-"echo_VA0021768"	"design_flow"	"design_flow"	0.0104	""	""	""
-"echo_VA0021776"	"design_flow"	"design_flow"	0.0104	""	""	""
-"echo_VA0021849"	"design_flow"	"design_flow"	0.0096	""	""	""
-"echo_VA0021857"	"design_flow"	"design_flow"	0.0096	""	""	""
-"echo_VA0021989"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0022012"	"design_flow"	"design_flow"	0.065	""	""	""
-"echo_VA0022225"	"design_flow"	"design_flow"	0.2375	""	""	""
-"echo_VA0022241"	"design_flow"	"design_flow"	0.078	""	""	""
-"echo_VA0022250"	"design_flow"	"design_flow"	0.082	""	""	""
-"echo_VA0022322"	"design_flow"	"design_flow"	0.15	""	""	""
-"echo_VA0022349"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0022373"	"design_flow"	"design_flow"	0.0045	""	""	""
-"echo_VA0022390"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0022471"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0022691"	"design_flow"	"design_flow"	0.0084	""	""	""
-"echo_VA0022705"	"design_flow"	"design_flow"	0.0051	""	""	""
-"echo_VA0022721"	"design_flow"	"design_flow"	0.0051	""	""	""
-"echo_VA0022730"	"design_flow"	"design_flow"	0.0051	""	""	""
-"echo_VA0022748"	"design_flow"	"design_flow"	0.0072	""	""	""
-"echo_VA0022772"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0022802"	"design_flow"	"design_flow"	1.5	""	""	""
-"echo_VA0022845"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0022853"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0022934"	"design_flow"	"design_flow"	0.0135	""	""	""
-"echo_VA0022985"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0022993"	"design_flow"	"design_flow"	0.017	""	""	""
-"echo_VA0023027"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0023078"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0023108"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0023141"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0023183"	"design_flow"	"design_flow"	0.375	""	""	""
-"echo_VA0023272"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0023281"	"design_flow"	"design_flow"	0.12	""	""	""
-"echo_VA0023299"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0023329"	"design_flow"	"design_flow"	0.037	""	""	""
-"echo_VA0023345"	"design_flow"	"design_flow"	0.07	""	""	""
-"echo_VA0023370"	"design_flow"	"design_flow"	0.037	""	""	""
-"echo_VA0023396"	"design_flow"	"design_flow"	0.028	""	""	""
-"echo_VA0023400"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0023418"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0023426"	"design_flow"	"design_flow"	0.065	""	""	""
-"echo_VA0023442"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0023469"	"design_flow"	"design_flow"	0.178	""	""	""
-"echo_VA0023477"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0023540"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0023558"	"design_flow"	"design_flow"	0.028	""	""	""
-"echo_VA0023582"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0023817"	"design_flow"	"design_flow"	0.0208	""	""	""
-"echo_VA0023825"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0023892"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0023914"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0023922"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0023965"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0024031"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0024040"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0024058"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0024066"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0024074"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0024101"	"design_flow"	"design_flow"	0.099	""	""	""
-"echo_VA0024112"	"design_flow"	"design_flow"	0.075	""	""	""
-"echo_VA0024121"	"design_flow"	"design_flow"	0.0395	""	""	""
-"echo_VA0024147"	"design_flow"	"design_flow"	0.099	""	""	""
-"echo_VA0024163"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0024244"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0024406"	"design_flow"	"design_flow"	0.13	""	""	""
-"echo_VA0024414"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0024422"	"design_flow"	"design_flow"	0.07	""	""	""
-"echo_VA0024431"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0024449"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0024457"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0024481"	"design_flow"	"design_flow"	0.0175	""	""	""
-"echo_VA0024490"	"design_flow"	"design_flow"	0.0271	""	""	""
-"echo_VA0024678"	"design_flow"	"design_flow"	4.6	""	""	""
-"echo_VA0024724"	"design_flow"	"design_flow"	4.6	""	""	""
-"echo_VA0024732"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0024741"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0024759"	"design_flow"	"design_flow"	0.09	""	""	""
-"echo_VA0024775"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0024899"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0024945"	"design_flow"	"design_flow"	0.775	""	""	""
-"echo_VA0024970"	"design_flow"	"design_flow"	22	""	""	""
-"echo_VA0024988"	"design_flow"	"design_flow"	54	""	""	""
-"echo_VA0024996"	"design_flow"	"design_flow"	12	""	""	""
-"echo_VA0025020"	"design_flow"	"design_flow"	55	""	""	""
-"echo_VA0025054"	"design_flow"	"design_flow"	8.1	""	""	""
-"echo_VA0025101"	"design_flow"	"design_flow"	24	""	""	""
-"echo_VA0025127"	"design_flow"	"design_flow"	4.5	""	""	""
-"echo_VA0025143"	"design_flow"	"design_flow"	40	""	""	""
-"echo_VA0025151"	"design_flow"	"design_flow"	6	""	""	""
-"echo_VA0025160"	"design_flow"	"design_flow"	54	""	""	""
-"echo_VA0025194"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0025216"	"design_flow"	"design_flow"	0.65	""	""	""
-"echo_VA0025291"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0025305"	"design_flow"	"design_flow"	8	""	""	""
-"echo_VA0025364"	"design_flow"	"design_flow"	67	""	""	""
-"echo_VA0025437"	"design_flow"	"design_flow"	23	""	""	""
-"echo_VA0025470"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0025488"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0025518"	"design_flow"	"design_flow"	15	""	""	""
-"echo_VA0025542"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0025569"	"design_flow"	"design_flow"	0.11	""	""	""
-"echo_VA0025658"	"design_flow"	"design_flow"	9.4	""	""	""
-"echo_VA0025992"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0026051"	"design_flow"	"design_flow"	0.569	""	""	""
-"echo_VA0026212"	"design_flow"	"design_flow"	0.75	""	""	""
-"echo_VA0026221"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0026239"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0026247"	"design_flow"	"design_flow"	0.36	""	""	""
-"echo_VA0026263"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0026298"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0026379"	"design_flow"	"design_flow"	0.999	""	""	""
-"echo_VA0026387"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0026409"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0026417"	"design_flow"	"design_flow"	0.59	""	""	""
-"echo_VA0026433"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0026441"	"design_flow"	"design_flow"	0.7	""	""	""
-"echo_VA0026468"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0026484"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0026514"	"design_flow"	"design_flow"	0.97	""	""	""
-"echo_VA0026531"	"design_flow"	"design_flow"	4.95	""	""	""
-"echo_VA0026557"	"design_flow"	"design_flow"	2.9	""	""	""
-"echo_VA0026565"	"design_flow"	"design_flow"	0.495	""	""	""
-"echo_VA0026778"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0026786"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0026808"	"design_flow"	"design_flow"	0.99	""	""	""
-"echo_VA0026816"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0026891"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0026964"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0026972"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0026999"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0027014"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0027022"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0027065"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0027162"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0027171"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0027197"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0027278"	"design_flow"	"design_flow"	0.0079	""	""	""
-"echo_VA0027294"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0027375"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0027413"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0027421"	"design_flow"	"design_flow"	0.0053	""	""	""
-"echo_VA0027430"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0027464"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0027481"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0027537"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0027553"	"design_flow"	"design_flow"	0.0395	""	""	""
-"echo_VA0027561"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0027618"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0027642"	"design_flow"	"design_flow"	0.24	""	""	""
-"echo_VA0027685"	"design_flow"	"design_flow"	0.0104	""	""	""
-"echo_VA0027693"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0027707"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0027715"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0027839"	"design_flow"	"design_flow"	0.039	""	""	""
-"echo_VA0027855"	"design_flow"	"design_flow"	0.0198	""	""	""
-"echo_VA0027901"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0027910"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0027944"	"design_flow"	"design_flow"	0.0175	""	""	""
-"echo_VA0027952"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0027979"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0028029"	"design_flow"	"design_flow"	0.15	""	""	""
-"echo_VA0028037"	"design_flow"	"design_flow"	0.15	""	""	""
-"echo_VA0028233"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0028258"	"design_flow"	"design_flow"	0.039	""	""	""
-"echo_VA0028291"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0028321"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0028363"	"design_flow"	"design_flow"	2.2	""	""	""
-"echo_VA0028371"	"design_flow"	"design_flow"	0.14	""	""	""
-"echo_VA0028380"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0028398"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0028401"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0028461"	"design_flow"	"design_flow"	0.018	""	""	""
-"echo_VA0028622"	"design_flow"	"design_flow"	0.09	""	""	""
-"echo_VA0028762"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0028819"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0028916"	"design_flow"	"design_flow"	0.036	""	""	""
-"echo_VA0029084"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0029092"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0029254"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0029319"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0029335"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0029343"	"design_flow"	"design_flow"	0.0325	""	""	""
-"echo_VA0029351"	"design_flow"	"design_flow"	0.0495	""	""	""
-"echo_VA0029416"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0029475"	"design_flow"	"design_flow"	0.12	""	""	""
-"echo_VA0029513"	"design_flow"	"design_flow"	0.345	""	""	""
-"echo_VA0029521"	"design_flow"	"design_flow"	5.8	""	""	""
-"echo_VA0029556"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0029564"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0029599"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0029653"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0029688"	"design_flow"	"design_flow"	0.0093	""	""	""
-"echo_VA0029769"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0029785"	"design_flow"	"design_flow"	6	""	""	""
-"echo_VA0029858"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0030112"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0030121"	"design_flow"	"design_flow"	0.003	""	""	""
-"echo_VA0030589"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0030767"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0031011"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0031194"	"design_flow"	"design_flow"	0.024	""	""	""
-"echo_VA0031321"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0031356"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0031763"	"design_flow"	"design_flow"	0.64	""	""	""
-"echo_VA0032000"	"design_flow"	"design_flow"	130	""	""	""
-"echo_VA0032034"	"design_flow"	"design_flow"	0.53	""	""	""
-"echo_VA0032115"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0032123"	"design_flow"	"design_flow"	0.013	""	""	""
-"echo_VA0050032"	"design_flow"	"design_flow"	7.2	""	""	""
-"echo_VA0050181"	"design_flow"	"design_flow"	0.903	""	""	""
-"echo_VA0050351"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0050989"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051144"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051373"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0051420"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051446"	"design_flow"	"design_flow"	0.467	""	""	""
-"echo_VA0051683"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051713"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051756"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051799"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051888"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0051926"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0052302"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0052337"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0052434"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0052451"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0052621"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0052639"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0052655"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0052817"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0052841"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0052850"	"design_flow"	"design_flow"	0.254	""	""	""
-"echo_VA0052906"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0053023"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0053082"	"design_flow"	"design_flow"	0.062	""	""	""
-"echo_VA0053121"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0053228"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0053317"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0053465"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0053473"	"design_flow"	"design_flow"	0.037	""	""	""
-"echo_VA0053554"	"design_flow"	"design_flow"	0.0635	""	""	""
-"echo_VA0053686"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0053813"	"design_flow"	"design_flow"	0.12	""	""	""
-"echo_VA0053911"	"design_flow"	"design_flow"	0.0905	""	""	""
-"echo_VA0054003"	"design_flow"	"design_flow"	0.0395	""	""	""
-"echo_VA0054291"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0054330"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0054381"	"design_flow"	"design_flow"	2.3	""	""	""
-"echo_VA0054453"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0054577"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0054623"	"design_flow"	"design_flow"	0.023	""	""	""
-"echo_VA0054780"	"design_flow"	"design_flow"	0.055	""	""	""
-"echo_VA0054828"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0055000"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0055018"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0055328"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0055409"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0055832"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0056138"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0056537"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0057142"	"design_flow"	"design_flow"	1.6614	""	""	""
-"echo_VA0057380"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0057487"	"design_flow"	"design_flow"	0.189	""	""	""
-"echo_VA0057541"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0057576"	"design_flow"	"design_flow"	1.01	""	""	""
-"echo_VA0057606"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058041"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058050"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058254"	"design_flow"	"design_flow"	0.634	""	""	""
-"echo_VA0058378"	"design_flow"	"design_flow"	0.188	""	""	""
-"echo_VA0058424"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0058572"	"design_flow"	"design_flow"	0.0045	""	""	""
-"echo_VA0058599"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058611"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058785"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058793"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0058891"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0059056"	"design_flow"	"design_flow"	0.35	""	""	""
-"echo_VA0059072"	"design_flow"	"design_flow"	0.0361	""	""	""
-"echo_VA0059137"	"design_flow"	"design_flow"	0.54	""	""	""
-"echo_VA0059145"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0059161"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0059170"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0060194"	"design_flow"	"design_flow"	27	""	""	""
-"echo_VA0060275"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0060321"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0060330"	"design_flow"	"design_flow"	0.0047	""	""	""
-"echo_VA0060348"	"design_flow"	"design_flow"	0.0078	""	""	""
-"echo_VA0060364"	"design_flow"	"design_flow"	0.125	""	""	""
-"echo_VA0060402"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0060429"	"design_flow"	"design_flow"	0.0375	""	""	""
-"echo_VA0060445"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0060500"	"design_flow"	"design_flow"	0.058	""	""	""
-"echo_VA0060526"	"design_flow"	"design_flow"	0.544	""	""	""
-"echo_VA0060569"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0060585"	"design_flow"	"design_flow"	0.0045	""	""	""
-"echo_VA0060593"	"design_flow"	"design_flow"	20	""	""	""
-"echo_VA0060640"	"design_flow"	"design_flow"	22	""	""	""
-"echo_VA0060712"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0060763"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0060798"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0060844"	"design_flow"	"design_flow"	9	""	""	""
-"echo_VA0060879"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0060887"	"design_flow"	"design_flow"	0.22	""	""	""
-"echo_VA0060909"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0060917"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0060968"	"design_flow"	"design_flow"	10	""	""	""
-"echo_VA0061042"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0061158"	"design_flow"	"design_flow"	0.0256	""	""	""
-"echo_VA0061247"	"design_flow"	"design_flow"	0.0062	""	""	""
-"echo_VA0061280"	"design_flow"	"design_flow"	0.0042	""	""	""
-"echo_VA0061298"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0061301"	"design_flow"	"design_flow"	0.0053	""	""	""
-"echo_VA0061310"	"design_flow"	"design_flow"	0.9	""	""	""
-"echo_VA0061379"	"design_flow"	"design_flow"	0.036	""	""	""
-"echo_VA0061409"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0061549"	"design_flow"	"design_flow"	0.189	""	""	""
-"echo_VA0061590"	"design_flow"	"design_flow"	6	""	""	""
-"echo_VA0061646"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0061743"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0061751"	"design_flow"	"design_flow"	6	""	""	""
-"echo_VA0061859"	"design_flow"	"design_flow"	3.75	""	""	""
-"echo_VA0061913"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0061964"	"design_flow"	"design_flow"	0.15	""	""	""
-"echo_VA0061972"	"design_flow"	"design_flow"	0.721	""	""	""
-"echo_VA0062031"	"design_flow"	"design_flow"	0.024	""	""	""
-"echo_VA0062103"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0062154"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0062162"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0062189"	"design_flow"	"design_flow"	0.086	""	""	""
-"echo_VA0062219"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0062316"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0062391"	"design_flow"	"design_flow"	0.038	""	""	""
-"echo_VA0062421"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0062481"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0062499"	"design_flow"	"design_flow"	0.45	""	""	""
-"echo_VA0062529"	"design_flow"	"design_flow"	0.0025	""	""	""
-"echo_VA0062561"	"design_flow"	"design_flow"	0.108	""	""	""
-"echo_VA0062642"	"design_flow"	"design_flow"	1.6	""	""	""
-"echo_VA0062669"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0062685"	"design_flow"	"design_flow"	9	""	""	""
-"echo_VA0062731"	"design_flow"	"design_flow"	0.0125	""	""	""
-"echo_VA0062812"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0062880"	"design_flow"	"design_flow"	0.055	""	""	""
-"echo_VA0062928"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0062961"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0063029"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0063037"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0063118"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0063177"	"design_flow"	"design_flow"	75	""	""	""
-"echo_VA0063291"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0063347"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0063568"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0063606"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0063614"	"design_flow"	"design_flow"	0.016	""	""	""
-"echo_VA0063649"	"design_flow"	"design_flow"	0.0036	""	""	""
-"echo_VA0063657"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0063673"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0063690"	"design_flow"	"design_flow"	75	""	""	""
-"echo_VA0063738"	"design_flow"	"design_flow"	0.0256	""	""	""
-"echo_VA0063843"	"design_flow"	"design_flow"	0.23	""	""	""
-"echo_VA0064009"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0064033"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0064181"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0064271"	"design_flow"	"design_flow"	0.7	""	""	""
-"echo_VA0064394"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0064424"	"design_flow"	"design_flow"	0.465	""	""	""
-"echo_VA0064599"	"design_flow"	"design_flow"	0.175	""	""	""
-"echo_VA0064726"	"design_flow"	"design_flow"	0.0067	""	""	""
-"echo_VA0064751"	"design_flow"	"design_flow"	0.023	""	""	""
-"echo_VA0064793"	"design_flow"	"design_flow"	6.8	""	""	""
-"echo_VA0065196"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0065315"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0065323"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0065358"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0065374"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0065471"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0065536"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0065552"	"design_flow"	"design_flow"	12.6	""	""	""
-"echo_VA0065676"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0065706"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0065714"	"design_flow"	"design_flow"	0.0105	""	""	""
-"echo_VA0065854"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0065951"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0066303"	"design_flow"	"design_flow"	0.45	""	""	""
-"echo_VA0066311"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0066460"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0066532"	"design_flow"	"design_flow"	0.013	""	""	""
-"echo_VA0066575"	"design_flow"	"design_flow"	0.026	""	""	""
-"echo_VA0066630"	"design_flow"	"design_flow"	50	""	""	""
-"echo_VA0066869"	"design_flow"	"design_flow"	0.35	""	""	""
-"echo_VA0066877"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0066907"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0066991"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0067032"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0067041"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0067059"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0067067"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0067105"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0067121"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0067245"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0067318"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0067326"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0067351"	"design_flow"	"design_flow"	1.25	""	""	""
-"echo_VA0067423"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0067521"	"design_flow"	"design_flow"	0.017	""	""	""
-"echo_VA0067555"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0067571"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0067661"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0067881"	"design_flow"	"design_flow"	0.22	""	""	""
-"echo_VA0067938"	"design_flow"	"design_flow"	0.016	""	""	""
-"echo_VA0067954"	"design_flow"	"design_flow"	0.4	""	""	""
-"echo_VA0067962"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0068110"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0068144"	"design_flow"	"design_flow"	0.002	""	""	""
-"echo_VA0068209"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0068314"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0068438"	"design_flow"	"design_flow"	0.0072	""	""	""
-"echo_VA0068543"	"design_flow"	"design_flow"	0.0396	""	""	""
-"echo_VA0068586"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0068934"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0068951"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0069337"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0070106"	"design_flow"	"design_flow"	0.12	""	""	""
-"echo_VA0070271"	"design_flow"	"design_flow"	0.16	""	""	""
-"echo_VA0070327"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0070564"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0070572"	"design_flow"	"design_flow"	0.165	""	""	""
-"echo_VA0070670"	"design_flow"	"design_flow"	0.0399	""	""	""
-"echo_VA0071366"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0071471"	"design_flow"	"design_flow"	0.8	""	""	""
-"echo_VA0071528"	"design_flow"	"design_flow"	1.296	""	""	""
-"echo_VA0071641"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0071692"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0071846"	"design_flow"	"design_flow"	0.039	""	""	""
-"echo_VA0071927"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0072044"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0072079"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0072354"	"design_flow"	"design_flow"	1.44	""	""	""
-"echo_VA0072389"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0072397"	"design_flow"	"design_flow"	3.4	""	""	""
-"echo_VA0072532"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0072575"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0072729"	"design_flow"	"design_flow"	0.13	""	""	""
-"echo_VA0072931"	"design_flow"	"design_flow"	0.187	""	""	""
-"echo_VA0072991"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0073091"	"design_flow"	"design_flow"	1.4	""	""	""
-"echo_VA0073121"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0073156"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0073245"	"design_flow"	"design_flow"	2.5	""	""	""
-"echo_VA0073300"	"design_flow"	"design_flow"	1.82	""	""	""
-"echo_VA0073318"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0073504"	"design_flow"	"design_flow"	1.5	""	""	""
-"echo_VA0073555"	"design_flow"	"design_flow"	0.133	""	""	""
-"echo_VA0073636"	"design_flow"	"design_flow"	0.29	""	""	""
-"echo_VA0073733"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0074047"	"design_flow"	"design_flow"	0.12	""	""	""
-"echo_VA0074098"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0074161"	"design_flow"	"design_flow"	1.25	""	""	""
-"echo_VA0074179"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0074268"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0074381"	"design_flow"	"design_flow"	0.026	""	""	""
-"echo_VA0074454"	"design_flow"	"design_flow"	0.1175	""	""	""
-"echo_VA0074586"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0074781"	"design_flow"	"design_flow"	0.659	""	""	""
-"echo_VA0074870"	"design_flow"	"design_flow"	0.0048	""	""	""
-"echo_VA0074934"	"design_flow"	"design_flow"	0.0062	""	""	""
-"echo_VA0074942"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0075183"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0075191"	"design_flow"	"design_flow"	5	""	""	""
-"echo_VA0075230"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0075361"	"design_flow"	"design_flow"	0.009	""	""	""
-"echo_VA0075434"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0075451"	"design_flow"	"design_flow"	0.0025	""	""	""
-"echo_VA0075515"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0075574"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0075981"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0076015"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0076244"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0076350"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0076376"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0076384"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0076392"	"design_flow"	"design_flow"	8	""	""	""
-"echo_VA0076473"	"design_flow"	"design_flow"	0.95	""	""	""
-"echo_VA0076520"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0076678"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0076805"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0076830"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0076856"	"design_flow"	"design_flow"	0.0022	""	""	""
-"echo_VA0076881"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0077089"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0077259"	"design_flow"	"design_flow"	0.75	""	""	""
-"echo_VA0077399"	"design_flow"	"design_flow"	0.0075	""	""	""
-"echo_VA0077402"	"design_flow"	"design_flow"	1.7	""	""	""
-"echo_VA0077411"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0077763"	"design_flow"	"design_flow"	1.22	""	""	""
-"echo_VA0077828"	"design_flow"	"design_flow"	6.5	""	""	""
-"echo_VA0077879"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0077895"	"design_flow"	"design_flow"	0.0047	""	""	""
-"echo_VA0078131"	"design_flow"	"design_flow"	0.014	""	""	""
-"echo_VA0078484"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0078531"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0078646"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0078654"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0078778"	"design_flow"	"design_flow"	1.5	""	""	""
-"echo_VA0079057"	"design_flow"	"design_flow"	0.0072	""	""	""
-"echo_VA0079502"	"design_flow"	"design_flow"	1.45	""	""	""
-"echo_VA0079863"	"design_flow"	"design_flow"	0.262	""	""	""
-"echo_VA0079928"	"design_flow"	"design_flow"	0.059	""	""	""
-"echo_VA0080071"	"design_flow"	"design_flow"	8	""	""	""
-"echo_VA0080080"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0080179"	"design_flow"	"design_flow"	1.63	""	""	""
-"echo_VA0080233"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0080241"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0080390"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0080527"	"design_flow"	"design_flow"	0.9	""	""	""
-"echo_VA0080535"	"design_flow"	"design_flow"	0.0054	""	""	""
-"echo_VA0080781"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0080837"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0080993"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0081001"	"design_flow"	"design_flow"	0.0042	""	""	""
-"echo_VA0081213"	"design_flow"	"design_flow"	0.0025	""	""	""
-"echo_VA0081230"	"design_flow"	"design_flow"	18	""	""	""
-"echo_VA0081248"	"design_flow"	"design_flow"	54	""	""	""
-"echo_VA0081256"	"design_flow"	"design_flow"	25	""	""	""
-"echo_VA0081264"	"design_flow"	"design_flow"	24	""	""	""
-"echo_VA0081272"	"design_flow"	"design_flow"	20	""	""	""
-"echo_VA0081281"	"design_flow"	"design_flow"	40	""	""	""
-"echo_VA0081299"	"design_flow"	"design_flow"	30	""	""	""
-"echo_VA0081302"	"design_flow"	"design_flow"	22.5	""	""	""
-"echo_VA0081311"	"design_flow"	"design_flow"	15	""	""	""
-"echo_VA0081418"	"design_flow"	"design_flow"	0.073	""	""	""
-"echo_VA0081621"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0081639"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0081779"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0082058"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0082228"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0082333"	"design_flow"	"design_flow"	0.28	""	""	""
-"echo_VA0082546"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0082589"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0082767"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0082783"	"design_flow"	"design_flow"	0.1363	""	""	""
-"echo_VA0083011"	"design_flow"	"design_flow"	0.836	""	""	""
-"echo_VA0083054"	"design_flow"	"design_flow"	0.411	""	""	""
-"echo_VA0083097"	"design_flow"	"design_flow"	1.735	""	""	""
-"echo_VA0083127"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0083135"	"design_flow"	"design_flow"	2.4	""	""	""
-"echo_VA0083194"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0083291"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0083305"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0083313"	"design_flow"	"design_flow"	0.7	""	""	""
-"echo_VA0083399"	"design_flow"	"design_flow"	0.192	""	""	""
-"echo_VA0083402"	"design_flow"	"design_flow"	0.175	""	""	""
-"echo_VA0083411"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0083712"	"design_flow"	"design_flow"	0.495	""	""	""
-"echo_VA0084034"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0084069"	"design_flow"	"design_flow"	1.0457	""	""	""
-"echo_VA0084212"	"design_flow"	"design_flow"	0.14	""	""	""
-"echo_VA0084298"	"design_flow"	"design_flow"	0.0015	""	""	""
-"echo_VA0084433"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0084565"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0085171"	"design_flow"	"design_flow"	0.099	""	""	""
-"echo_VA0085278"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0085481"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0085499"	"design_flow"	"design_flow"	2.16	""	""	""
-"echo_VA0085588"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0085723"	"design_flow"	"design_flow"	0.144	""	""	""
-"echo_VA0085871"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0085901"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0085936"	"design_flow"	"design_flow"	0.009	""	""	""
-"echo_VA0085952"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0085961"	"design_flow"	"design_flow"	0.275	""	""	""
-"echo_VA0085979"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0086151"	"design_flow"	"design_flow"	0.73	""	""	""
-"echo_VA0086169"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0086274"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0086304"	"design_flow"	"design_flow"	3.4	""	""	""
-"echo_VA0086355"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0086452"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0086533"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0086541"	"design_flow"	"design_flow"	1.47	""	""	""
-"echo_VA0086584"	"design_flow"	"design_flow"	0.381	""	""	""
-"echo_VA0086622"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0086665"	"design_flow"	"design_flow"	0.0035	""	""	""
-"echo_VA0086673"	"design_flow"	"design_flow"	0.025	""	""	""
-"echo_VA0086681"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0086720"	"design_flow"	"design_flow"	0.07	""	""	""
-"echo_VA0086762"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0086789"	"design_flow"	"design_flow"	0.14	""	""	""
-"echo_VA0086797"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0086967"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0087033"	"design_flow"	"design_flow"	0.056	""	""	""
-"echo_VA0087068"	"design_flow"	"design_flow"	112.8	""	""	""
-"echo_VA0087084"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0087092"	"design_flow"	"design_flow"	0.0284	""	""	""
-"echo_VA0087106"	"design_flow"	"design_flow"	1.465	""	""	""
-"echo_VA0087114"	"design_flow"	"design_flow"	0.177	""	""	""
-"echo_VA0087173"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0087238"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0087254"	"design_flow"	"design_flow"	0.0174	""	""	""
-"echo_VA0087271"	"design_flow"	"design_flow"	0.028	""	""	""
-"echo_VA0087319"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087327"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0087351"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087378"	"design_flow"	"design_flow"	0.63	""	""	""
-"echo_VA0087408"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087424"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0087505"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087548"	"design_flow"	"design_flow"	0.016	""	""	""
-"echo_VA0087581"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087599"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0087611"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0087629"	"design_flow"	"design_flow"	0.0085	""	""	""
-"echo_VA0087645"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0087661"	"design_flow"	"design_flow"	0.0008	""	""	""
-"echo_VA0087696"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0087700"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087718"	"design_flow"	"design_flow"	0.27	""	""	""
-"echo_VA0087734"	"design_flow"	"design_flow"	3.88	""	""	""
-"echo_VA0087858"	"design_flow"	"design_flow"	2.215	""	""	""
-"echo_VA0087874"	"design_flow"	"design_flow"	0.555	""	""	""
-"echo_VA0087882"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0087891"	"design_flow"	"design_flow"	0.0075	""	""	""
-"echo_VA0087912"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0087955"	"design_flow"	"design_flow"	0.07	""	""	""
-"echo_VA0088048"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0088072"	"design_flow"	"design_flow"	0.0037	""	""	""
-"echo_VA0088081"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088102"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0088111"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0088153"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088161"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0088170"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088188"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088196"	"design_flow"	"design_flow"	0.165	""	""	""
-"echo_VA0088226"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088277"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0088331"	"design_flow"	"design_flow"	2	""	""	""
-"echo_VA0088374"	"design_flow"	"design_flow"	1.9685	""	""	""
-"echo_VA0088382"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0088404"	"design_flow"	"design_flow"	5	""	""	""
-"echo_VA0088421"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0088463"	"design_flow"	"design_flow"	0.065	""	""	""
-"echo_VA0088480"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088498"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0088510"	"design_flow"	"design_flow"	0.192	""	""	""
-"echo_VA0088552"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088561"	"design_flow"	"design_flow"	0.0019	""	""	""
-"echo_VA0088579"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0088587"	"design_flow"	"design_flow"	9999	""	""	""
-"echo_VA0088595"	"design_flow"	"design_flow"	9999	""	""	""
-"echo_VA0088609"	"design_flow"	"design_flow"	9999	""	""	""
-"echo_VA0088617"	"design_flow"	"design_flow"	999	""	""	""
-"echo_VA0088625"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0088633"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0088641"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0088650"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0088668"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0088676"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0088684"	"design_flow"	"design_flow"	0.07	""	""	""
-"echo_VA0088692"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088706"	"design_flow"	"design_flow"	0.0395	""	""	""
-"echo_VA0088714"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0088722"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0088749"	"design_flow"	"design_flow"	0.45	""	""	""
-"echo_VA0088765"	"design_flow"	"design_flow"	22.759	""	""	""
-"echo_VA0088811"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0088846"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088871"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0088935"	"design_flow"	"design_flow"	0.125	""	""	""
-"echo_VA0088943"	"design_flow"	"design_flow"	0.018	""	""	""
-"echo_VA0088960"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0088978"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0088986"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0088994"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0089001"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089010"	"design_flow"	"design_flow"	0.0016	""	""	""
-"echo_VA0089052"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0089061"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0089087"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089125"	"design_flow"	"design_flow"	0.58	""	""	""
-"echo_VA0089133"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0089168"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0089184"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089206"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0089214"	"design_flow"	"design_flow"	0.0093	""	""	""
-"echo_VA0089222"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0089231"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089265"	"design_flow"	"design_flow"	0.009	""	""	""
-"echo_VA0089273"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0089290"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089303"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089320"	"design_flow"	"design_flow"	0.027	""	""	""
-"echo_VA0089338"	"design_flow"	"design_flow"	0.375	""	""	""
-"echo_VA0089354"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0089397"	"design_flow"	"design_flow"	0.8	""	""	""
-"echo_VA0089427"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089443"	"design_flow"	"design_flow"	1.25	""	""	""
-"echo_VA0089451"	"design_flow"	"design_flow"	0.66	""	""	""
-"echo_VA0089460"	"design_flow"	"design_flow"	12	""	""	""
-"echo_VA0089478"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089486"	"design_flow"	"design_flow"	0.0576	""	""	""
-"echo_VA0089508"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089541"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0089559"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089583"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0089591"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089605"	"design_flow"	"design_flow"	0.75	""	""	""
-"echo_VA0089630"	"design_flow"	"design_flow"	0.0008	""	""	""
-"echo_VA0089656"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089681"	"design_flow"	"design_flow"	0.13	""	""	""
-"echo_VA0089699"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0089729"	"design_flow"	"design_flow"	0.22	""	""	""
-"echo_VA0089737"	"design_flow"	"design_flow"	2.3	""	""	""
-"echo_VA0089770"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089796"	"design_flow"	"design_flow"	0.0144	""	""	""
-"echo_VA0089818"	"design_flow"	"design_flow"	0.0009	""	""	""
-"echo_VA0089826"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0089842"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089877"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089885"	"design_flow"	"design_flow"	0.013	""	""	""
-"echo_VA0089893"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0089907"	"design_flow"	"design_flow"	0.0075	""	""	""
-"echo_VA0089915"	"design_flow"	"design_flow"	7	""	""	""
-"echo_VA0089923"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0089940"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0089958"	"design_flow"	"design_flow"	0.0055	""	""	""
-"echo_VA0089982"	"design_flow"	"design_flow"	0.0065	""	""	""
-"echo_VA0089991"	"design_flow"	"design_flow"	0.065	""	""	""
-"echo_VA0090026"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090034"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0090051"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0090085"	"design_flow"	"design_flow"	0.356	""	""	""
-"echo_VA0090093"	"design_flow"	"design_flow"	0.1224	""	""	""
-"echo_VA0090107"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090115"	"design_flow"	"design_flow"	0.575	""	""	""
-"echo_VA0090131"	"design_flow"	"design_flow"	0.0012	""	""	""
-"echo_VA0090140"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0090174"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0090182"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0090212"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090221"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0090239"	"design_flow"	"design_flow"	0.0032	""	""	""
-"echo_VA0090247"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0090263"	"design_flow"	"design_flow"	2.923	""	""	""
-"echo_VA0090271"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090280"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090298"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090301"	"design_flow"	"design_flow"	23.86	""	""	""
-"echo_VA0090310"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0090328"	"design_flow"	"design_flow"	0.75	""	""	""
-"echo_VA0090344"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0090361"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090379"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090395"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090417"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0090425"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090433"	"design_flow"	"design_flow"	0.0181	""	""	""
-"echo_VA0090441"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090468"	"design_flow"	"design_flow"	0.41	""	""	""
-"echo_VA0090506"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0090531"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090549"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0090573"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090590"	"design_flow"	"design_flow"	1.4	""	""	""
-"echo_VA0090620"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0090638"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0090646"	"design_flow"	"design_flow"	0.018	""	""	""
-"echo_VA0090654"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0090671"	"design_flow"	"design_flow"	3.5	""	""	""
-"echo_VA0090689"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0090697"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090719"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0090727"	"design_flow"	"design_flow"	0.25	""	""	""
-"echo_VA0090743"	"design_flow"	"design_flow"	0.311	""	""	""
-"echo_VA0090760"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090778"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0090786"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0090794"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0090824"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090875"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0090883"	"design_flow"	"design_flow"	0.018	""	""	""
-"echo_VA0090891"	"design_flow"	"design_flow"	0.53	""	""	""
-"echo_VA0090905"	"design_flow"	"design_flow"	1.73	""	""	""
-"echo_VA0090913"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090921"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0090930"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090948"	"design_flow"	"design_flow"	0.6	""	""	""
-"echo_VA0090956"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0090964"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0090981"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0090999"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091006"	"design_flow"	"design_flow"	0.5026	""	""	""
-"echo_VA0091014"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0091049"	"design_flow"	"design_flow"	0.037	""	""	""
-"echo_VA0091065"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091081"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091103"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0091111"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0091120"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091146"	"design_flow"	"design_flow"	0.15	""	""	""
-"echo_VA0091154"	"design_flow"	"design_flow"	0.007	""	""	""
-"echo_VA0091162"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0091189"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091197"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091201"	"design_flow"	"design_flow"	0.754	""	""	""
-"echo_VA0091219"	"design_flow"	"design_flow"	1.1	""	""	""
-"echo_VA0091227"	"design_flow"	"design_flow"	0.74	""	""	""
-"echo_VA0091243"	"design_flow"	"design_flow"	0.3875	""	""	""
-"echo_VA0091251"	"design_flow"	"design_flow"	11.52	""	""	""
-"echo_VA0091260"	"design_flow"	"design_flow"	2.48	""	""	""
-"echo_VA0091278"	"design_flow"	"design_flow"	4.43	""	""	""
-"echo_VA0091286"	"design_flow"	"design_flow"	2.8	""	""	""
-"echo_VA0091294"	"design_flow"	"design_flow"	0.001	""	""	""
-"echo_VA0091316"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091324"	"design_flow"	"design_flow"	3.09	""	""	""
-"echo_VA0091332"	"design_flow"	"design_flow"	33.5	""	""	""
-"echo_VA0091341"	"design_flow"	"design_flow"	0.09	""	""	""
-"echo_VA0091375"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091383"	"design_flow"	"design_flow"	11	""	""	""
-"echo_VA0091391"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091405"	"design_flow"	"design_flow"	1	""	""	""
-"echo_VA0091421"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0091430"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0091448"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0091456"	"design_flow"	"design_flow"	3.168	""	""	""
-"echo_VA0091464"	"design_flow"	"design_flow"	0.27	""	""	""
-"echo_VA0091499"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091502"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091511"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091529"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0091537"	"design_flow"	"design_flow"	0.008	""	""	""
-"echo_VA0091553"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0091561"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0091588"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0091618"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091642"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0091651"	"design_flow"	"design_flow"	0.06	""	""	""
-"echo_VA0091669"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0091677"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0091707"	"design_flow"	"design_flow"	0.999	""	""	""
-"echo_VA0091723"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091731"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091758"	"design_flow"	"design_flow"	0.004	""	""	""
-"echo_VA0091766"	"design_flow"	"design_flow"	0.173	""	""	""
-"echo_VA0091791"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091804"	"design_flow"	"design_flow"	0.012	""	""	""
-"echo_VA0091821"	"design_flow"	"design_flow"	0.435	""	""	""
-"echo_VA0091847"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091855"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091863"	"design_flow"	"design_flow"	0.626	""	""	""
-"echo_VA0091871"	"design_flow"	"design_flow"	0.1	""	""	""
-"echo_VA0091898"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0091910"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091928"	"design_flow"	"design_flow"	0.039	""	""	""
-"echo_VA0091936"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091952"	"design_flow"	"design_flow"	0.05	""	""	""
-"echo_VA0091961"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0091979"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0091987"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0091995"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"	""	""
-"echo_VA0092002"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092011"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092029"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092037"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092045"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0092061"	"design_flow"	"design_flow"	0.016	""	""	""
-"echo_VA0092070"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0092100"	"design_flow"	"design_flow"	0.13	""	""	""
-"echo_VA0092118"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092126"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092134"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0092142"	"design_flow"	"design_flow"	0.0864	""	""	""
-"echo_VA0092169"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092185"	"design_flow"	"design_flow"	0.0288	""	""	""
-"echo_VA0092193"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092207"	"design_flow"	"design_flow"	0.087	""	""	""
-"echo_VA0092215"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0092240"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092258"	"design_flow"	"design_flow"	0.0086	""	""	""
-"echo_VA0092274"	"design_flow"	"design_flow"	4	""	""	""
-"echo_VA0092282"	"design_flow"	"design_flow"	7.5	""	""	""
-"echo_VA0092291"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092304"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092312"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0092321"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092339"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0092347"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092363"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092371"	"design_flow"	"design_flow"	0.018	""	""	""
-"echo_VA0092380"	"design_flow"	"design_flow"	0.12	""	""	""
-"echo_VA0092398"	"design_flow"	"design_flow"	0.0003	""	""	""
-"echo_VA0092410"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092428"	"design_flow"	"design_flow"	0.3	""	""	""
-"echo_VA0092436"	"design_flow"	"design_flow"	3.6	""	""	""
-"echo_VA0092444"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092452"	"design_flow"	"design_flow"	0.0055	""	""	""
-"echo_VA0092461"	"design_flow"	"design_flow"	0.009	""	""	""
-"echo_VA0092487"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092495"	"design_flow"	"design_flow"	0	""	""	""
-"echo_VA0092509"	"design_flow"	"design_flow"	0.01	""	""	""
-"echo_VA0092517"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092525"	"design_flow"	"design_flow"	0.183	""	""	""
-"echo_VA0092533"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092541"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0092550"	"design_flow"	"design_flow"	0.006	""	""	""
-"echo_VA0092568"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092576"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0092584"	"design_flow"	"design_flow"	0.0036	""	""	""
-"echo_VA0092592"	"design_flow"	"design_flow"	0.03	""	""	""
-"echo_VA0092606"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092614"	"design_flow"	"design_flow"	0.003	""	""	""
-"echo_VA0092622"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092631"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092649"	"design_flow"	"design_flow"	0.0005	""	""	""
-"echo_VA0092657"	"design_flow"	"design_flow"	0.0002	""	""	""
-"echo_VA0092665"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092673"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092681"	"design_flow"	"design_flow"	0.035	""	""	""
-"echo_VA0092690"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092703"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092711"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092720"	"design_flow"	"design_flow"	0.015	""	""	""
-"echo_VA0092738"	"design_flow"	"design_flow"	0.0936	""	""	""
-"echo_VA0092746"	"design_flow"	"design_flow"	0.7	""	""	""
-"echo_VA0092754"	"design_flow"	"design_flow"	0.33	""	""	""
-"echo_VA0092762"	"design_flow"	"design_flow"	0.526	""	""	""
-"echo_VA0092771"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092789"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092797"	"design_flow"	"design_flow"	0.2	""	""	""
-"echo_VA0092843"	"design_flow"	"design_flow"	0.04	""	""	""
-"echo_VA0092851"	"design_flow"	"design_flow"	0.08	""	""	""
-"echo_VA0092860"	"design_flow"	"design_flow"	0.5	""	""	""
-"echo_VA0092878"	"design_flow"	"design_flow"	0.005	""	""	""
-"echo_VA0092894"	"design_flow"	"design_flow"	0.153	""	""	""
-"echo_VA0092908"	"design_flow"	"design_flow"	0.143	""	""	""
-"echo_VA0092916"	"design_flow"	"design_flow"	2.7	""	""	""
-"echo_VA0092924"	"design_flow"	"design_flow"	0.0045	""	""	""
-"echo_VA0092932"	"design_flow"	"design_flow"	0.02	""	""	""
-"echo_VA0092941"	"design_flow"	"design_flow"	2.06	""	""	""
-"echo_VA0092959"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VA0092967"	"design_flow"	"design_flow"	3	""	""	""
-"echo_VA0C50001"	"design_flow"	"design_flow"	0.024	""	""	""
-"echo_VA0C50002"	"design_flow"	"design_flow"	0.024	""	""	""
-"echo_VAG110020"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110024"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110034"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110048"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110063"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110064"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110065"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110074"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110082"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110092"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110095"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110099"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110117"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110153"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110159"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110175"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110177"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110180"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110181"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110182"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110183"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110185"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110188"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110193"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG110198"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG111002"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG112005"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG112007"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG112011"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG112012"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG112014"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG112016"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG114034"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG116006"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG116008"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG116010"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG116024"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG116025"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG250018"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG250029"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG402056"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG840204"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG844036"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG846009"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG846018"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAG846024"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL002151"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL005215"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020273"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020281"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020311"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020346"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020354"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020362"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020451"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020494"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020567"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020940"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL020991"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL021105"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL021172"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL021199"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL021377"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL021385"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022292"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022306"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022322"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022349"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022390"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022772"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022802"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL022845"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL023922"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024678"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024724"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024732"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024899"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024970"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024988"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL024996"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025020"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025054"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025101"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025127"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025143"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025151"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025160"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025194"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025291"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025305"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025364"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025437"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025470"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025488"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025496"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025518"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025542"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL025658"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026298"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026409"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026417"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026433"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026468"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026514"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL026531"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL027901"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL028363"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL028436"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL029424"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL029513"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL029521"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL029858"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL030155"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL030163"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL058441"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL060194"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL060445"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL060593"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL060640"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL060844"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL060968"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL061590"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL061654"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL061751"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL061859"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL062481"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL062642"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL062685"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL062812"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL063177"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL063690"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL064637"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL064793"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL065366"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL065552"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL066630"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL066877"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL067351"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL067822"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL067962"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL068110"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL069337"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL069345"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL073504"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL074161"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL075191"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL076392"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL076805"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL077259"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL077828"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL078484"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081230"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081248"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081256"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081264"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081272"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081281"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081299"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081302"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL081311"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL083135"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL083411"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL085952"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL086304"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL086584"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL086754"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL087068"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL087718"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL088161"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL088331"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL088579"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL089443"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL089915"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL090212"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL090263"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL090280"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL090417"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL090531"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL090671"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL091383"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL091707"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL092274"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAL092282"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VALL21385"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VALL29521"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VALL92282"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VALX90263"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010006"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010007"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010008"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010009"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010010"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010011"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010012"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010014"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010015"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010016"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010017"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010018"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010019"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010020"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010021"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010022"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010023"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010039"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010040"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010041"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010042"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010043"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010050"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010057"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010058"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010059"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010060"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010061"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010062"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010092"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010093"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010094"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010096"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010098"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010099"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010102"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010107"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010120"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010121"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010123"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010124"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010128"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010129"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010131"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010134"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010136"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010142"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010144"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN010155"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020024"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020025"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020026"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020028"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020029"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020030"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020031"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020032"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020033"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020034"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020035"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020036"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020037"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020038"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020044"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020053"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020054"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020055"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020056"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020095"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020101"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020108"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020109"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020111"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020113"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020114"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020115"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020157"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020160"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN020162"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030045"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030046"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030047"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030048"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030049"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030051"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030052"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030110"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030119"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030133"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030146"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030154"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN030156"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040063"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040065"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040066"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040067"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040068"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040069"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040070"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040071"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040072"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040073"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040074"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040075"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040076"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040077"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040078"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040079"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040080"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040081"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040082"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040083"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040084"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040085"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040086"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040087"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040089"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040090"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040097"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040100"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040103"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040104"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040105"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040106"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040118"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040126"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040127"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040132"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040140"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040141"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040143"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040145"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN040173"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN050001"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN050002"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN050003"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN050004"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAN050005"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAP181272"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040029"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040035"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040057"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040071"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040075"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040100"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040104"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040113"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR040114"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050014"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050046"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050123"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050140"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050168"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050202"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050214"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050222"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050256"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050275"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050452"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050462"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050504"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050511"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050513"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050527"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050577"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050581"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050604"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050607"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050619"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050628"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050640"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050655"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050682"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050685"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050686"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050690"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050691"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050716"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050717"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050740"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050772"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050776"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050860"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050878"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050901"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050919"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050922"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR050974"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR051012"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR051022"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR051055"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR051137"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR051227"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100540"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100767"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100798"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100799"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100878"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100895"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR100926"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101005"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101014"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101072"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101294"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101305"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101351"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101388"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101401"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101441"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101487"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR101490"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR102130"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR102279"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR102337"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR102489"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR102807"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR103397"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR103461"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR103921"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR103930"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR103938"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR103977"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR104191"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR104199"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR104209"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR104350"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR104414"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR104634"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR105317"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR105528"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR106141"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR107363"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR107429"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR107430"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR108818"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C359"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C407"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C624"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C640"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C662"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C775"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10C817"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10D013"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10D139"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10D417"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10F729"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10G187"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10G914"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10H092"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10H397"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR10I177"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR110019"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR130015"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR140049"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR140069"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR140156"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR150067"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR160060"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR220049"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR220111"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR240055"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR320004"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAR320109"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000001"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000002"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000003"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000004"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000005"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000006"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000007"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000020"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000021"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000022"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000023"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000024"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000025"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000026"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000027"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000028"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000029"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000030"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000031"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000032"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000033"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000034"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000035"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000036"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000037"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000038"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000039"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000040"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000041"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000042"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000043"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000044"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000045"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000046"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000047"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000048"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000049"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000050"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000051"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000052"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000053"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU000054"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001538"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001539"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001540"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001541"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001543"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001544"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001545"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001546"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001547"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001548"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001549"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001550"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001551"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001552"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001553"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001554"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001555"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001556"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001557"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001559"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001560"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001561"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001562"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001563"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001564"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001565"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001566"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001567"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001568"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001569"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001570"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001571"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001572"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001573"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001575"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001576"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001577"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001579"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001580"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001581"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001582"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001583"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001584"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001585"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001586"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001587"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001588"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001589"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001590"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001591"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001592"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001593"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001594"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001595"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001596"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001597"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001598"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001599"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001600"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001601"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001602"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001603"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001604"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001605"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001606"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001607"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001608"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001609"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001610"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001611"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001612"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001613"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001614"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001615"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001616"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001617"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001618"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001619"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001620"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001621"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001622"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001623"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001624"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001625"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001626"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001627"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001628"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001629"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001630"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001631"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001632"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001633"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001634"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001635"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001636"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001637"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001638"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001639"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001640"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001641"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001642"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001643"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001644"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001645"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001646"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001647"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001648"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001649"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001650"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001651"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001652"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001653"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001654"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001655"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001656"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001657"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001658"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001659"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001660"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001661"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001662"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001663"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001664"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001665"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001666"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001667"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001668"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001669"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001670"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001671"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001672"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001673"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001674"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001675"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001676"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001677"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001678"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001679"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001680"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001681"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001682"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001683"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001684"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001685"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001686"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001687"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001688"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001689"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001690"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001691"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001692"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001693"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001694"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001695"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001696"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001697"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001698"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001699"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001700"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001702"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001703"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001704"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001705"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001706"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001707"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001708"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001709"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001710"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001711"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001712"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001713"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001714"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001715"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001716"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001717"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001718"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001719"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001720"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001721"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001722"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001723"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001724"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001725"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001726"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001727"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001728"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001729"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001730"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001731"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001732"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001733"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001734"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001735"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001736"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001737"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001738"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001739"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001740"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001741"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001742"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001743"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001744"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001745"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001746"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001747"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001748"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001749"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001750"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001751"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001752"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001753"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001754"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001755"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001756"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001757"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001758"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001759"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001760"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001761"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001762"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001763"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001764"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001765"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001766"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001767"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001768"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001769"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001771"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001772"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001773"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001774"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001775"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001776"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001777"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001778"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001779"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001780"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001781"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001782"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001783"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001784"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001785"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001786"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001787"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001788"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001789"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001790"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001791"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001792"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001793"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001794"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001795"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001796"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001797"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001798"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001805"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001811"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001812"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001813"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001814"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001815"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001816"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001817"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001818"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001819"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001820"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001821"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001822"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001823"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001824"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001831"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001832"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001839"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001840"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001841"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001842"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001850"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001851"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001852"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001857"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001858"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001859"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001860"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU001866"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU320064"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU410182"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU431041"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU520021"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU520323"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU540027"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU540050"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_VAU550080"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0021687"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0045144"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0049751"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0050521"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0053121"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0090972"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0096725"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV0097527"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1005642"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1005651"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1005685"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1006045"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1006126"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1008579"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1008781"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1008919"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1008978"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1011821"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1011928"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1011995"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1016113"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1016164"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1016211"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1016270"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1016296"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1016326"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1018558"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1018639"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1018795"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1020609"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1021222"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1021303"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1021559"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1023292"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1023837"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1023969"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1024281"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1026852"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WV1027581"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WVG415507"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WVU000037"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WVU007388"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WVU007416"	"design_flow"	"design_flow"	NA	""	""	""
-"echo_WVU007601"	"design_flow"	"design_flow"	NA	""	""	""
+"hydrocode"	"varkey"	"propname"	"propvalue"	"propcode"
+"echo_DC0022004"	"design_flow"	"design_flow"	NA	NA
+"echo_DCNOE3034"	"design_flow"	"design_flow"	NA	NA
+"echo_ILG870595"	"design_flow"	"design_flow"	NA	NA
+"echo_ILR007054"	"design_flow"	"design_flow"	NA	NA
+"echo_MD0056464"	"design_flow"	"design_flow"	NA	NA
+"echo_MD0064556"	"design_flow"	"design_flow"	NA	NA
+"echo_MD0066184"	"design_flow"	"design_flow"	NA	NA
+"echo_MD0066427"	"design_flow"	"design_flow"	NA	NA
+"echo_MD0067598"	"design_flow"	"design_flow"	NA	NA
+"echo_MD0068187"	"design_flow"	"design_flow"	NA	NA
+"echo_NCG210111"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0000213"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0000248"	"design_flow"	"design_flow"	1.07	NA
+"echo_VA0000281"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0000299"	"design_flow"	"design_flow"	70	NA
+"echo_VA0000370"	"design_flow"	"design_flow"	357	NA
+"echo_VA0000523"	"design_flow"	"design_flow"	5.25	NA
+"echo_VA0001015"	"design_flow"	"design_flow"	4.84	NA
+"echo_VA0001201"	"design_flow"	"design_flow"	0.13	NA
+"echo_VA0001309"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0001333"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0001431"	"design_flow"	"design_flow"	5.32	NA
+"echo_VA0001449"	"design_flow"	"design_flow"	0.0195	NA
+"echo_VA0001473"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0001490"	"design_flow"	"design_flow"	0.054	NA
+"echo_VA0001554"	"design_flow"	"design_flow"	0.464	NA
+"echo_VA0001589"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0001597"	"design_flow"	"design_flow"	0.043	NA
+"echo_VA0001678"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0001767"	"design_flow"	"design_flow"	2.93	NA
+"echo_VA0001872"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0001945"	"design_flow"	"design_flow"	0.054	NA
+"echo_VA0001961"	"design_flow"	"design_flow"	1	NA
+"echo_VA0001988"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0002071"	"design_flow"	"design_flow"	300	NA
+"echo_VA0002151"	"design_flow"	"design_flow"	0.0033	NA
+"echo_VA0002160"	"design_flow"	"design_flow"	4.51	NA
+"echo_VA0002178"	"design_flow"	"design_flow"	7.54	NA
+"echo_VA0002194"	"design_flow"	"design_flow"	0.242	NA
+"echo_VA0002283"	"design_flow"	"design_flow"	0.18	NA
+"echo_VA0002313"	"design_flow"	"design_flow"	1.52	NA
+"echo_VA0002402"	"design_flow"	"design_flow"	0.216	NA
+"echo_VA0002585"	"design_flow"	"design_flow"	5.8	NA
+"echo_VA0002623"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0002631"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0002666"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0002674"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0002771"	"design_flow"	"design_flow"	0.136	NA
+"echo_VA0002780"	"design_flow"	"design_flow"	3	NA
+"echo_VA0002925"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0003018"	"design_flow"	"design_flow"	6.3	NA
+"echo_VA0003026"	"design_flow"	"design_flow"	12	NA
+"echo_VA0003077"	"design_flow"	"design_flow"	1	NA
+"echo_VA0003115"	"design_flow"	"design_flow"	19	NA
+"echo_VA0003255"	"design_flow"	"design_flow"	0.1866	NA
+"echo_VA0003263"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0003344"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0003387"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0003409"	"design_flow"	"design_flow"	1	NA
+"echo_VA0003433"	"design_flow"	"design_flow"	6.4	NA
+"echo_VA0003450"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0003492"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0003646"	"design_flow"	"design_flow"	35	NA
+"echo_VA0003654"	"design_flow"	"design_flow"	0.002	NA
+"echo_VA0003697"	"design_flow"	"design_flow"	1	NA
+"echo_VA0003808"	"design_flow"	"design_flow"	3	NA
+"echo_VA0003867"	"design_flow"	"design_flow"	4.5	NA
+"echo_VA0004031"	"design_flow"	"design_flow"	1.4	NA
+"echo_VA0004049"	"design_flow"	"design_flow"	2	NA
+"echo_VA0004081"	"design_flow"	"design_flow"	483	NA
+"echo_VA0004090"	"design_flow"	"design_flow"	2170	NA
+"echo_VA0004103"	"design_flow"	"design_flow"	971	NA
+"echo_VA0004138"	"design_flow"	"design_flow"	4.59	NA
+"echo_VA0004146"	"design_flow"	"design_flow"	1089	NA
+"echo_VA0004162"	"design_flow"	"design_flow"	146	NA
+"echo_VA0004189"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0004383"	"design_flow"	"design_flow"	0.144	NA
+"echo_VA0004391"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0004421"	"design_flow"	"design_flow"	2.7	NA
+"echo_VA0004448"	"design_flow"	"design_flow"	0.301	NA
+"echo_VA0004642"	"design_flow"	"design_flow"	6.5	NA
+"echo_VA0004669"	"design_flow"	"design_flow"	43.67	NA
+"echo_VA0004677"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0004774"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0004791"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0004804"	"design_flow"	"design_flow"	30	NA
+"echo_VA0004880"	"design_flow"	"design_flow"	3.63	NA
+"echo_VA0005215"	"design_flow"	"design_flow"	2.03	NA
+"echo_VA0005266"	"design_flow"	"design_flow"	0.045	NA
+"echo_VA0005291"	"design_flow"	"design_flow"	157.89	NA
+"echo_VA0005312"	"design_flow"	"design_flow"	41.36	NA
+"echo_VA0005487"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0005657"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0005720"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0005819"	"design_flow"	"design_flow"	3.3	NA
+"echo_VA0005827"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0005835"	"design_flow"	"design_flow"	0.0504	NA
+"echo_VA0005851"	"design_flow"	"design_flow"	0.22	NA
+"echo_VA0005860"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0005975"	"design_flow"	"design_flow"	1.65	NA
+"echo_VA0006076"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0006149"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0006203"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0006220"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0006254"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0006262"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0006301"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0006335"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0006408"	"design_flow"	"design_flow"	5.44	NA
+"echo_VA0006483"	"design_flow"	"design_flow"	0.452	NA
+"echo_VA0006513"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0020168"	"design_flow"	"design_flow"	0.55	NA
+"echo_VA0020176"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0020184"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0020222"	"design_flow"	"design_flow"	0.016	NA
+"echo_VA0020249"	"design_flow"	"design_flow"	0.17	NA
+"echo_VA0020257"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0020281"	"design_flow"	"design_flow"	4	NA
+"echo_VA0020303"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0020311"	"design_flow"	"design_flow"	2	NA
+"echo_VA0020320"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0020346"	"design_flow"	"design_flow"	1.5	NA
+"echo_VA0020354"	"design_flow"	"design_flow"	1.2	NA
+"echo_VA0020362"	"design_flow"	"design_flow"	3	NA
+"echo_VA0020451"	"design_flow"	"design_flow"	3.6	NA
+"echo_VA0020460"	"design_flow"	"design_flow"	0.95	NA
+"echo_VA0020508"	"design_flow"	"design_flow"	0.175	NA
+"echo_VA0020524"	"design_flow"	"design_flow"	0.45	NA
+"echo_VA0020532"	"design_flow"	"design_flow"	0.7	NA
+"echo_VA0020630"	"design_flow"	"design_flow"	0.019	NA
+"echo_VA0020656"	"design_flow"	"design_flow"	0.09	NA
+"echo_VA0020664"	"design_flow"	"design_flow"	0.0347	NA
+"echo_VA0020672"	"design_flow"	"design_flow"	0.021	NA
+"echo_VA0020681"	"design_flow"	"design_flow"	0.216	NA
+"echo_VA0020699"	"design_flow"	"design_flow"	0.465	NA
+"echo_VA0020702"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0020729"	"design_flow"	"design_flow"	0.15	NA
+"echo_VA0020737"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0020745"	"design_flow"	"design_flow"	0.999	NA
+"echo_VA0020761"	"design_flow"	"design_flow"	0.16	NA
+"echo_VA0020788"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0020818"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0020826"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0020842"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0020851"	"design_flow"	"design_flow"	0.0045	NA
+"echo_VA0020869"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0020877"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0020940"	"design_flow"	"design_flow"	4	NA
+"echo_VA0020974"	"design_flow"	"design_flow"	0.16	NA
+"echo_VA0020982"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0020991"	"design_flow"	"design_flow"	2.25	NA
+"echo_VA0021016"	"design_flow"	"design_flow"	0.0399	NA
+"echo_VA0021041"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0021067"	"design_flow"	"design_flow"	0.72	NA
+"echo_VA0021083"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0021105"	"design_flow"	"design_flow"	0.667	NA
+"echo_VA0021113"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0021130"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0021148"	"design_flow"	"design_flow"	0.0088	NA
+"echo_VA0021172"	"design_flow"	"design_flow"	2.5	NA
+"echo_VA0021199"	"design_flow"	"design_flow"	4	NA
+"echo_VA0021253"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0021261"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0021288"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0021318"	"design_flow"	"design_flow"	0.0096	NA
+"echo_VA0021326"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0021342"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0021385"	"design_flow"	"design_flow"	3	NA
+"echo_VA0021733"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0021750"	"design_flow"	"design_flow"	0.0063	NA
+"echo_VA0021768"	"design_flow"	"design_flow"	0.0104	NA
+"echo_VA0021776"	"design_flow"	"design_flow"	0.0104	NA
+"echo_VA0021849"	"design_flow"	"design_flow"	0.0096	NA
+"echo_VA0021857"	"design_flow"	"design_flow"	0.0096	NA
+"echo_VA0021989"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0022012"	"design_flow"	"design_flow"	0.065	NA
+"echo_VA0022225"	"design_flow"	"design_flow"	0.2375	NA
+"echo_VA0022241"	"design_flow"	"design_flow"	0.078	NA
+"echo_VA0022250"	"design_flow"	"design_flow"	0.082	NA
+"echo_VA0022322"	"design_flow"	"design_flow"	0.15	NA
+"echo_VA0022349"	"design_flow"	"design_flow"	3	NA
+"echo_VA0022373"	"design_flow"	"design_flow"	0.0045	NA
+"echo_VA0022390"	"design_flow"	"design_flow"	2	NA
+"echo_VA0022471"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0022691"	"design_flow"	"design_flow"	0.0084	NA
+"echo_VA0022705"	"design_flow"	"design_flow"	0.0051	NA
+"echo_VA0022721"	"design_flow"	"design_flow"	0.0051	NA
+"echo_VA0022730"	"design_flow"	"design_flow"	0.0051	NA
+"echo_VA0022748"	"design_flow"	"design_flow"	0.0072	NA
+"echo_VA0022772"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0022802"	"design_flow"	"design_flow"	1.5	NA
+"echo_VA0022845"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0022853"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0022934"	"design_flow"	"design_flow"	0.0135	NA
+"echo_VA0022985"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0022993"	"design_flow"	"design_flow"	0.017	NA
+"echo_VA0023027"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0023078"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0023108"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0023141"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0023183"	"design_flow"	"design_flow"	0.375	NA
+"echo_VA0023272"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0023281"	"design_flow"	"design_flow"	0.12	NA
+"echo_VA0023299"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0023329"	"design_flow"	"design_flow"	0.037	NA
+"echo_VA0023345"	"design_flow"	"design_flow"	0.07	NA
+"echo_VA0023370"	"design_flow"	"design_flow"	0.037	NA
+"echo_VA0023396"	"design_flow"	"design_flow"	0.028	NA
+"echo_VA0023400"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0023418"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0023426"	"design_flow"	"design_flow"	0.065	NA
+"echo_VA0023442"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0023469"	"design_flow"	"design_flow"	0.178	NA
+"echo_VA0023477"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0023540"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0023558"	"design_flow"	"design_flow"	0.028	NA
+"echo_VA0023582"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0023817"	"design_flow"	"design_flow"	0.0208	NA
+"echo_VA0023825"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0023892"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0023914"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0023922"	"design_flow"	"design_flow"	2	NA
+"echo_VA0023965"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0024031"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0024040"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0024058"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0024066"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0024074"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0024101"	"design_flow"	"design_flow"	0.099	NA
+"echo_VA0024112"	"design_flow"	"design_flow"	0.075	NA
+"echo_VA0024121"	"design_flow"	"design_flow"	0.0395	NA
+"echo_VA0024147"	"design_flow"	"design_flow"	0.099	NA
+"echo_VA0024163"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0024244"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0024406"	"design_flow"	"design_flow"	0.13	NA
+"echo_VA0024414"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0024422"	"design_flow"	"design_flow"	0.07	NA
+"echo_VA0024431"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0024449"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0024457"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0024481"	"design_flow"	"design_flow"	0.0175	NA
+"echo_VA0024490"	"design_flow"	"design_flow"	0.0271	NA
+"echo_VA0024678"	"design_flow"	"design_flow"	4.6	NA
+"echo_VA0024724"	"design_flow"	"design_flow"	4.6	NA
+"echo_VA0024732"	"design_flow"	"design_flow"	2	NA
+"echo_VA0024741"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0024759"	"design_flow"	"design_flow"	0.09	NA
+"echo_VA0024775"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0024899"	"design_flow"	"design_flow"	2	NA
+"echo_VA0024945"	"design_flow"	"design_flow"	0.775	NA
+"echo_VA0024970"	"design_flow"	"design_flow"	22	NA
+"echo_VA0024988"	"design_flow"	"design_flow"	54	NA
+"echo_VA0024996"	"design_flow"	"design_flow"	12	NA
+"echo_VA0025020"	"design_flow"	"design_flow"	55	NA
+"echo_VA0025054"	"design_flow"	"design_flow"	8.1	NA
+"echo_VA0025101"	"design_flow"	"design_flow"	24	NA
+"echo_VA0025127"	"design_flow"	"design_flow"	4.5	NA
+"echo_VA0025143"	"design_flow"	"design_flow"	40	NA
+"echo_VA0025151"	"design_flow"	"design_flow"	6	NA
+"echo_VA0025160"	"design_flow"	"design_flow"	54	NA
+"echo_VA0025194"	"design_flow"	"design_flow"	2	NA
+"echo_VA0025216"	"design_flow"	"design_flow"	0.65	NA
+"echo_VA0025291"	"design_flow"	"design_flow"	4	NA
+"echo_VA0025305"	"design_flow"	"design_flow"	8	NA
+"echo_VA0025364"	"design_flow"	"design_flow"	67	NA
+"echo_VA0025437"	"design_flow"	"design_flow"	23	NA
+"echo_VA0025470"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0025488"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0025518"	"design_flow"	"design_flow"	15	NA
+"echo_VA0025542"	"design_flow"	"design_flow"	3	NA
+"echo_VA0025569"	"design_flow"	"design_flow"	0.11	NA
+"echo_VA0025658"	"design_flow"	"design_flow"	9.4	NA
+"echo_VA0025992"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0026051"	"design_flow"	"design_flow"	0.569	NA
+"echo_VA0026212"	"design_flow"	"design_flow"	0.75	NA
+"echo_VA0026221"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0026239"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0026247"	"design_flow"	"design_flow"	0.36	NA
+"echo_VA0026263"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0026298"	"design_flow"	"design_flow"	2	NA
+"echo_VA0026379"	"design_flow"	"design_flow"	0.999	NA
+"echo_VA0026387"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0026409"	"design_flow"	"design_flow"	2	NA
+"echo_VA0026417"	"design_flow"	"design_flow"	0.59	NA
+"echo_VA0026433"	"design_flow"	"design_flow"	2	NA
+"echo_VA0026441"	"design_flow"	"design_flow"	0.7	NA
+"echo_VA0026468"	"design_flow"	"design_flow"	2	NA
+"echo_VA0026484"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0026514"	"design_flow"	"design_flow"	0.97	NA
+"echo_VA0026531"	"design_flow"	"design_flow"	4.95	NA
+"echo_VA0026557"	"design_flow"	"design_flow"	2.9	NA
+"echo_VA0026565"	"design_flow"	"design_flow"	0.495	NA
+"echo_VA0026778"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0026786"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0026808"	"design_flow"	"design_flow"	0.99	NA
+"echo_VA0026816"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0026891"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0026964"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0026972"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0026999"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0027014"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0027022"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0027065"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0027162"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0027171"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0027197"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0027278"	"design_flow"	"design_flow"	0.0079	NA
+"echo_VA0027294"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0027375"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0027413"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0027421"	"design_flow"	"design_flow"	0.0053	NA
+"echo_VA0027430"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0027464"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0027481"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0027537"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0027553"	"design_flow"	"design_flow"	0.0395	NA
+"echo_VA0027561"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0027618"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0027642"	"design_flow"	"design_flow"	0.24	NA
+"echo_VA0027685"	"design_flow"	"design_flow"	0.0104	NA
+"echo_VA0027693"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0027707"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0027715"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0027839"	"design_flow"	"design_flow"	0.039	NA
+"echo_VA0027855"	"design_flow"	"design_flow"	0.0198	NA
+"echo_VA0027901"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0027910"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0027944"	"design_flow"	"design_flow"	0.0175	NA
+"echo_VA0027952"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0027979"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0028029"	"design_flow"	"design_flow"	0.15	NA
+"echo_VA0028037"	"design_flow"	"design_flow"	0.15	NA
+"echo_VA0028233"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0028258"	"design_flow"	"design_flow"	0.039	NA
+"echo_VA0028291"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0028321"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0028363"	"design_flow"	"design_flow"	2.2	NA
+"echo_VA0028371"	"design_flow"	"design_flow"	0.14	NA
+"echo_VA0028380"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0028398"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0028401"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0028461"	"design_flow"	"design_flow"	0.018	NA
+"echo_VA0028622"	"design_flow"	"design_flow"	0.09	NA
+"echo_VA0028762"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0028819"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0028916"	"design_flow"	"design_flow"	0.036	NA
+"echo_VA0029084"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0029092"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0029254"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0029319"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0029335"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0029343"	"design_flow"	"design_flow"	0.0325	NA
+"echo_VA0029351"	"design_flow"	"design_flow"	0.0495	NA
+"echo_VA0029416"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0029475"	"design_flow"	"design_flow"	0.12	NA
+"echo_VA0029513"	"design_flow"	"design_flow"	0.345	NA
+"echo_VA0029521"	"design_flow"	"design_flow"	5.8	NA
+"echo_VA0029556"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0029564"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0029599"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0029653"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0029688"	"design_flow"	"design_flow"	0.0093	NA
+"echo_VA0029769"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0029785"	"design_flow"	"design_flow"	6	NA
+"echo_VA0029858"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0030112"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0030121"	"design_flow"	"design_flow"	0.003	NA
+"echo_VA0030589"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0030767"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0031011"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0031194"	"design_flow"	"design_flow"	0.024	NA
+"echo_VA0031321"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0031356"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0031763"	"design_flow"	"design_flow"	0.64	NA
+"echo_VA0032000"	"design_flow"	"design_flow"	130	NA
+"echo_VA0032034"	"design_flow"	"design_flow"	0.53	NA
+"echo_VA0032115"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0032123"	"design_flow"	"design_flow"	0.013	NA
+"echo_VA0050032"	"design_flow"	"design_flow"	7.2	NA
+"echo_VA0050181"	"design_flow"	"design_flow"	0.903	NA
+"echo_VA0050351"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0050989"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051144"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051373"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0051420"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051446"	"design_flow"	"design_flow"	0.467	NA
+"echo_VA0051683"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051713"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051756"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051799"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051888"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0051926"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0052302"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0052337"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0052434"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0052451"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0052621"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0052639"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0052655"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0052817"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0052841"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0052850"	"design_flow"	"design_flow"	0.254	NA
+"echo_VA0052906"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0053023"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0053082"	"design_flow"	"design_flow"	0.062	NA
+"echo_VA0053121"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0053228"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0053317"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0053465"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0053473"	"design_flow"	"design_flow"	0.037	NA
+"echo_VA0053554"	"design_flow"	"design_flow"	0.0635	NA
+"echo_VA0053686"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0053813"	"design_flow"	"design_flow"	0.12	NA
+"echo_VA0053911"	"design_flow"	"design_flow"	0.0905	NA
+"echo_VA0054003"	"design_flow"	"design_flow"	0.0395	NA
+"echo_VA0054291"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0054330"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0054381"	"design_flow"	"design_flow"	2.3	NA
+"echo_VA0054453"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0054577"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0054623"	"design_flow"	"design_flow"	0.023	NA
+"echo_VA0054780"	"design_flow"	"design_flow"	0.055	NA
+"echo_VA0054828"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0055000"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0055018"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0055328"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0055409"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0055832"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0056138"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0056537"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0057142"	"design_flow"	"design_flow"	1.6614	NA
+"echo_VA0057380"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0057487"	"design_flow"	"design_flow"	0.189	NA
+"echo_VA0057541"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0057576"	"design_flow"	"design_flow"	1.01	NA
+"echo_VA0057606"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058041"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058050"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058254"	"design_flow"	"design_flow"	0.634	NA
+"echo_VA0058378"	"design_flow"	"design_flow"	0.188	NA
+"echo_VA0058424"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0058572"	"design_flow"	"design_flow"	0.0045	NA
+"echo_VA0058599"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058611"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058785"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058793"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0058891"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0059056"	"design_flow"	"design_flow"	0.35	NA
+"echo_VA0059072"	"design_flow"	"design_flow"	0.0361	NA
+"echo_VA0059137"	"design_flow"	"design_flow"	0.54	NA
+"echo_VA0059145"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0059161"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0059170"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0060194"	"design_flow"	"design_flow"	27	NA
+"echo_VA0060275"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0060321"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0060330"	"design_flow"	"design_flow"	0.0047	NA
+"echo_VA0060348"	"design_flow"	"design_flow"	0.0078	NA
+"echo_VA0060364"	"design_flow"	"design_flow"	0.125	NA
+"echo_VA0060402"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0060429"	"design_flow"	"design_flow"	0.0375	NA
+"echo_VA0060445"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0060500"	"design_flow"	"design_flow"	0.058	NA
+"echo_VA0060526"	"design_flow"	"design_flow"	0.544	NA
+"echo_VA0060569"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0060585"	"design_flow"	"design_flow"	0.0045	NA
+"echo_VA0060593"	"design_flow"	"design_flow"	20	NA
+"echo_VA0060640"	"design_flow"	"design_flow"	22	NA
+"echo_VA0060712"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0060763"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0060798"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0060844"	"design_flow"	"design_flow"	9	NA
+"echo_VA0060879"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0060887"	"design_flow"	"design_flow"	0.22	NA
+"echo_VA0060909"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0060917"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0060968"	"design_flow"	"design_flow"	10	NA
+"echo_VA0061042"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0061158"	"design_flow"	"design_flow"	0.0256	NA
+"echo_VA0061247"	"design_flow"	"design_flow"	0.0062	NA
+"echo_VA0061280"	"design_flow"	"design_flow"	0.0042	NA
+"echo_VA0061298"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0061301"	"design_flow"	"design_flow"	0.0053	NA
+"echo_VA0061310"	"design_flow"	"design_flow"	0.9	NA
+"echo_VA0061379"	"design_flow"	"design_flow"	0.036	NA
+"echo_VA0061409"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0061549"	"design_flow"	"design_flow"	0.189	NA
+"echo_VA0061590"	"design_flow"	"design_flow"	6	NA
+"echo_VA0061646"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0061743"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0061751"	"design_flow"	"design_flow"	6	NA
+"echo_VA0061859"	"design_flow"	"design_flow"	3.75	NA
+"echo_VA0061913"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0061964"	"design_flow"	"design_flow"	0.15	NA
+"echo_VA0061972"	"design_flow"	"design_flow"	0.721	NA
+"echo_VA0062031"	"design_flow"	"design_flow"	0.024	NA
+"echo_VA0062103"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0062154"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0062162"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0062189"	"design_flow"	"design_flow"	0.086	NA
+"echo_VA0062219"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0062316"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0062391"	"design_flow"	"design_flow"	0.038	NA
+"echo_VA0062421"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0062481"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0062499"	"design_flow"	"design_flow"	0.45	NA
+"echo_VA0062529"	"design_flow"	"design_flow"	0.0025	NA
+"echo_VA0062561"	"design_flow"	"design_flow"	0.108	NA
+"echo_VA0062642"	"design_flow"	"design_flow"	1.6	NA
+"echo_VA0062669"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0062685"	"design_flow"	"design_flow"	9	NA
+"echo_VA0062731"	"design_flow"	"design_flow"	0.0125	NA
+"echo_VA0062812"	"design_flow"	"design_flow"	4	NA
+"echo_VA0062880"	"design_flow"	"design_flow"	0.055	NA
+"echo_VA0062928"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0062961"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0063029"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0063037"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0063118"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0063177"	"design_flow"	"design_flow"	75	NA
+"echo_VA0063291"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0063347"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0063568"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0063606"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0063614"	"design_flow"	"design_flow"	0.016	NA
+"echo_VA0063649"	"design_flow"	"design_flow"	0.0036	NA
+"echo_VA0063657"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0063673"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0063690"	"design_flow"	"design_flow"	75	NA
+"echo_VA0063738"	"design_flow"	"design_flow"	0.0256	NA
+"echo_VA0063843"	"design_flow"	"design_flow"	0.23	NA
+"echo_VA0064009"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0064033"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0064181"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0064271"	"design_flow"	"design_flow"	0.7	NA
+"echo_VA0064394"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0064424"	"design_flow"	"design_flow"	0.465	NA
+"echo_VA0064599"	"design_flow"	"design_flow"	0.175	NA
+"echo_VA0064726"	"design_flow"	"design_flow"	0.0067	NA
+"echo_VA0064751"	"design_flow"	"design_flow"	0.023	NA
+"echo_VA0064793"	"design_flow"	"design_flow"	6.8	NA
+"echo_VA0065196"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0065315"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0065323"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0065358"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0065374"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0065471"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0065536"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0065552"	"design_flow"	"design_flow"	12.6	NA
+"echo_VA0065676"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0065706"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0065714"	"design_flow"	"design_flow"	0.0105	NA
+"echo_VA0065854"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0065951"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0066303"	"design_flow"	"design_flow"	0.45	NA
+"echo_VA0066311"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0066460"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0066532"	"design_flow"	"design_flow"	0.013	NA
+"echo_VA0066575"	"design_flow"	"design_flow"	0.026	NA
+"echo_VA0066630"	"design_flow"	"design_flow"	50	NA
+"echo_VA0066869"	"design_flow"	"design_flow"	0.35	NA
+"echo_VA0066877"	"design_flow"	"design_flow"	4	NA
+"echo_VA0066907"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0066991"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0067032"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0067041"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0067059"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0067067"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0067105"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0067121"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0067245"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0067318"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0067326"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0067351"	"design_flow"	"design_flow"	1.25	NA
+"echo_VA0067423"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0067521"	"design_flow"	"design_flow"	0.017	NA
+"echo_VA0067555"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0067571"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0067661"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0067881"	"design_flow"	"design_flow"	0.22	NA
+"echo_VA0067938"	"design_flow"	"design_flow"	0.016	NA
+"echo_VA0067954"	"design_flow"	"design_flow"	0.4	NA
+"echo_VA0067962"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0068110"	"design_flow"	"design_flow"	4	NA
+"echo_VA0068144"	"design_flow"	"design_flow"	0.002	NA
+"echo_VA0068209"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0068314"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0068438"	"design_flow"	"design_flow"	0.0072	NA
+"echo_VA0068543"	"design_flow"	"design_flow"	0.0396	NA
+"echo_VA0068586"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0068934"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0068951"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0069337"	"design_flow"	"design_flow"	2	NA
+"echo_VA0070106"	"design_flow"	"design_flow"	0.12	NA
+"echo_VA0070271"	"design_flow"	"design_flow"	0.16	NA
+"echo_VA0070327"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0070564"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0070572"	"design_flow"	"design_flow"	0.165	NA
+"echo_VA0070670"	"design_flow"	"design_flow"	0.0399	NA
+"echo_VA0071366"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0071471"	"design_flow"	"design_flow"	0.8	NA
+"echo_VA0071528"	"design_flow"	"design_flow"	1.296	NA
+"echo_VA0071641"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0071692"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0071846"	"design_flow"	"design_flow"	0.039	NA
+"echo_VA0071927"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0072044"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0072079"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0072354"	"design_flow"	"design_flow"	1.44	NA
+"echo_VA0072389"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0072397"	"design_flow"	"design_flow"	3.4	NA
+"echo_VA0072532"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0072575"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0072729"	"design_flow"	"design_flow"	0.13	NA
+"echo_VA0072931"	"design_flow"	"design_flow"	0.187	NA
+"echo_VA0072991"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0073091"	"design_flow"	"design_flow"	1.4	NA
+"echo_VA0073121"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0073156"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0073245"	"design_flow"	"design_flow"	2.5	NA
+"echo_VA0073300"	"design_flow"	"design_flow"	1.82	NA
+"echo_VA0073318"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0073504"	"design_flow"	"design_flow"	1.5	NA
+"echo_VA0073555"	"design_flow"	"design_flow"	0.133	NA
+"echo_VA0073636"	"design_flow"	"design_flow"	0.29	NA
+"echo_VA0073733"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0074047"	"design_flow"	"design_flow"	0.12	NA
+"echo_VA0074098"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0074161"	"design_flow"	"design_flow"	1.25	NA
+"echo_VA0074179"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0074268"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0074381"	"design_flow"	"design_flow"	0.026	NA
+"echo_VA0074454"	"design_flow"	"design_flow"	0.1175	NA
+"echo_VA0074586"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0074781"	"design_flow"	"design_flow"	0.659	NA
+"echo_VA0074870"	"design_flow"	"design_flow"	0.0048	NA
+"echo_VA0074934"	"design_flow"	"design_flow"	0.0062	NA
+"echo_VA0074942"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0075183"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0075191"	"design_flow"	"design_flow"	5	NA
+"echo_VA0075230"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0075361"	"design_flow"	"design_flow"	0.009	NA
+"echo_VA0075434"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0075451"	"design_flow"	"design_flow"	0.0025	NA
+"echo_VA0075515"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0075574"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0075981"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0076015"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0076244"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0076350"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0076376"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0076384"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0076392"	"design_flow"	"design_flow"	8	NA
+"echo_VA0076473"	"design_flow"	"design_flow"	0.95	NA
+"echo_VA0076520"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0076678"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0076805"	"design_flow"	"design_flow"	2	NA
+"echo_VA0076830"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0076856"	"design_flow"	"design_flow"	0.0022	NA
+"echo_VA0076881"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0077089"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0077259"	"design_flow"	"design_flow"	0.75	NA
+"echo_VA0077399"	"design_flow"	"design_flow"	0.0075	NA
+"echo_VA0077402"	"design_flow"	"design_flow"	1.7	NA
+"echo_VA0077411"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0077763"	"design_flow"	"design_flow"	1.22	NA
+"echo_VA0077828"	"design_flow"	"design_flow"	6.5	NA
+"echo_VA0077879"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0077895"	"design_flow"	"design_flow"	0.0047	NA
+"echo_VA0078131"	"design_flow"	"design_flow"	0.014	NA
+"echo_VA0078484"	"design_flow"	"design_flow"	3	NA
+"echo_VA0078531"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0078646"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0078654"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0078778"	"design_flow"	"design_flow"	1.5	NA
+"echo_VA0079057"	"design_flow"	"design_flow"	0.0072	NA
+"echo_VA0079502"	"design_flow"	"design_flow"	1.45	NA
+"echo_VA0079863"	"design_flow"	"design_flow"	0.262	NA
+"echo_VA0079928"	"design_flow"	"design_flow"	0.059	NA
+"echo_VA0080071"	"design_flow"	"design_flow"	8	NA
+"echo_VA0080080"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0080179"	"design_flow"	"design_flow"	1.63	NA
+"echo_VA0080233"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0080241"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0080390"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0080527"	"design_flow"	"design_flow"	0.9	NA
+"echo_VA0080535"	"design_flow"	"design_flow"	0.0054	NA
+"echo_VA0080781"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0080837"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0080993"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0081001"	"design_flow"	"design_flow"	0.0042	NA
+"echo_VA0081213"	"design_flow"	"design_flow"	0.0025	NA
+"echo_VA0081230"	"design_flow"	"design_flow"	18	NA
+"echo_VA0081248"	"design_flow"	"design_flow"	54	NA
+"echo_VA0081256"	"design_flow"	"design_flow"	25	NA
+"echo_VA0081264"	"design_flow"	"design_flow"	24	NA
+"echo_VA0081272"	"design_flow"	"design_flow"	20	NA
+"echo_VA0081281"	"design_flow"	"design_flow"	40	NA
+"echo_VA0081299"	"design_flow"	"design_flow"	30	NA
+"echo_VA0081302"	"design_flow"	"design_flow"	22.5	NA
+"echo_VA0081311"	"design_flow"	"design_flow"	15	NA
+"echo_VA0081418"	"design_flow"	"design_flow"	0.073	NA
+"echo_VA0081621"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0081639"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0081779"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0082058"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0082228"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0082333"	"design_flow"	"design_flow"	0.28	NA
+"echo_VA0082546"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0082589"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0082767"	"design_flow"	"design_flow"	1	NA
+"echo_VA0082783"	"design_flow"	"design_flow"	0.1363	NA
+"echo_VA0083011"	"design_flow"	"design_flow"	0.836	NA
+"echo_VA0083054"	"design_flow"	"design_flow"	0.411	NA
+"echo_VA0083097"	"design_flow"	"design_flow"	1.735	NA
+"echo_VA0083127"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0083135"	"design_flow"	"design_flow"	2.4	NA
+"echo_VA0083194"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0083291"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0083305"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0083313"	"design_flow"	"design_flow"	0.7	NA
+"echo_VA0083399"	"design_flow"	"design_flow"	0.192	NA
+"echo_VA0083402"	"design_flow"	"design_flow"	0.175	NA
+"echo_VA0083411"	"design_flow"	"design_flow"	2	NA
+"echo_VA0083712"	"design_flow"	"design_flow"	0.495	NA
+"echo_VA0084034"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0084069"	"design_flow"	"design_flow"	1.0457	NA
+"echo_VA0084212"	"design_flow"	"design_flow"	0.14	NA
+"echo_VA0084298"	"design_flow"	"design_flow"	0.0015	NA
+"echo_VA0084433"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0084565"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0085171"	"design_flow"	"design_flow"	0.099	NA
+"echo_VA0085278"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0085481"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0085499"	"design_flow"	"design_flow"	2.16	NA
+"echo_VA0085588"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0085723"	"design_flow"	"design_flow"	0.144	NA
+"echo_VA0085871"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0085901"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0085936"	"design_flow"	"design_flow"	0.009	NA
+"echo_VA0085952"	"design_flow"	"design_flow"	2	NA
+"echo_VA0085961"	"design_flow"	"design_flow"	0.275	NA
+"echo_VA0085979"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0086151"	"design_flow"	"design_flow"	0.73	NA
+"echo_VA0086169"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0086274"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0086304"	"design_flow"	"design_flow"	3.4	NA
+"echo_VA0086355"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0086452"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0086533"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0086541"	"design_flow"	"design_flow"	1.47	NA
+"echo_VA0086584"	"design_flow"	"design_flow"	0.381	NA
+"echo_VA0086622"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0086665"	"design_flow"	"design_flow"	0.0035	NA
+"echo_VA0086673"	"design_flow"	"design_flow"	0.025	NA
+"echo_VA0086681"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0086720"	"design_flow"	"design_flow"	0.07	NA
+"echo_VA0086762"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0086789"	"design_flow"	"design_flow"	0.14	NA
+"echo_VA0086797"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0086967"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0087033"	"design_flow"	"design_flow"	0.056	NA
+"echo_VA0087068"	"design_flow"	"design_flow"	112.8	NA
+"echo_VA0087084"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0087092"	"design_flow"	"design_flow"	0.0284	NA
+"echo_VA0087106"	"design_flow"	"design_flow"	1.465	NA
+"echo_VA0087114"	"design_flow"	"design_flow"	0.177	NA
+"echo_VA0087173"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0087238"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0087254"	"design_flow"	"design_flow"	0.0174	NA
+"echo_VA0087271"	"design_flow"	"design_flow"	0.028	NA
+"echo_VA0087319"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087327"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0087351"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087378"	"design_flow"	"design_flow"	0.63	NA
+"echo_VA0087408"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087424"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0087505"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087548"	"design_flow"	"design_flow"	0.016	NA
+"echo_VA0087581"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087599"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0087611"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0087629"	"design_flow"	"design_flow"	0.0085	NA
+"echo_VA0087645"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0087661"	"design_flow"	"design_flow"	8e-04	NA
+"echo_VA0087696"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0087700"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087718"	"design_flow"	"design_flow"	0.27	NA
+"echo_VA0087734"	"design_flow"	"design_flow"	3.88	NA
+"echo_VA0087858"	"design_flow"	"design_flow"	2.215	NA
+"echo_VA0087874"	"design_flow"	"design_flow"	0.555	NA
+"echo_VA0087882"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0087891"	"design_flow"	"design_flow"	0.0075	NA
+"echo_VA0087912"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0087955"	"design_flow"	"design_flow"	0.07	NA
+"echo_VA0088048"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0088072"	"design_flow"	"design_flow"	0.0037	NA
+"echo_VA0088081"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088102"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0088111"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0088153"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088161"	"design_flow"	"design_flow"	3	NA
+"echo_VA0088170"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088188"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088196"	"design_flow"	"design_flow"	0.165	NA
+"echo_VA0088226"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088277"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0088331"	"design_flow"	"design_flow"	2	NA
+"echo_VA0088374"	"design_flow"	"design_flow"	1.9685	NA
+"echo_VA0088382"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0088404"	"design_flow"	"design_flow"	5	NA
+"echo_VA0088421"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0088463"	"design_flow"	"design_flow"	0.065	NA
+"echo_VA0088480"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088498"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0088510"	"design_flow"	"design_flow"	0.192	NA
+"echo_VA0088552"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088561"	"design_flow"	"design_flow"	0.0019	NA
+"echo_VA0088579"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0088587"	"design_flow"	"design_flow"	9999	NA
+"echo_VA0088595"	"design_flow"	"design_flow"	9999	NA
+"echo_VA0088609"	"design_flow"	"design_flow"	9999	NA
+"echo_VA0088617"	"design_flow"	"design_flow"	999	NA
+"echo_VA0088625"	"design_flow"	"design_flow"	1	NA
+"echo_VA0088633"	"design_flow"	"design_flow"	1	NA
+"echo_VA0088641"	"design_flow"	"design_flow"	1	NA
+"echo_VA0088650"	"design_flow"	"design_flow"	1	NA
+"echo_VA0088668"	"design_flow"	"design_flow"	1	NA
+"echo_VA0088676"	"design_flow"	"design_flow"	1	NA
+"echo_VA0088684"	"design_flow"	"design_flow"	0.07	NA
+"echo_VA0088692"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088706"	"design_flow"	"design_flow"	0.0395	NA
+"echo_VA0088714"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0088722"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0088749"	"design_flow"	"design_flow"	0.45	NA
+"echo_VA0088765"	"design_flow"	"design_flow"	22.759	NA
+"echo_VA0088811"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0088846"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088871"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0088935"	"design_flow"	"design_flow"	0.125	NA
+"echo_VA0088943"	"design_flow"	"design_flow"	0.018	NA
+"echo_VA0088960"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0088978"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0088986"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0088994"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0089001"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089010"	"design_flow"	"design_flow"	0.0016	NA
+"echo_VA0089052"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0089061"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0089087"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089125"	"design_flow"	"design_flow"	0.58	NA
+"echo_VA0089133"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0089168"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0089184"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089206"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0089214"	"design_flow"	"design_flow"	0.0093	NA
+"echo_VA0089222"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0089231"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089265"	"design_flow"	"design_flow"	0.009	NA
+"echo_VA0089273"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0089290"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089303"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089320"	"design_flow"	"design_flow"	0.027	NA
+"echo_VA0089338"	"design_flow"	"design_flow"	0.375	NA
+"echo_VA0089354"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0089397"	"design_flow"	"design_flow"	0.8	NA
+"echo_VA0089427"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089443"	"design_flow"	"design_flow"	1.25	NA
+"echo_VA0089451"	"design_flow"	"design_flow"	0.66	NA
+"echo_VA0089460"	"design_flow"	"design_flow"	12	NA
+"echo_VA0089478"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089486"	"design_flow"	"design_flow"	0.0576	NA
+"echo_VA0089508"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089541"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0089559"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089583"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0089591"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089605"	"design_flow"	"design_flow"	0.75	NA
+"echo_VA0089630"	"design_flow"	"design_flow"	8e-04	NA
+"echo_VA0089656"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089681"	"design_flow"	"design_flow"	0.13	NA
+"echo_VA0089699"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0089729"	"design_flow"	"design_flow"	0.22	NA
+"echo_VA0089737"	"design_flow"	"design_flow"	2.3	NA
+"echo_VA0089770"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089796"	"design_flow"	"design_flow"	0.0144	NA
+"echo_VA0089818"	"design_flow"	"design_flow"	9e-04	NA
+"echo_VA0089826"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0089842"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089877"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089885"	"design_flow"	"design_flow"	0.013	NA
+"echo_VA0089893"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0089907"	"design_flow"	"design_flow"	0.0075	NA
+"echo_VA0089915"	"design_flow"	"design_flow"	7	NA
+"echo_VA0089923"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0089940"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0089958"	"design_flow"	"design_flow"	0.0055	NA
+"echo_VA0089982"	"design_flow"	"design_flow"	0.0065	NA
+"echo_VA0089991"	"design_flow"	"design_flow"	0.065	NA
+"echo_VA0090026"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090034"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0090051"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0090085"	"design_flow"	"design_flow"	0.356	NA
+"echo_VA0090093"	"design_flow"	"design_flow"	0.1224	NA
+"echo_VA0090107"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090115"	"design_flow"	"design_flow"	0.575	NA
+"echo_VA0090131"	"design_flow"	"design_flow"	0.0012	NA
+"echo_VA0090140"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0090174"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0090182"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0090212"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090221"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0090239"	"design_flow"	"design_flow"	0.0032	NA
+"echo_VA0090247"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0090263"	"design_flow"	"design_flow"	2.923	NA
+"echo_VA0090271"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090280"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090298"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090301"	"design_flow"	"design_flow"	23.86	NA
+"echo_VA0090310"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0090328"	"design_flow"	"design_flow"	0.75	NA
+"echo_VA0090344"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0090361"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090379"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090395"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090417"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0090425"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090433"	"design_flow"	"design_flow"	0.0181	NA
+"echo_VA0090441"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090468"	"design_flow"	"design_flow"	0.41	NA
+"echo_VA0090506"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0090531"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090549"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0090573"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090590"	"design_flow"	"design_flow"	1.4	NA
+"echo_VA0090620"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0090638"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0090646"	"design_flow"	"design_flow"	0.018	NA
+"echo_VA0090654"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0090671"	"design_flow"	"design_flow"	3.5	NA
+"echo_VA0090689"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0090697"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090719"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0090727"	"design_flow"	"design_flow"	0.25	NA
+"echo_VA0090743"	"design_flow"	"design_flow"	0.311	NA
+"echo_VA0090760"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090778"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0090786"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0090794"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0090824"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090875"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0090883"	"design_flow"	"design_flow"	0.018	NA
+"echo_VA0090891"	"design_flow"	"design_flow"	0.53	NA
+"echo_VA0090905"	"design_flow"	"design_flow"	1.73	NA
+"echo_VA0090913"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090921"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0090930"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090948"	"design_flow"	"design_flow"	0.6	NA
+"echo_VA0090956"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0090964"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0090981"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0090999"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091006"	"design_flow"	"design_flow"	0.5026	NA
+"echo_VA0091014"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0091049"	"design_flow"	"design_flow"	0.037	NA
+"echo_VA0091065"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091081"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091103"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0091111"	"design_flow"	"design_flow"	1	NA
+"echo_VA0091120"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091146"	"design_flow"	"design_flow"	0.15	NA
+"echo_VA0091154"	"design_flow"	"design_flow"	0.007	NA
+"echo_VA0091162"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0091189"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091197"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091201"	"design_flow"	"design_flow"	0.754	NA
+"echo_VA0091219"	"design_flow"	"design_flow"	1.1	NA
+"echo_VA0091227"	"design_flow"	"design_flow"	0.74	NA
+"echo_VA0091243"	"design_flow"	"design_flow"	0.3875	NA
+"echo_VA0091251"	"design_flow"	"design_flow"	11.52	NA
+"echo_VA0091260"	"design_flow"	"design_flow"	2.48	NA
+"echo_VA0091278"	"design_flow"	"design_flow"	4.43	NA
+"echo_VA0091286"	"design_flow"	"design_flow"	2.8	NA
+"echo_VA0091294"	"design_flow"	"design_flow"	0.001	NA
+"echo_VA0091316"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091324"	"design_flow"	"design_flow"	3.09	NA
+"echo_VA0091332"	"design_flow"	"design_flow"	33.5	NA
+"echo_VA0091341"	"design_flow"	"design_flow"	0.09	NA
+"echo_VA0091375"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091383"	"design_flow"	"design_flow"	11	NA
+"echo_VA0091391"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091405"	"design_flow"	"design_flow"	1	NA
+"echo_VA0091421"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0091430"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0091448"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0091456"	"design_flow"	"design_flow"	3.168	NA
+"echo_VA0091464"	"design_flow"	"design_flow"	0.27	NA
+"echo_VA0091499"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091502"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091511"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091529"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0091537"	"design_flow"	"design_flow"	0.008	NA
+"echo_VA0091553"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0091561"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0091588"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0091618"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091642"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0091651"	"design_flow"	"design_flow"	0.06	NA
+"echo_VA0091669"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0091677"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0091707"	"design_flow"	"design_flow"	0.999	NA
+"echo_VA0091723"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091731"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091758"	"design_flow"	"design_flow"	0.004	NA
+"echo_VA0091766"	"design_flow"	"design_flow"	0.173	NA
+"echo_VA0091791"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091804"	"design_flow"	"design_flow"	0.012	NA
+"echo_VA0091821"	"design_flow"	"design_flow"	0.435	NA
+"echo_VA0091847"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091855"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091863"	"design_flow"	"design_flow"	0.626	NA
+"echo_VA0091871"	"design_flow"	"design_flow"	0.1	NA
+"echo_VA0091898"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0091910"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091928"	"design_flow"	"design_flow"	0.039	NA
+"echo_VA0091936"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091952"	"design_flow"	"design_flow"	0.05	NA
+"echo_VA0091961"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0091979"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0091987"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0091995"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0092002"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092011"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092029"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092037"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092045"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0092061"	"design_flow"	"design_flow"	0.016	NA
+"echo_VA0092070"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0092100"	"design_flow"	"design_flow"	0.13	NA
+"echo_VA0092118"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092126"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092134"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0092142"	"design_flow"	"design_flow"	0.0864	NA
+"echo_VA0092169"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092185"	"design_flow"	"design_flow"	0.0288	NA
+"echo_VA0092193"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092207"	"design_flow"	"design_flow"	0.087	NA
+"echo_VA0092215"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0092240"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092258"	"design_flow"	"design_flow"	0.0086	NA
+"echo_VA0092274"	"design_flow"	"design_flow"	4	NA
+"echo_VA0092282"	"design_flow"	"design_flow"	7.5	NA
+"echo_VA0092291"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092304"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092312"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0092321"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092339"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0092347"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092363"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092371"	"design_flow"	"design_flow"	0.018	NA
+"echo_VA0092380"	"design_flow"	"design_flow"	0.12	NA
+"echo_VA0092398"	"design_flow"	"design_flow"	3e-04	NA
+"echo_VA0092410"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092428"	"design_flow"	"design_flow"	0.3	NA
+"echo_VA0092436"	"design_flow"	"design_flow"	3.6	NA
+"echo_VA0092444"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092452"	"design_flow"	"design_flow"	0.0055	NA
+"echo_VA0092461"	"design_flow"	"design_flow"	0.009	NA
+"echo_VA0092487"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092495"	"design_flow"	"design_flow"	0	"fac_flag_zerodesflow"
+"echo_VA0092509"	"design_flow"	"design_flow"	0.01	NA
+"echo_VA0092517"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092525"	"design_flow"	"design_flow"	0.183	NA
+"echo_VA0092533"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092541"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0092550"	"design_flow"	"design_flow"	0.006	NA
+"echo_VA0092568"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092576"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0092584"	"design_flow"	"design_flow"	0.0036	NA
+"echo_VA0092592"	"design_flow"	"design_flow"	0.03	NA
+"echo_VA0092606"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092614"	"design_flow"	"design_flow"	0.003	NA
+"echo_VA0092622"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092631"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092649"	"design_flow"	"design_flow"	5e-04	NA
+"echo_VA0092657"	"design_flow"	"design_flow"	2e-04	NA
+"echo_VA0092665"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092673"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092681"	"design_flow"	"design_flow"	0.035	NA
+"echo_VA0092690"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092703"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092711"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092720"	"design_flow"	"design_flow"	0.015	NA
+"echo_VA0092738"	"design_flow"	"design_flow"	0.0936	NA
+"echo_VA0092746"	"design_flow"	"design_flow"	0.7	NA
+"echo_VA0092754"	"design_flow"	"design_flow"	0.33	NA
+"echo_VA0092762"	"design_flow"	"design_flow"	0.526	NA
+"echo_VA0092771"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092789"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092797"	"design_flow"	"design_flow"	0.2	NA
+"echo_VA0092843"	"design_flow"	"design_flow"	0.04	NA
+"echo_VA0092851"	"design_flow"	"design_flow"	0.08	NA
+"echo_VA0092860"	"design_flow"	"design_flow"	0.5	NA
+"echo_VA0092878"	"design_flow"	"design_flow"	0.005	NA
+"echo_VA0092894"	"design_flow"	"design_flow"	0.153	NA
+"echo_VA0092908"	"design_flow"	"design_flow"	0.143	NA
+"echo_VA0092916"	"design_flow"	"design_flow"	2.7	NA
+"echo_VA0092924"	"design_flow"	"design_flow"	0.0045	NA
+"echo_VA0092932"	"design_flow"	"design_flow"	0.02	NA
+"echo_VA0092941"	"design_flow"	"design_flow"	2.06	NA
+"echo_VA0092959"	"design_flow"	"design_flow"	NA	NA
+"echo_VA0092967"	"design_flow"	"design_flow"	3	NA
+"echo_VA0C50001"	"design_flow"	"design_flow"	0.024	NA
+"echo_VA0C50002"	"design_flow"	"design_flow"	0.024	NA
+"echo_VAG110020"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110024"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110034"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110048"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110063"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110064"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110065"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110074"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110082"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110092"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110095"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110099"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110117"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110153"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110159"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110175"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110177"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110180"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110181"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110182"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110183"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110185"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110188"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110193"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG110198"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG111002"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG112005"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG112007"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG112011"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG112012"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG112014"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG112016"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG114034"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG116006"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG116008"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG116010"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG116024"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG116025"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG250018"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG250029"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG402056"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG840204"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG844036"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG846009"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG846018"	"design_flow"	"design_flow"	NA	NA
+"echo_VAG846024"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010006"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010007"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010008"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010009"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010010"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010011"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010012"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010014"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010015"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010016"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010017"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010018"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010019"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010020"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010021"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010022"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010023"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010039"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010040"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010041"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010042"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010043"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010050"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010057"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010058"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010059"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010060"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010061"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010062"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010092"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010093"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010094"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010096"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010098"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010099"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010102"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010107"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010120"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010121"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010123"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010124"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010128"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010129"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010131"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010134"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010136"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010142"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010144"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN010155"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020024"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020025"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020026"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020028"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020029"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020030"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020031"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020032"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020033"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020034"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020035"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020036"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020037"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020038"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020044"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020053"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020054"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020055"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020056"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020095"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020101"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020108"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020109"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020111"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020113"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020114"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020115"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020157"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020160"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN020162"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030045"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030046"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030047"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030048"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030049"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030051"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030052"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030110"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030119"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030133"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030146"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030154"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN030156"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040063"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040065"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040066"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040067"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040068"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040069"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040070"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040071"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040072"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040073"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040074"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040075"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040076"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040077"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040078"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040079"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040080"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040081"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040082"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040083"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040084"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040085"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040086"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040087"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040089"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040090"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040097"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040100"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040103"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040104"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040105"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040106"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040118"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040126"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040127"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040132"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040140"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040141"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040143"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040145"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN040173"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN050001"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN050002"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN050003"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN050004"	"design_flow"	"design_flow"	NA	NA
+"echo_VAN050005"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040029"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040035"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040057"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040071"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040075"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040100"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040104"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040113"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR040114"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050014"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050046"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050123"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050140"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050168"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050202"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050214"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050222"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050256"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050275"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050452"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050462"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050504"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050511"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050513"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050527"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050577"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050581"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050604"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050607"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050619"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050628"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050640"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050655"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050682"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050685"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050686"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050690"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050691"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050716"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050717"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050740"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050772"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050776"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050860"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050878"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050901"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050919"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050922"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR050974"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR051012"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR051022"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR051055"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR051137"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR051227"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100540"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100767"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100798"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100799"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100878"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100895"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR100926"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101005"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101014"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101072"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101294"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101305"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101351"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101388"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101401"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101441"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101487"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR101490"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR102130"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR102279"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR102337"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR102489"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR102807"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR103397"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR103461"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR103921"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR103930"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR103938"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR103977"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR104191"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR104199"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR104209"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR104350"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR104414"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR104634"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR105317"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR105528"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR106141"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR107363"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR107429"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR107430"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR108818"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C359"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C407"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C624"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C640"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C662"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C775"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10C817"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10D013"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10D139"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10D417"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10F729"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10G187"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10G914"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10H092"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10H397"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR10I177"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR110019"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR130015"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR140049"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR140069"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR140156"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR150067"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR160060"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR220049"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR220111"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR240055"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR320004"	"design_flow"	"design_flow"	NA	NA
+"echo_VAR320109"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0021687"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0045144"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0049751"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0050521"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0053121"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0090972"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0096725"	"design_flow"	"design_flow"	NA	NA
+"echo_WV0097527"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1005642"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1005651"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1006045"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1006126"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1008579"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1008781"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1008919"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1008978"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1011821"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1011928"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1011995"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1016113"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1016164"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1016211"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1016296"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1016326"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1018558"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1018639"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1018795"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1020609"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1021222"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1021303"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1021559"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1023292"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1023837"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1023969"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1024281"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1026852"	"design_flow"	"design_flow"	NA	NA
+"echo_WV1027581"	"design_flow"	"design_flow"	NA	NA
+"echo_WVG415507"	"design_flow"	"design_flow"	NA	NA
