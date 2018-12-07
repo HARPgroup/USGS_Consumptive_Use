@@ -81,13 +81,13 @@ The data dictionary for this script can be found [here]
 
 To start off, a clean workspace is required to avoid clutter and potential errors:
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
 rm(list=ls())
 ```
 
 The following packages are then loaded:
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE}
 library(foreign) #allows for easy manipulation of *.dbf file types
 library(rgdal) #download files from file geodatabases-like in ArcMap
 library(dplyr) #data manipulation package that speeds up grouping, summarizing, ordering
@@ -97,15 +97,19 @@ library(readxl) #reads excel files
 library(jsonlite) #JSON parser and generator for statistical data and web based data
 library(lubridate) #parses and manipulates dates
 library(httr) #contains useful tools that work with HTTP organised by HTTP verbs. 
+library(daff)#helps calculate the differences between two dataframes
 ```
 
 Collectively, they allow for the manipulation of data extracted from the ECHO REST Services. Inputs for the REST services include a two letter State abbrievation (*state*) and time range of interest (*startDate* & *endDate*). It is important to note that data on ECHO often limited to 2012 for most sites and 2009 for a few. 
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
 state<-"VA" #Input for State of Interest. Must be Inputted as Abreviation 
 startDate<-"01/01/2012" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
 endDate<-Sys.Date()
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
+options(scipen=999) #Disable scientific notation
+options(digits = 9) #maintains digits for coordinates
+
 ```
 
 ## CWA Facility Download
@@ -114,18 +118,20 @@ After defining the inputs, they can be used in the *Water Facility Search REST S
 
 In R, this query can completed in two steps. First an XML document containing the customized query is downloaded (*URL_Download*). Then it is parsed into an R structure (*URL_Parse*) to isolate a query ID (*QID*) to resubmit into the *Water Facility Search* Service (*GET_Facilities*). This results in a .csv file containing all of the CWA Facilities in the state of interest (*ECHO_Facilities*). It is important to note that this contains all facilities, regardless of permit type and status. *ECHO_Facilities_IP* shows the facilities with an individual permit, while *ECHO_Facilities_activeIP* shows *active* individual permits. 
 
-```{r,warning=FALSE,message=FALSE}
-Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&p_st=",state)
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&p_st=","VA")
 URL_Download<-getURL(Req_URL) #Download URL from above
 URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
 QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
 QID<-QID$QueryID
-GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,14,23,24,25,26,27,60,63,65,67,84,91,95,97,204,205,206,207,209,210&passthrough=Y&qid=",QID)
+GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID)
 ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
 ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)
-ECHO_Facilities_IP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
-ECHO_Facilities_activeIP<-subset(ECHO_Facilities,subset = ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit" & ECHO_Facilities$CWPPermitStatusDesc=="Effective")
-rm(uri_summary,uri_query,ECHO_query,ECHO_xml,QID) #Clear unnecessary variables
+
+#Narrow to NPDES Permits only
+ECHO_Facilities<-subset(ECHO_Facilities, ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
+
+rm(Req_URL,URL_Download,URL_Parse,QID,GET_Facilities)
 ```
 
 ## Extraction of DMR timeseries Data
@@ -136,8 +142,9 @@ This service provides outfalls, their ID's, measured effluents, and statistical 
 
 Before looping through each CWA facility, variables are defined, as well as a data frame containing the days and months in a calendar year (*mon_in_mp*).
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
 Facility_Name<-character() #Name of the CWA regulated discharging facility
+FacilityID<-character() #Facility ID 
 VPDESID<-character() #Unique ID used in Virginia for a facility's outfall: concatonated facility ID with 3 digit outfall ID
 eff_limit<-numeric() #numerical limit for flow 
 eff_limit_units<-character() #units of measure applicable to effluent quantity limit
@@ -146,34 +153,35 @@ dmr_units<-character() #units for measured effluent
 statistic<-character() #indicates the statistic analysis used for the measured effluent-we are interested in averages
 mp_begin<-character() #beginning date of monitoring period (mp)
 mp_end<-character() #end data of monitoring period (mp)
-mon_in_mp<-numeric() #number of months included in monitoring period
+mon_in_mp<-numeric() #number of months included in monitoring period--need to multiply measured effluent by this 
+nodi<-character() #if the DMR value is NA, the no data indicator code describes why that is the case
 violation<-character() #Code identifying if a Violation has occurred  (e.g., D80 = Required Monitoring DMR Value Non-Receipt, E90 = Effluent Violation, C20 = Schedule Event Achieved Late).
-violation_severity<-numeric() #Severity of any alleged violation
+violation_severity<-numeric() #Severity of any alleged violation caused by the reported value: 5 = significant noncompliance; 3 = reportable noncompliance; 2 = effluent violation, i.e., discharge in excess of permitted limit; 1 = monitoring or reporting violation; 0 = no violation.
+
 ```
 
 Next, the overarching for-loop is entered. This takes each sourceID found in *ECHO_Facilities* and the defined time range (*startDate* & *endDate*) enters it into the Effluent Chart REST Services query (*DMR_Data*). This returns the discharge monitoring reports for each facility, containing every associated outfall and measured parameter. The ECHO database contains 347 defined effluent parameters including major pollutants. Since effluent is the parameter of interest, each DMR is subsetted to examine code **50050**: flow in conduit or thru treatment plant. The DMR is further filtered to search for entries with No Data Indicator Codes (*nodi_code*) of C (No Discharge) or 7 (No Influent). If these codes are present, the measured effluent is set to 0 rather than NA. 
 
-```{r,warning=FALSE,message=FALSE}
-for (i in 1:length(ECHO_Facilities_IP$SourceID)){
-    sourceID<-ECHO_Facilities$SourceID[i]
-    print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities_IP$SourceID),")", sep=""))
-    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe
-    DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-    DMR_data<-DMR_data[DMR_data$parameter_code==50050,]#only looks at Flow, in conduit ot thru treatment plant
-    DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0 #nodi_code is the unique code indicating the reason why an expected DMR value was not submitted, C and 7 means no influent.
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+for (i in 1:length(ECHO_Facilities$SourceID)){
+  sourceID<-ECHO_Facilities$SourceID[i]
+  print(paste("Processing Facility ID: ", sourceID, "(",i," of ",length(ECHO_Facilities$SourceID),")", sep=""))
+  DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe, parameter code 50050 is for flow thru or in conduit
+  DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0 #nodi_code is the unique code indicating the reason why an expected DMR value was not submitted, C and 7 means no discharge and influent, respectively. So set to 0.
 ```
 
 The number of monitoring period end dates within each DMR is evaluated to check for extacrtable data (*data_length*). If there is data within the DMR, it will enter the subsequent for loops to locate relevant timeseries data. 
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
 data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
         if(data_length>0){ #if the value is NOT NA, enter loop
 ```
 
 If the DMR meets the condition, the facility's outfalls (*outfall_nmbr*) and their ID's (*outfall_ID*) are extracted. The outfall ID is a three character code assigned by NPDES to track the permannent points of discharge in the state. If the *outfall_ID* in the DMR is less than three characters, the next section of code assigns leading zeros (*leadingzeros*).
 
-```{r,warning=FALSE,message=FALSE}
-outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls which are called permanent features in the DMR
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+          outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls which are called permanent features in the DMR
           outfall_ID<-unique(DMR_data$perm_feature_nmbr) #perm_feature_nmbr is a three-character code in ICIS-NPDES that identifies the point of discharge
           for(j in 1:length(outfall_ID)){ #If the code is less than three characters in the .CSV, append zeros to the beginning of the number (e.g., 1 is equivalent to 001)
             if(!is.na(as.numeric(outfall_ID[j]))){
@@ -187,20 +195,21 @@ outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls 
 
 Once outfall IDs are formatted, the DMR for the overall facility is filtered to examine each unique outfall (*outfall_DMR*). Timeseries data for each outfall is stored and ultimately compiled at the end of this script. As mentioned previously, each measured effluent has a reported statistic associated with it. The most common statistic is a monthly average (*mon_ave*). This is intuitive and can be used for analysis in the future. Therefore, each outfall's DMR is checked to find monthly average values. If these are absent, daily (*day_ave*), weekly (*wk_ave*), and annual averages (*yr_ave*) are checked for. If none of theses are available, effleunt for the outfall is not stored. 
 
-```{r,warning=FALSE,message=FALSE}
-       for(k in 1:length(outfall_ID)){ #Go through the DMR attached to each unique outfall
-            outfall<-as.character(outfall_ID[k])
-            outfall_DMR<-DMR_data[DMR_data$perm_feature_nmbr==outfall_nmbr[k],]
-            eff_limit_i<-numeric() #Create variables that will store DMR data for each outfall
-            eff_limit_units_i<-character()
-            dmr_value_i<-numeric(length(outfall_DMR$perm_feature_nmbr))
-            dmr_units_i<-character()
-            statistic_i<-character(length(outfall_DMR$perm_feature_nmbr))
-            mp_end_i<-character()
-            mon_in_mp_i<-numeric(length(outfall_DMR$perm_feature_nmbr))
-            mp_begin_i<-character()
-            violation_i<-character()
-            violation_severity_i<-numeric()
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+       for(k in 1:length(outfall_ID)){ #Now we go through the DMR attached to each unique individual outfall and extract the information we would like
+                outfall<-as.character(outfall_ID[k])
+                outfall_DMR<-DMR_data[DMR_data$perm_feature_nmbr==outfall_nmbr[k],] #specifies that we want to go through each unique outfall
+                eff_limit_i<-numeric() #Create variables that will store DMR data for each outfall
+                eff_limit_units_i<-character()
+                dmr_value_i<-numeric(length(outfall_DMR$perm_feature_nmbr))
+                dmr_units_i<-character()
+                statistic_i<-character(length(outfall_DMR$perm_feature_nmbr))
+                mp_end_i<-character()
+                mon_in_mp_i<-numeric(length(outfall_DMR$perm_feature_nmbr))
+                mp_begin_i<-character()
+                violation_i<-character()
+                violation_severity_i<-numeric()
+                nodi_i<-character()
             
             for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. 
               if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
@@ -256,10 +265,11 @@ Once outfall IDs are formatted, the DMR for the overall facility is filtered to 
 
 After each iteration, all outfall time series data is stored into a larger dataframe. This ensures that results are not written over. It's important to note that the unique facility ID (*SourceID*) assigned by the EPA is stored as *ECHOID*, while the unique ID for each outfall in the state is created by concatonating the facility ID with the three digit *outfall_ID* (*VPDESID*).
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
       Facility_Name<-c(Facility_Name,rep(paste0(ECHO_Facilities$CWPName[ECHO_Facilities$SourceID==sourceID]),length(dmr_value_i)))
       statistic<-c(statistic,statistic_i)
       VPDESID<-c(VPDESID,paste0(sourceID,rep(outfall,length(dmr_value_i))))
+      FacilityID<-c(FacilityID,paste0(rep(sourceID, length(dmr_value_i))))
       dmr_value<-c(dmr_value,dmr_value_i)
       dmr_units<-c(dmr_units,dmr_units_i)
       eff_limit<-c(eff_limit,eff_limit_i)
@@ -269,17 +279,19 @@ After each iteration, all outfall time series data is stored into a larger dataf
       mp_begin<-c(mp_begin,mp_begin_i)
       violation<-c(violation,violation_i)
       violation_severity<-c(violation_severity,violation_severity_i)
+      nodi<-c(nodi,nodi_i)
       
     }
 ```
 
 If the facility lacked DMR data within the date range, its timeseries variables are stored as NA.
 
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
     }else{ #if the DMR contains no data, set variables to NA
           Facility_Name<-c(Facility_Name,NA)
           statistic<-c(statistic,NA)
           VPDESID<-c(VPDESID,NA)
+          FacilityID<-c(FacilityID,NA)
           dmr_value<-c(dmr_value,NA)
           dmr_units<-c(dmr_units,NA)
           eff_limit<-c(eff_limit,NA)
@@ -289,19 +301,283 @@ If the facility lacked DMR data within the date range, its timeseries variables 
           mp_begin<-c(mp_begin,NA)
           violation<-c(violation,NA)
           violation_severity<-c(violation_severity,NA)
-          
+          nodi<-c(nodi,NA)
+                
         }
 ```
 
 ## Compiling and Exporting Data
 
-After each CWA regulated facility has been looped through and their associated outfall DMR data has been extracted, they are stored in a data frame labeled *ECHO_timeseries_wNAs*. Then NA values are filtered and the dates are formatted into the mm/dd/yyyy format (*ECHO_timeseries*). 
+After each CWA regulated facility has been looped through and their associated outfall DMR data has been extracted, they are stored in a data frame labeled *ECHO_timeseries_wNAs*. Then NA values are filtered and the dates are formatted into the mm/dd/yyyy format (*ECHO_timeseries*). Duplicated entries are also indicated and removed to avoid double counting of effluent values. 
 
-```{r,warning=FALSE,message=FALSE}
-ECHO_timeseries_wNAs<-data.frame(FacilityName=Facility_Name,OutfallID=VPDESID,Statistic=statistic,Measured_Effluent=dmr_value,Units=dmr_units,Permitted_Limit=eff_limit,
-                               MP_Begin_Date=mp_begin,MP_End_Date=mp_end,Violation_Code=violation,Violation_Severity=violation_severity)
-        ECHO_timeseries<-ECHO_timeseries_wNAs[!(is.na(ECHO_timeseries_wNAs$MP_End_Date)),] #remove if a monitoring period end date is missing 
-        ECHO_timeseries$MP_Begin_Date<-format(ymd(ECHO_timeseries$MP_Begin_Date), "%m/%d/%Y")
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+ECHO_timeseries_wNAs<-data.frame(FacilityName=Facility_Name,Facility.ID=FacilityID,OutfallID=VPDESID,Statistic=statistic,
+                                 Measured_Effluent=dmr_value,Units=dmr_units,Permitted_Limit=eff_limit,
+                                 MP_Begin_Date=mp_begin,MP_End_Date=mp_end,Mon_in_MP=mon_in_mp,Violation_Code=violation,Violation_Severity=violation_severity,NODI=nodi)
+
+ECHO_timeseries<-ECHO_timeseries_wNAs[!(is.na(ECHO_timeseries_wNAs$MP_End_Date)),] #remove if a monitoring period end date is missing 
+
+ECHO_timeseries$MP_Begin_Date<-as.Date(ECHO_timeseries$MP_Begin_Date, format="%Y-%m-%d")
+ECHO_timeseries$MP_End_Date<-as.Date(ECHO_timeseries$MP_End_Date, format="%m/%d/%Y")
+
+duplicated<-ECHO_timeseries[duplicated(ECHO_timeseries, by=c("OutfallID","MP_End_Date")),]
+ECHO_timeseries<-ECHO_timeseries[!duplicated(ECHO_timeseries, by=c("OutfallID","MP_End_Date")),]
+```
+
+## Convert Annual, Semi-Annual, and Quarterly Entries into Monthyl Entries
+
+In addition to monthly entries, there are cases where average monthly effluent values are submitted once a year, twice, or four times a year. They represent the monthly average effluent for those 12, 6, or 3 months. Therefore, the single entries need to be split into corresponding 12, 6, and 3 entries to represent monthly discharge throughtout the year. 
+
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+Annual_Submissions<-subset(ECHO_timeseries,ECHO_timeseries$Mon_in_MP==12)
+
+
+FacilityName<-character()
+Facility.ID<-character()
+OutfallID<-character()
+Statistic<-character()
+Measured_Effluent<-numeric()
+Units<-character()
+Permitted_Limit<-numeric()
+MP_Begin_Date<-character()
+MP_End_Date<-character()
+Mon_in_MP<-numeric()
+Violation_Code<-character()
+Violation_Severity<-character()
+NODI<-character()
+
+for (i in 1:length(Annual_Submissions$Facility.ID)){
+    FacilityName_i<-character()
+    Facility.ID_i<-character()
+    OutfallID_i<-character()
+    Statistic_i<-character()
+    Measured_Effluent_i<-numeric()
+    Units_i<-character()
+    Permitted_Limit_i<-numeric()
+    MP_Begin_Date_i<-character()
+    MP_End_Date_i<-character()
+    Mon_in_MP_i<-numeric()
+    Violation_Code_i<-character()
+    Violation_Severity_i<-character()
+    NODI_i<-character()
+
+    FacilityName_i<-rep(as.character(Annual_Submissions$FacilityName[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Facility.ID_i<-rep(as.character(Annual_Submissions$Facility.ID[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    OutfallID_i<-rep(as.character(Annual_Submissions$OutfallID[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Statistic_i<-rep(as.character(Annual_Submissions$Statistic[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Measured_Effluent_i<-rep(as.character(Annual_Submissions$Measured_Effluent[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Units_i<-rep(as.character(Annual_Submissions$Units[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Permitted_Limit_i<-rep(as.character(Annual_Submissions$Permitted_Limit[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    MP_Begin_Date_i<-seq(as.Date(Annual_Submissions$MP_Begin_Date[i]),length=12,by="1 month")
+    MP_End_Date_i<-ceiling_date(MP_Begin_Date_i,"month")-days(1)
+    Mon_in_MP<-rep(1, as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Violation_Code_i<-rep(as.character(Annual_Submissions$Violation_Code[i]),as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Violation_Severity_i<-rep(as.character(Annual_Submissions$Violation_Severity[i]),as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    NODI_i<-rep(as.character(Annual_Submissions$NODI[i]),as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    
+    
+    FacilityName<-c(FacilityName,FacilityName_i)
+    Facility.ID<-c(Facility.ID,Facility.ID_i)
+    OutfallID<-c(OutfallID,OutfallID_i)
+    Statistic<-c(Statistic,Statistic_i)
+    Measured_Effluent<-c(Measured_Effluent,Measured_Effluent_i)
+    Units<-c(Units,Units_i)
+    Permitted_Limit<-c(Permitted_Limit,Permitted_Limit_i)
+    MP_Begin_Date<-c(MP_Begin_Date,as.character(MP_Begin_Date_i))
+    MP_End_Date<-c(MP_End_Date,as.character(MP_End_Date_i))
+    Mon_in_MP<-c(Mon_in_MP,Mon_in_MP_i)
+    Violation_Code<-c(Violation_Code,Violation_Code_i)
+    Violation_Severity<-c(Violation_Severity,Violation_Severity_i)
+    NODI<-c(NODI,NODI_i)
+  }
+
+Annual_to_Monthly<-data.frame(FacilityName=FacilityName,
+                              Facility.ID=Facility.ID,
+                              OutfallID=OutfallID,
+                              Statistic=Statistic,
+                              Measured_Effluent=Measured_Effluent,
+                              Units=Units,
+                              Permitted_Limit=Permitted_Limit,
+                              MP_Begin_Date=MP_Begin_Date,
+                              MP_End_Date=MP_End_Date,
+                              Mon_in_MP=Mon_in_MP,
+                              Violation_Code=Violation_Code,
+                              Violation_Severity=Violation_Severity,
+                              NODI=NODI)
+
+
+Semi_Annual_Submissions<-subset(ECHO_timeseries,ECHO_timeseries$Mon_in_MP==6)
+
+
+FacilityName<-character()
+Facility.ID<-character()
+OutfallID<-character()
+Statistic<-character()
+Measured_Effluent<-numeric()
+Units<-character()
+Permitted_Limit<-numeric()
+MP_Begin_Date<-character()
+MP_End_Date<-character()
+Mon_in_MP<-numeric()
+Violation_Code<-character()
+Violation_Severity<-character()
+NODI<-character()
+
+for (i in 1:length(Semi_Annual_Submissions$Facility.ID)){
+  FacilityName_i<-character()
+  Facility.ID_i<-character()
+  OutfallID_i<-character()
+  Statistic_i<-character()
+  Measured_Effluent_i<-numeric()
+  Units_i<-character()
+  Permitted_Limit_i<-numeric()
+  MP_Begin_Date_i<-character()
+  MP_End_Date_i<-character()
+  Mon_in_MP_i<-numeric()
+  Violation_Code_i<-character()
+  Violation_Severity_i<-character()
+  NODI_i<-character()
+  
+  FacilityName_i<-rep(as.character(Semi_Annual_Submissions$FacilityName[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Facility.ID_i<-rep(as.character(Semi_Annual_Submissions$Facility.ID[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  OutfallID_i<-rep(as.character(Semi_Annual_Submissions$OutfallID[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Statistic_i<-rep(as.character(Semi_Annual_Submissions$Statistic[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Measured_Effluent_i<-rep(as.character(Semi_Annual_Submissions$Measured_Effluent[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Units_i<-rep(as.character(Semi_Annual_Submissions$Units[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Permitted_Limit_i<-rep(as.character(Semi_Annual_Submissions$Permitted_Limit[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  MP_Begin_Date_i<-seq(as.Date(Semi_Annual_Submissions$MP_Begin_Date[i]),length=6,by="1 month")
+  MP_End_Date_i<-ceiling_date(MP_Begin_Date_i,"month")-days(1)
+  Mon_in_MP<-rep(1, as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Violation_Code_i<-rep(as.character(Semi_Annual_Submissions$Violation_Code[i]),as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Violation_Severity_i<-rep(as.character(Semi_Annual_Submissions$Violation_Severity[i]),as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  NODI_i<-rep(as.character(Semi_Annual_Submissions$NODI[i]),as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  
+  
+  FacilityName<-c(FacilityName,FacilityName_i)
+  Facility.ID<-c(Facility.ID,Facility.ID_i)
+  OutfallID<-c(OutfallID,OutfallID_i)
+  Statistic<-c(Statistic,Statistic_i)
+  Measured_Effluent<-c(Measured_Effluent,Measured_Effluent_i)
+  Units<-c(Units,Units_i)
+  Permitted_Limit<-c(Permitted_Limit,Permitted_Limit_i)
+  MP_Begin_Date<-c(MP_Begin_Date,as.character(MP_Begin_Date_i))
+  MP_End_Date<-c(MP_End_Date,as.character(MP_End_Date_i))
+  Mon_in_MP<-c(Mon_in_MP,Mon_in_MP_i)
+  Violation_Code<-c(Violation_Code,Violation_Code_i)
+  Violation_Severity<-c(Violation_Severity,Violation_Severity_i)
+  NODI<-c(NODI,NODI_i)
+}
+
+SemiAnnual_to_Monthly<-data.frame(FacilityName=FacilityName,
+                              Facility.ID=Facility.ID,
+                              OutfallID=OutfallID,
+                              Statistic=Statistic,
+                              Measured_Effluent=Measured_Effluent,
+                              Units=Units,
+                              Permitted_Limit=Permitted_Limit,
+                              MP_Begin_Date=MP_Begin_Date,
+                              MP_End_Date=MP_End_Date,
+                              Mon_in_MP=Mon_in_MP,
+                              Violation_Code=Violation_Code,
+                              Violation_Severity=Violation_Severity,
+                              NODI=NODI)
+
+
+Quarterly_Submissions<-subset(ECHO_timeseries,ECHO_timeseries$Mon_in_MP==3)
+
+
+FacilityName<-character()
+Facility.ID<-character()
+OutfallID<-character()
+Statistic<-character()
+Measured_Effluent<-numeric()
+Units<-character()
+Permitted_Limit<-numeric()
+MP_Begin_Date<-character()
+MP_End_Date<-character()
+Mon_in_MP<-numeric()
+Violation_Code<-character()
+Violation_Severity<-character()
+NODI<-character()
+
+for (i in 1:length(Quarterly_Submissions$Facility.ID)){
+  FacilityName_i<-character()
+  Facility.ID_i<-character()
+  OutfallID_i<-character()
+  Statistic_i<-character()
+  Measured_Effluent_i<-numeric()
+  Units_i<-character()
+  Permitted_Limit_i<-numeric()
+  MP_Begin_Date_i<-character()
+  MP_End_Date_i<-character()
+  Mon_in_MP_i<-numeric()
+  Violation_Code_i<-character()
+  Violation_Severity_i<-character()
+  NODI_i<-character()
+  
+  FacilityName_i<-rep(as.character(Quarterly_Submissions$FacilityName[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Facility.ID_i<-rep(as.character(Quarterly_Submissions$Facility.ID[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  OutfallID_i<-rep(as.character(Quarterly_Submissions$OutfallID[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Statistic_i<-rep(as.character(Quarterly_Submissions$Statistic[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Measured_Effluent_i<-rep(as.character(Quarterly_Submissions$Measured_Effluent[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Units_i<-rep(as.character(Quarterly_Submissions$Units[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Permitted_Limit_i<-rep(as.character(Quarterly_Submissions$Permitted_Limit[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  MP_Begin_Date_i<-seq(as.Date(Quarterly_Submissions$MP_Begin_Date[i]),length=3,by="1 month")
+  MP_End_Date_i<-ceiling_date(MP_Begin_Date_i,"month")-days(1)
+  Mon_in_MP<-rep(1, as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Violation_Code_i<-rep(as.character(Quarterly_Submissions$Violation_Code[i]),as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Violation_Severity_i<-rep(as.character(Quarterly_Submissions$Violation_Severity[i]),as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  NODI_i<-rep(as.character(Quarterly_Submissions$NODI[i]),as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  
+  
+  FacilityName<-c(FacilityName,FacilityName_i)
+  Facility.ID<-c(Facility.ID,Facility.ID_i)
+  OutfallID<-c(OutfallID,OutfallID_i)
+  Statistic<-c(Statistic,Statistic_i)
+  Measured_Effluent<-c(Measured_Effluent,Measured_Effluent_i)
+  Units<-c(Units,Units_i)
+  Permitted_Limit<-c(Permitted_Limit,Permitted_Limit_i)
+  MP_Begin_Date<-c(MP_Begin_Date,as.character(MP_Begin_Date_i))
+  MP_End_Date<-c(MP_End_Date,as.character(MP_End_Date_i))
+  Mon_in_MP<-c(Mon_in_MP,Mon_in_MP_i)
+  Violation_Code<-c(Violation_Code,Violation_Code_i)
+  Violation_Severity<-c(Violation_Severity,Violation_Severity_i)
+  NODI<-c(NODI,NODI_i)
+}
+
+Quarterly_to_Monthly<-data.frame(FacilityName=FacilityName,
+                                  Facility.ID=Facility.ID,
+                                  OutfallID=OutfallID,
+                                  Statistic=Statistic,
+                                  Measured_Effluent=Measured_Effluent,
+                                  Units=Units,
+                                  Permitted_Limit=Permitted_Limit,
+                                  MP_Begin_Date=MP_Begin_Date,
+                                  MP_End_Date=MP_End_Date,
+                                  Mon_in_MP=Mon_in_MP,
+                                  Violation_Code=Violation_Code,
+                                  Violation_Severity=Violation_Severity,
+                                  NODI=NODI)
+```
+
+These entries are then binded to the timeseries dataframe, making sure to remove the singular annual, semi-annual, and qaurterly submissions.
+
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+ECHO_timeseries<-subset(ECHO_timeseries,ECHO_timeseries$Mon_in_MP==1) #focusing on monthly submissions
+ECHO_timeseries<-rbind(ECHO_timeseries,Annual_to_Monthly,SemiAnnual_to_Monthly,Quarterly_to_Monthly)
+ECHO_timeseries<-as.data.table(ECHO_timeseries)
+
+duplicated<-ECHO_timeseries[duplicated(ECHO_timeseries, by=c("OutfallID","MP_End_Date")),]
+ECHO_timeseries<-ECHO_timeseries[!duplicated(ECHO_timeseries, by=c("OutfallID","MP_End_Date")),]
+```
+
+The timeseries dataframe is then saved as a table and .RData file to be used for QA/QC methods in the ECHO_QAQC.R script. 
+
+```{r,warning=FALSE,message=FALSE,eval=FALSE,echo=TRUE}
+save.image("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/ECHO_Timeseries.RData") #Save the global environment for future reference
+
+#In personal file
+write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_11_29.txt",sep="\t",row.names = F)
 ```
 
 ## Conclusion
