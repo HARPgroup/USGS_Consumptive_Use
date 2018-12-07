@@ -811,6 +811,7 @@
 "conveyance"	"VA0083402 TO VA0083402001"	"water_transfer"	"vahydro_VA0083402_VA0083402001"	"active"	"vahydro_VA0083402001"	"echo_VA0083402001"
 "conveyance"	"VA0083411 TO VA0083411001"	"water_transfer"	"vahydro_VA0083411_VA0083411001"	"active"	"vahydro_VA0083411001"	"echo_VA0083411001"
 "conveyance"	"VA0083712 TO VA0083712001"	"water_transfer"	"vahydro_VA0083712_VA0083712001"	"active"	"vahydro_VA0083712001"	"echo_VA0083712001"
+"conveyance"	"VA0084069 TO VA0084069001"	"water_transfer"	"vahydro_VA0084069_VA0084069001"	"active"	"vahydro_VA0084069001"	"echo_VA0084069001"
 "conveyance"	"VA0084069 TO VA0084069101"	"water_transfer"	"vahydro_VA0084069_VA0084069101"	"active"	"vahydro_VA0084069101"	"echo_VA0084069101"
 "conveyance"	"VA0084069 TO VA0084069102"	"water_transfer"	"vahydro_VA0084069_VA0084069102"	"active"	"vahydro_VA0084069102"	"echo_VA0084069102"
 "conveyance"	"VA0084212 TO VA0084212003"	"water_transfer"	"vahydro_VA0084212_VA0084212003"	"active"	"vahydro_VA0084212003"	"echo_VA0084212003"
