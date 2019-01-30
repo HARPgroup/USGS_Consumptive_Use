@@ -54,6 +54,20 @@ class dHECHODMRAnnualMGY extends dHVariablePluginDefault {
   var $stat = 'sum';
   var $rep_varkey = 'dmr_mon_mgm';
   
+  public function update(&$entity) {
+    // update dopplegangers
+    //dpm($entity, 'update');
+    $this->updateLinked($entity);
+    parent::update($entity);
+  }
+  
+  public function insert(&$entity) {
+    // update dopplegangers
+    //dpm($entity, 'insert');
+    $this->updateLinked($entity);
+    parent::insert($entity);
+  }
+  
   public function updateLinked(&$entity) {
     // push monthly total to annual
     $year = date('Y', dh_handletimestamp($entity->tstime));
