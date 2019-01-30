@@ -1,0 +1,11 @@
+name = Data retrieval and handing from U.S. EPA ECHO system for Data Handlers Module
+description = Adds support for point source data reporting and data analysis.
+core = 7.x
+php = 5.3.0
+
+; 
+dependencies[] = dh
+
+;files[] = dh_epa_echo.admin.inc
+
+version = "7.x-1.0"

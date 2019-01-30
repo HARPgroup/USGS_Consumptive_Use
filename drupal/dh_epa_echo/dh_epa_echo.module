@@ -1,0 +1,18 @@
+<?php
+// loads these needed for ajax calls
+//module_load_include('inc', 'dh_epa_echo', 'dh_epa_echo.custom_forms');
+
+  
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function dh_epa_echo_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+  if ($owner == 'dh' && $plugin_type == 'dh_variables') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+?>
