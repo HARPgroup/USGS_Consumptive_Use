@@ -4,8 +4,7 @@ module_load_include('module', 'dh');
 
 class dHECHODMRPeriodMGD extends dHVariablePluginDefault {
   var $stat = 'mean';
-  var $varkey2sum = 'wlg';
-  var $rep_varkey = 'wd_gpy';
+  var $rep_varkey = 'dmr_mon_mgd';
   
   public function update(&$entity) {
     // update dopplegangers
@@ -36,13 +35,13 @@ class dHECHODMRPeriodMGD extends dHVariablePluginDefault {
       'tsvalue' => $entity->tsvalue
     );
     while ( ($thisyear <= $eyear) and ($thismon <= $emon) ) {
-      $begin = dh_handletimestamp("$year-$thismon-01 00:00:00");
+      $begin = dh_handletimestamp("$thisyear-$thismon-01 00:00:00");
       $modays = date('t', $begin);
-      $end = dh_handletimestamp("$year-$thismon-$modays 00:00:00");
+      $end = dh_handletimestamp("$thisyear-$thismon-$modays 00:00:00");
       $dopple['tstime'] = $begin;
       $dopple['tsendtime'] = $end;
       $tid = dh_update_timeseries($dopple, 'tstime_singular');
-      dpm($dopple,"Updating $thisyear - $thismon ");
+      //dpm($dopple,"Updating $thisyear - $thismon with tid = $tid");
       $thismon = ($thismon == 12) ? 1 : $thismon + 1;
     }
     parent::updateLinked($entity);
