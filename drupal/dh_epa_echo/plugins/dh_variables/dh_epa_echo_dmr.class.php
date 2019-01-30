@@ -48,4 +48,27 @@ class dHECHODMRPeriodMGD extends dHVariablePluginDefault {
   }
 }
 
+
+  
+class dHECHODMRAnnualMGY extends dHVariablePluginDefault {
+  var $stat = 'sum';
+  var $rep_varkey = 'dmr_mon_mgm';
+  
+  public function updateLinked(&$entity) {
+    // push monthly total to annual
+    $year = date('Y', dh_handletimestamp($entity->tstime));
+    $begin = dh_handletimestamp("$year-01-01 00:00:00");
+    $end = dh_handletimestamp("$year-12-31 00:00:00");
+    $summary = dh_summarizeTimePeriod($entity->entity_type, $entity->featureid, $entity->varid, $begin, $end);
+    if (!empty($summary)) {
+      $summary['varkey'] = $this->rep_varkey;
+      $summary['tsvalue'] = $summary['sum_value'];
+      $tid = dh_update_timeseries($summary, 'tstime_singular');
+      //dpm($summary, "Updated TID $tid $this->rep_varkey Annual $year-01-01 to $year-12-31 From Monthly " . date("Y-m-d", $entity->tstime));
+    } else {
+      dsm("dh_summarizeTimePeriod returned FALSE ");
+    }
+    parent::updateLinked($entity);
+  }
+}
 ?>
