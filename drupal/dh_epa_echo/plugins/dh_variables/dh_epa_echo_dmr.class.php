@@ -74,7 +74,7 @@ class dHECHODMRMonMGD extends dHVariablePluginDefault {
       'entity_type' => $entity->entity_type,
 	  'tstime' => $entity->tstime,
 	  'tsendtime' => $entity->tsendtime,
-      'tsvalue' => $entity->tsvalue/$modays
+      'tsvalue' => $entity->tsvalue*$modays
     );
     
     $tid = dh_update_timeseries($dopple, 'tstime_singular');
@@ -82,10 +82,10 @@ class dHECHODMRMonMGD extends dHVariablePluginDefault {
     parent::updateLinked($entity);
   }
 }
-  
-class dHECHODMRAnnualMGY extends dHVariablePluginDefault {
+ 
+class dHECHODMRMonMGM extends dHVariablePluginDefault {
   var $stat = 'sum';
-  var $rep_varkey = 'dmr_mon_mgm';
+  var $rep_varkey = 'dmr_ann_mgy';
   
   public function update(&$entity) {
     // update dopplegangers
@@ -101,6 +101,7 @@ class dHECHODMRAnnualMGY extends dHVariablePluginDefault {
     parent::insert($entity);
   }
   
+  
   public function updateLinked(&$entity) {
     // push monthly total to annual
     $year = date('Y', dh_handletimestamp($entity->tstime));
@@ -115,6 +116,43 @@ class dHECHODMRAnnualMGY extends dHVariablePluginDefault {
     } else {
       dsm("dh_summarizeTimePeriod returned FALSE ");
     }
+    parent::updateLinked($entity);
+  }
+}
+
+ 
+class dHECHODMRAnnMGY extends dHVariablePluginDefault {
+  var $stat = 'sum';
+  var $rep_varkey = 'dmr_ann_mgd';
+  
+  public function update(&$entity) {
+    // update dopplegangers
+    //dpm($entity, 'update');
+    $this->updateLinked($entity);
+    parent::update($entity);
+  }
+  
+  public function insert(&$entity) {
+    // update dopplegangers
+    //dpm($entity, 'insert');
+    $this->updateLinked($entity);
+    parent::insert($entity);
+  }
+  
+    public function updateLinked(&$entity) {
+	$yeardays = date('z', $entity->tsendtime)+1;
+    $dopple = array(
+      'featureid' => $entity->featureid,
+      'varkey' => $this->rep_varkey,
+      'entity_type' => $entity->entity_type,
+	  'tstime' => $entity->tstime,
+	  'tsendtime' => $entity->tsendtime,
+      'tsvalue' => $entity->tsvalue/$yeardays
+    );
+    
+    $tid = dh_update_timeseries($dopple, 'tstime_singular');
+
+	
     parent::updateLinked($entity);
   }
 }
