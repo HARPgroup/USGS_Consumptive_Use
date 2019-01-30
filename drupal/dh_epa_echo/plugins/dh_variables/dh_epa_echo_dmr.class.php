@@ -42,6 +42,9 @@ class dHECHODMRPeriodMGD extends dHVariablePluginDefault {
       $dopple['tsendtime'] = $end;
       $tid = dh_update_timeseries($dopple, 'tstime_singular');
       //dpm($dopple,"Updating $thisyear - $thismon with tid = $tid");
+	  if ($thismon == 12) {
+		  $thisyear++;
+	  }
       $thismon = ($thismon == 12) ? 1 : $thismon + 1;
     }
     parent::updateLinked($entity);
