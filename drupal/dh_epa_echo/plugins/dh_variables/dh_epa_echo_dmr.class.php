@@ -28,24 +28,27 @@ class dHECHODMRPeriodMGD extends dHVariablePluginDefault {
     $emon = date('m', dh_handletimestamp($entity->tsendtime));
     $thisyear = $syear;
     $thismon = $smon;
+    $begin = dh_handletimestamp("$thisyear-$thismon-01 00:00:00");
     $dopple = array(
       'featureid' => $entity->featureid,
       'varkey' => $this->rep_varkey,
       'entity_type' => $entity->entity_type,
       'tsvalue' => $entity->tsvalue
     );
-    while ( ($thisyear <= $eyear) and ($thismon <= $emon) ) {
-      $begin = dh_handletimestamp("$thisyear-$thismon-01 00:00:00");
+    while ( $begin < $entity->tsendtime ) {
       $modays = date('t', $begin);
       $end = dh_handletimestamp("$thisyear-$thismon-$modays 00:00:00");
       $dopple['tstime'] = $begin;
       $dopple['tsendtime'] = $end;
       $tid = dh_update_timeseries($dopple, 'tstime_singular');
       //dpm($dopple,"Updating $thisyear - $thismon with tid = $tid");
-	  if ($thismon == 12) {
-		  $thisyear++;
-	  }
-      $thismon = ($thismon == 12) ? 1 : $thismon + 1;
+      if ($thismon == 12) {
+        $thisyear++;
+        $thismon = 1;
+      } else {
+        $thismon++;
+      }
+      $begin = dh_handletimestamp("$thisyear-$thismon-01 00:00:00");
     }
     parent::updateLinked($entity);
   }
