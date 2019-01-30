@@ -48,7 +48,40 @@ class dHECHODMRPeriodMGD extends dHVariablePluginDefault {
   }
 }
 
+class dHECHODMRMonMGD extends dHVariablePluginDefault {
+  var $stat = 'mean';
+  var $rep_varkey = 'dmr_mon_mgm';
+  
+  public function update(&$entity) {
+    // update dopplegangers
+    //dpm($entity, 'update');
+    $this->updateLinked($entity);
+    parent::update($entity);
+  }
+  
+  public function insert(&$entity) {
+    // update dopplegangers
+    //dpm($entity, 'insert');
+    $this->updateLinked($entity);
+    parent::insert($entity);
+  }
+  
+  public function updateLinked(&$entity) {
+	$modays = date('t', $entity->tstime);
+    $dopple = array(
+      'featureid' => $entity->featureid,
+      'varkey' => $this->rep_varkey,
+      'entity_type' => $entity->entity_type,
+	  'tstime' => $entity->tstime,
+	  'tsendtime' => $entity->tsendtime,
+      'tsvalue' => $entity->tsvalue/$modays
+    );
+    
+    $tid = dh_update_timeseries($dopple, 'tstime_singular');
 
+    parent::updateLinked($entity);
+  }
+}
   
 class dHECHODMRAnnualMGY extends dHVariablePluginDefault {
   var $stat = 'sum';
