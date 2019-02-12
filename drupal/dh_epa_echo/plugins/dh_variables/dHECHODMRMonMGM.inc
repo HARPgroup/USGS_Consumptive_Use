@@ -21,7 +21,7 @@ $plugin = array(
     'data_entry' => 'value,code',
     'plugin' => 'dHECHODMRMonMGM',
     'options' => '',
-    'varabbrev' => 'DMR MGD',
+    'varabbrev' => 'DMR MGM',
   ),
 );
 
