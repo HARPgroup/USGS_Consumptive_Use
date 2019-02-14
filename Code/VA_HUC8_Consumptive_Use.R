@@ -318,23 +318,21 @@ rm(delf,delt,dFrom,dTo,relf,relt,rFrom,rTo,temp,interbasin,ToHUC)
 #Load in .txt file with DMR data from 2010-2017. 
 ECHO_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC.txt", sep="\t", header=T)
 
-ECHO_2010_2017%>%
-  summarise(Facilities=n_distinct(Facility.ID),
-  Outfalls=n_distinct(OutfallID),
-  Summed_D=sum(Measured_Effluent,na.rm=T)/12,
-  Summed_D_QAQC=sum(Resolved_Measured_Effluent_NA,na.rm=T)/12,
-  NPDES=sum(Permit_Type=="NPDES Individual Permit"),
-  GP=sum(Permit_Type=="General Permit Covered Facility"))
+# Subset by Matched Facilities
+Matched<-read.csv("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Matched Facilities/Runninglist_Matches.csv")
+# ECHO_2010_2017<-subset(ECHO_2010_2017,ECHO_2010_2017$Facility.ID%in%gsub("echo_","",Matched$VPDES.Hydrocode))
 
 #Filtering out General Permits and Outfalls not ending in 001 
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Permit_Type=="NPDES Individual Permit"&str_sub(ECHO_2010_2017$OutfallID, start=-3)=="001")
-
-#---Separate by Water Use Sector---# Go through individually---don't do scenario with transfers
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Agriculture/Irrigation")
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Commercial")
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Energy")
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Industrial")
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Municipal")
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Permit_Type=="NPDES Individual Permit"&str_sub(ECHO_2010_2017$OutfallID, start=-3)=="001")
+# 
+# #---Separate by Water Use Sector---# Go through individually---don't do scenario with transfers
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Agriculture/Irrigation")
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Commercial")
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Energy")
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Industrial")
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Municipal")
+# 
+# ECHO_2010_2017<-subset(ECHO_2010_2017, subset=!ECHO_2010_2017$Reclass_Use_Type=="Energy")
 
 ECHO_2010_2017<-SpatialPointsDataFrame(data.frame(Outfall_Longitude=ECHO_2010_2017$Outfall_Longitude,Outfall_Latitude=ECHO_2010_2017$Outfall_Latitude),ECHO_2010_2017,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
 
@@ -344,11 +342,11 @@ ECHO_2010_2017@data$Resolved_Measured_Effluent_NA<-as.numeric(ECHO_2010_2017@dat
 ECHO_2010_2017@data$Resolved_Measured_Effluent_Med<-as.numeric(ECHO_2010_2017@data$Resolved_Measured_Effluent_Med)#after QA/QC
 ECHO_2010_2017@data$Measured_Effluent<-as.numeric(ECHO_2010_2017@data$Measured_Effluent)#Before QA/QC
 
-
 ####Overlay with HUC 8 Watershed Shapefile####
 HUC8_Facilities<-over(ECHO_2010_2017,HUC8_Overlay)
 ECHO_2010_2017@data$HUC8<-HUC8_Facilities$HUC8
 ECHO_2010_2017@data$HUC8Name<-HUC8_Facilities$HUC8Name
+HUC8Codes<-as.vector(HUC8@data$HUC8)
 
 ####Sum Discharges in HUC 8 Watersheds####
 ECHO_2010_2017.test<-as.data.frame(ECHO_2010_2017@data)
@@ -357,30 +355,46 @@ ECHO_Resol_Mean_Med<-ECHO_2010_2017.test%>%dplyr::group_by(OutfallID)%>%dplyr::s
 ECHO_2010_2017.test<-merge(ECHO_2010_2017.test,ECHO_Resol_Mean_NA,by="OutfallID",all.x=T)
 ECHO_2010_2017.test<-merge(ECHO_2010_2017.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
 
-HUC8_Discharges<-ECHO_2010_2017@data%>%
-                    dplyr::group_by(HUC8Name,Year=substring(MP_End_Date,1,4))%>%
-                      dplyr::summarise(HUC8=first(HUC8),Discharge_MGD=sum(Resolved_Measured_Effluent_Med,na.rm=T)/12)
+Outfall_Discharges<-ECHO_2010_2017@data%>%
+  dplyr::group_by(OutfallID,Year)%>%
+  dplyr::summarise(Facility.ID=first(Facility.ID),
+                   Facility_Name=first(FacilityName),
+                   Mon_Reported=first(Mon_Reported),
+                   Discharges_MGD=sum(Resolved_Measured_Effluent_Med, na.rm=T)/first(Mon_Reported),
+                   Sector=first(Reclass_Use_Type),
+                   HUC8=first(HUC8),
+                   HUC8Name=first(HUC8Name))%>%arrange(desc(Discharges_MGD))
+
+HUC8_Discharges<-Outfall_Discharges%>%
+  dplyr::group_by(HUC8Name,Year)%>%
+  dplyr::summarise(HUC8=first(HUC8),Discharge_MGD=sum(Discharges_MGD,na.rm=T))%>%arrange(desc(Discharge_MGD))
+
+TS_HUC8_Discharges<-ECHO_2010_2017@data%>%
+  dplyr::group_by(Date=MP_Begin_Date,HUC8=HUC8)%>%
+  dplyr::summarise(Discharge=sum(Resolved_Measured_Effluent_Med,na.rm=T))%>%
+  tidyr::spread(HUC8, Discharge)
+
+Missing<-setdiff(HUC8Codes,names(TS_HUC8_Discharges))
+TS_HUC8_Discharges[Missing]<-NA
+TS_HUC8_Discharges<-TS_HUC8_Discharges[HUC8Codes]
+
 
 ###########################################################################################################################################
 ####################################################Calculating Withdrawals################################################################
 
 load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
-VWUDS_2010_2017<-VWUDS_Monthly_WaterUse_View
-rm(VWUDS_Monthly_WaterUse_View)
 
-VWUDS_2010_2017%>%
-  dplyr::group_by(substring(Date,1,4))%>%
-  dplyr::summarise(Ave_Withdrawal_MGM=mean(Million.Gallons.Month,na.rm=T), 
-                   Ave_Withdrawal_MGD=mean(Withdrawals_MGD,na.rm=T),
-                   Sum_Withdrawal_MGM=(sum(Million.Gallons.Month,na.rm=T)/12),
-                   Sum_Withdrawal_MGD=(sum(Withdrawals_MGD,na.rm=T))/12)
+# Subset by Matched Facilities
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017,VWUDS_2010_2017$Facility.ID%in%gsub("echo_","",Matched$VWUDS.HydroID))
 
 #---Separate by Water Use Sector---# Go through individually---don't do scenario with transfers
-VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Agriculture/Irrigation")
-VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Commercial")
-VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Energy")
-VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Industrial")
-VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Municipal")
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Agriculture/Irrigation")
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Commercial")
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Energy")
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Industrial")
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=VWUDS_2010_2017$Reclass_Use_Type=="Municipal")
+# 
+# VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=!VWUDS_2010_2017$Reclass_Use_Type=="Energy")
 
 #Convert these facilities into a spatial dataframe and overlay with HUC 8s. Then, summarize the data by HUC 8.
 #Create a spatial dataframe of all facilities with real geometry
@@ -395,9 +409,38 @@ VWUDS_2010_2017@data$HUC8Name<-HUC8_VWUDS$HUC8Name
 VWUDS_2010_2017.test<-VWUDS_2010_2017@data
 #Summarize by HUC to find the total withdrawal occurring in each HUC
 
-HUC8_Withdrawals<-VWUDS_2010_2017@data%>%
-  dplyr::group_by(HUC8Name,Year=substring(Date,1,4))%>%
-  dplyr::summarise(HUC8=first(HUC8),Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/12)
+Source_Withdrawals<-VWUDS_2010_2017@data%>%
+  dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+  dplyr::summarise(Facility.ID=first(Facility.ID),
+                   Facility_Name=first(Facility),
+                   Mon_Reported=first(Mon_Reported),
+                   Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                   Sector=first(Reclass_Use_Type),
+                   HUC8=first(HUC8),
+                   HUC8Name=first(HUC8Name))%>%arrange(desc(Withdrawals_MGD))
+
+HUC8_Withdrawals<-Source_Withdrawals%>%
+  dplyr::group_by(HUC8Name,Year)%>%
+  dplyr::summarise(HUC8=first(HUC8),Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T))%>%arrange(desc(Withdrawals_MGD))
+
+TS_HUC8_Withdrawals<-VWUDS_2010_2017@data%>%
+  dplyr::group_by(Date=Date,HUC8=HUC8)%>%
+  dplyr::summarise(Withdrawal=sum(Withdrawals_MGD,na.rm=T))%>%
+  tidyr::spread(HUC8, Withdrawal)
+
+Missing<-setdiff(HUC8Codes,names(TS_HUC8_Withdrawals))
+TS_HUC8_Withdrawals[Missing]<-NA
+TS_HUC8_Withdrawals<-TS_HUC8_Withdrawals[HUC8Codes]
+
+# Timeseries Consumption in HUC8 for Mann Kendall Analysis
+CU_Function<-function(x,y) (ifelse(is.na(x),0,x)-ifelse(is.na(y),0,y))/(ifelse(is.na(x),0,x))
+TS_HUC8_Withdrawals<-TS_HUC8_Withdrawals[,order(names(TS_HUC8_Withdrawals))]
+TS_HUC8_Discharges<-TS_HUC8_Discharges[,order(names(TS_HUC8_Discharges))]
+
+TS_HUC8_CU<-data.frame(Date=unique(VWUDS_2010_2017@data$Date), 
+                       mapply(CU_Function,TS_HUC8_Withdrawals,TS_HUC8_Discharges),stringsAsFactors = F)
+
+save(TS_HUC8_CU,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/TS_HUC8_CU.RData")
 
 ###########################################################################################################################################
 ####################################################Put Withdrawals and Discharrges into HUC8 Spatial Dataframe#############################
@@ -448,7 +491,7 @@ HUC8@data$NetWB_2010_t<-ifelse(is.na(HUC8@data$Discharges_2010)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2010_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2010),0,HUC8@data$Withdrawals_2010))+(ifelse(is.na(HUC8@data$waterout_2010),0,-HUC8@data$waterout_2010)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2010),0,HUC8@data$Discharges_2010))+(ifelse(is.na(HUC8@data$waterin_2010),0,HUC8@data$waterin_2010)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2010),0,HUC8@data$Withdrawals_2010))+(ifelse(is.na(HUC8@data$waterout_2010),0,-HUC8@data$waterout_2010)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2010),0,HUC8@data$Withdrawals_2010))+(ifelse(is.na(HUC8@data$waterout_2010),0,-HUC8@data$waterout_2010)))
 
 HUC8@data$Consumption_2010_t<-ifelse(is.nan(HUC8@data$Consumption_2010_t)|is.infinite(HUC8@data$Consumption_2010_t),NA,HUC8@data$Consumption_2010_t)
 #--Without Transfers---#
@@ -470,7 +513,7 @@ HUC8@data$NetWB_2011_t<-ifelse(is.na(HUC8@data$Discharges_2011)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2011_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2011),0,HUC8@data$Withdrawals_2011))+(ifelse(is.na(HUC8@data$waterout_2011),0,-HUC8@data$waterout_2011)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2011),0,HUC8@data$Discharges_2011))+(ifelse(is.na(HUC8@data$waterin_2011),0,HUC8@data$waterin_2011)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2011),0,HUC8@data$Withdrawals_2011))+(ifelse(is.na(HUC8@data$waterout_2011),0,-HUC8@data$waterout_2011)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2011),0,HUC8@data$Withdrawals_2011))+(ifelse(is.na(HUC8@data$waterout_2011),0,-HUC8@data$waterout_2011)))
 
 HUC8@data$Consumption_2011_t<-ifelse(is.nan(HUC8@data$Consumption_2011_t)|is.infinite(HUC8@data$Consumption_2011_t),NA,HUC8@data$Consumption_2011_t)
 #---Without Transfers----#
@@ -479,8 +522,8 @@ HUC8@data$NetWB_2011<-(ifelse(is.na(HUC8@data$Discharges_2011),0,HUC8@data$Disch
 HUC8@data$NetWB_2011<-ifelse(is.na(HUC8@data$Discharges_2011)&is.na(HUC8@data$Withdrawals_2011),NA,HUC8@data$NetWB_2011)
 
 HUC8@data$Consumption_2011<-((ifelse(is.na(HUC8@data$Withdrawals_2011),0,HUC8@data$Withdrawals_2011))-
-                            (ifelse(is.na(HUC8@data$Discharges_2011),0,HUC8@data$Discharges_2011)))/
-                            (ifelse(is.na(HUC8@data$Withdrawals_2011),0,HUC8@data$Withdrawals_2011))
+                               (ifelse(is.na(HUC8@data$Discharges_2011),0,HUC8@data$Discharges_2011)))/
+  (ifelse(is.na(HUC8@data$Withdrawals_2011),0,HUC8@data$Withdrawals_2011))
 
 HUC8@data$Consumption_2011<-ifelse(is.nan(HUC8@data$Consumption_2011)|is.infinite(HUC8@data$Consumption_2011),NA,HUC8@data$Consumption_2011)
 #---Year 2012----#
@@ -492,7 +535,7 @@ HUC8@data$NetWB_2012_t<-ifelse(is.na(HUC8@data$Discharges_2012)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2012_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2012),0,HUC8@data$Withdrawals_2012))+(ifelse(is.na(HUC8@data$waterout_2012),0,-HUC8@data$waterout_2012)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2012),0,HUC8@data$Discharges_2012))+(ifelse(is.na(HUC8@data$waterin_2012),0,HUC8@data$waterin_2012)))))/
-                                  ((ifelse(is.na(HUC8@data$Withdrawals_2012),0,HUC8@data$Withdrawals_2012))+(ifelse(is.na(HUC8@data$waterout_2012),0,-HUC8@data$waterout_2012)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2012),0,HUC8@data$Withdrawals_2012))+(ifelse(is.na(HUC8@data$waterout_2012),0,-HUC8@data$waterout_2012)))
 
 
 HUC8@data$Consumption_2012_t<-ifelse(is.nan(HUC8@data$Consumption_2012_t)|is.infinite(HUC8@data$Consumption_2012_t),NA,HUC8@data$Consumption_2012_t)
@@ -504,7 +547,7 @@ HUC8@data$NetWB_2012<-ifelse(is.na(HUC8@data$Discharges_2012)&is.na(HUC8@data$Wi
 
 HUC8@data$Consumption_2012<-((ifelse(is.na(HUC8@data$Withdrawals_2012),0,HUC8@data$Withdrawals_2012))-
                                (ifelse(is.na(HUC8@data$Discharges_2012),0,HUC8@data$Discharges_2012)))/
-                            (ifelse(is.na(HUC8@data$Withdrawals_2012),0,HUC8@data$Withdrawals_2012))
+  (ifelse(is.na(HUC8@data$Withdrawals_2012),0,HUC8@data$Withdrawals_2012))
 
 HUC8@data$Consumption_2012<-ifelse(is.nan(HUC8@data$Consumption_2012)|is.infinite(HUC8@data$Consumption_2012),NA,HUC8@data$Consumption_2012)
 #---Year 2013----#
@@ -516,7 +559,7 @@ HUC8@data$NetWB_2013_t<-ifelse(is.na(HUC8@data$Discharges_2013)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2013_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2013),0,HUC8@data$Withdrawals_2013))+(ifelse(is.na(HUC8@data$waterout_2013),0,-HUC8@data$waterout_2013)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2013),0,HUC8@data$Discharges_2013))+(ifelse(is.na(HUC8@data$waterin_2013),0,HUC8@data$waterin_2013)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2013),0,HUC8@data$Withdrawals_2013))+(ifelse(is.na(HUC8@data$waterout_2013),0,-HUC8@data$waterout_2013)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2013),0,HUC8@data$Withdrawals_2013))+(ifelse(is.na(HUC8@data$waterout_2013),0,-HUC8@data$waterout_2013)))
 
 HUC8@data$Consumption_2013_t<-ifelse(is.nan(HUC8@data$Consumption_2013_t)|is.infinite(HUC8@data$Consumption_2013_t),NA,HUC8@data$Consumption_2013_t)
 
@@ -527,7 +570,7 @@ HUC8@data$NetWB_2013<-ifelse(is.na(HUC8@data$Discharges_2013)&is.na(HUC8@data$Wi
 
 HUC8@data$Consumption_2013<-((ifelse(is.na(HUC8@data$Withdrawals_2013),0,HUC8@data$Withdrawals_2013))-
                                (ifelse(is.na(HUC8@data$Discharges_2013),0,HUC8@data$Discharges_2013)))/
-                            (ifelse(is.na(HUC8@data$Withdrawals_2013),0,HUC8@data$Withdrawals_2013))
+  (ifelse(is.na(HUC8@data$Withdrawals_2013),0,HUC8@data$Withdrawals_2013))
 
 HUC8@data$Consumption_2013<-ifelse(is.nan(HUC8@data$Consumption_2013)|is.infinite(HUC8@data$Consumption_2013),NA,HUC8@data$Consumption_2013)
 
@@ -540,7 +583,7 @@ HUC8@data$NetWB_2014_t<-ifelse(is.na(HUC8@data$Discharges_2014)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2014_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2014),0,HUC8@data$Withdrawals_2014))+(ifelse(is.na(HUC8@data$waterout_2014),0,-HUC8@data$waterout_2014)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2014),0,HUC8@data$Discharges_2014))+(ifelse(is.na(HUC8@data$waterin_2014),0,HUC8@data$waterin_2014)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2014),0,HUC8@data$Withdrawals_2014))+(ifelse(is.na(HUC8@data$waterout_2014),0,-HUC8@data$waterout_2014)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2014),0,HUC8@data$Withdrawals_2014))+(ifelse(is.na(HUC8@data$waterout_2014),0,-HUC8@data$waterout_2014)))
 
 HUC8@data$Consumption_2014_t<-ifelse(is.nan(HUC8@data$Consumption_2014_t)|is.infinite(HUC8@data$Consumption_2014_t),NA,HUC8@data$Consumption_2014_t)
 
@@ -563,7 +606,7 @@ HUC8@data$NetWB_2015_t<-ifelse(is.na(HUC8@data$Discharges_2015)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2015_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2015),0,HUC8@data$Withdrawals_2015))+(ifelse(is.na(HUC8@data$waterout_2015),0,-HUC8@data$waterout_2015)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2015),0,HUC8@data$Discharges_2015))+(ifelse(is.na(HUC8@data$waterin_2015),0,HUC8@data$waterin_2015)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2015),0,HUC8@data$Withdrawals_2015))+(ifelse(is.na(HUC8@data$waterout_2015),0,-HUC8@data$waterout_2015)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2015),0,HUC8@data$Withdrawals_2015))+(ifelse(is.na(HUC8@data$waterout_2015),0,-HUC8@data$waterout_2015)))
 
 HUC8@data$Consumption_2015_t<-ifelse(is.nan(HUC8@data$Consumption_2015_t)|is.infinite(HUC8@data$Consumption_2015_t),NA,HUC8@data$Consumption_2015_t)
 
@@ -587,7 +630,7 @@ HUC8@data$NetWB_2016_t<-ifelse(is.na(HUC8@data$Discharges_2016)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2016_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2016),0,HUC8@data$Withdrawals_2016))+(ifelse(is.na(HUC8@data$waterout_2016),0,-HUC8@data$waterout_2016)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2016),0,HUC8@data$Discharges_2016))+(ifelse(is.na(HUC8@data$waterin_2016),0,HUC8@data$waterin_2016)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2016),0,HUC8@data$Withdrawals_2016))+(ifelse(is.na(HUC8@data$waterout_2016),0,-HUC8@data$waterout_2016)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2016),0,HUC8@data$Withdrawals_2016))+(ifelse(is.na(HUC8@data$waterout_2016),0,-HUC8@data$waterout_2016)))
 
 HUC8@data$Consumption_2016_t<-ifelse(is.nan(HUC8@data$Consumption_2016_t)|is.infinite(HUC8@data$Consumption_2016_t),NA,HUC8@data$Consumption_2016_t)
 
@@ -611,7 +654,7 @@ HUC8@data$NetWB_2017_t<-ifelse(is.na(HUC8@data$Discharges_2017)&is.na(HUC8@data$
 
 HUC8@data$Consumption_2017_t<-(((ifelse(is.na(HUC8@data$Withdrawals_2017),0,HUC8@data$Withdrawals_2017))+(ifelse(is.na(HUC8@data$waterout_2017),0,-HUC8@data$waterout_2017)))-
                                  (((ifelse(is.na(HUC8@data$Discharges_2017),0,HUC8@data$Discharges_2017))+(ifelse(is.na(HUC8@data$waterin_2017),0,HUC8@data$waterin_2017)))))/
-                              ((ifelse(is.na(HUC8@data$Withdrawals_2017),0,HUC8@data$Withdrawals_2017))+(ifelse(is.na(HUC8@data$waterout_2017),0,-HUC8@data$waterout_2017)))
+  ((ifelse(is.na(HUC8@data$Withdrawals_2017),0,HUC8@data$Withdrawals_2017))+(ifelse(is.na(HUC8@data$waterout_2017),0,-HUC8@data$waterout_2017)))
 
 HUC8@data$Consumption_2017_t<-ifelse(is.nan(HUC8@data$Consumption_2017_t)|is.infinite(HUC8@data$Consumption_2017_t),NA,HUC8@data$Consumption_2017_t)
 
@@ -621,7 +664,7 @@ HUC8@data$NetWB_2017<-(ifelse(is.na(HUC8@data$Discharges_2017),0,HUC8@data$Disch
 HUC8@data$NetWB_2017<-ifelse(is.na(HUC8@data$Discharges_2017)&is.na(HUC8@data$Withdrawals_2017),NA,HUC8@data$NetWB_2017)
 
 HUC8@data$Consumption_2017<-((ifelse(is.na(HUC8@data$Withdrawals_2017),0,HUC8@data$Withdrawals_2017))-(ifelse(is.na(HUC8@data$Discharges_2017),0,HUC8@data$Discharges_2017)))/
-                              (ifelse(is.na(HUC8@data$Withdrawals_2017),0,HUC8@data$Withdrawals_2017))
+  (ifelse(is.na(HUC8@data$Withdrawals_2017),0,HUC8@data$Withdrawals_2017))
 
 HUC8@data$Consumption_2017<-ifelse(is.nan(HUC8@data$Consumption_2017)|is.infinite(HUC8@data$Consumption_2017),NA,HUC8@data$Consumption_2017)
 #################################################################################################
@@ -670,7 +713,7 @@ for (i in 1:length(HUC8@data$TNMID)){
                              ifelse(is.na(HUC8@data$NetWB_2017[i]),0,HUC8@data$NetWB_2017[i]))
 }
 HUC8@data$NetWB_ave<-HUC8@data$NetWB_sum/8
-HUC8@data$NetWB_ave<-ifelse(HUC8@data$NetWB_ave==0,NA,HUC8@data$NetWB_ave)
+HUC8@data$NetWB_ave<-ifelse(HUC8@data$NetWB_ave==0,NA,-HUC8@data$NetWB_ave)
 
 #----Consumption----#
 
@@ -691,26 +734,26 @@ HUC8@data$Consumption_ave<-ifelse(HUC8@data$Consumption_ave==0,NA,HUC8@data$Cons
 #-----------------With Transfers-------------------------#
 for (i in 1:length(HUC8@data$TNMID)){
   HUC8@data$NetWB_t_sum[i]<-(ifelse(is.na(HUC8@data$NetWB_2010_t[i]),0,HUC8@data$NetWB_2010_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2011_t[i]),0,HUC8@data$NetWB_2011_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2012_t[i]),0,HUC8@data$NetWB_2012_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2013_t[i]),0,HUC8@data$NetWB_2013_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2014_t[i]),0,HUC8@data$NetWB_2014_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2015_t[i]),0,HUC8@data$NetWB_2015_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2016_t[i]),0,HUC8@data$NetWB_2016_t[i])+
-                             ifelse(is.na(HUC8@data$NetWB_2017_t[i]),0,HUC8@data$NetWB_2017_t[i]))
+                               ifelse(is.na(HUC8@data$NetWB_2011_t[i]),0,HUC8@data$NetWB_2011_t[i])+
+                               ifelse(is.na(HUC8@data$NetWB_2012_t[i]),0,HUC8@data$NetWB_2012_t[i])+
+                               ifelse(is.na(HUC8@data$NetWB_2013_t[i]),0,HUC8@data$NetWB_2013_t[i])+
+                               ifelse(is.na(HUC8@data$NetWB_2014_t[i]),0,HUC8@data$NetWB_2014_t[i])+
+                               ifelse(is.na(HUC8@data$NetWB_2015_t[i]),0,HUC8@data$NetWB_2015_t[i])+
+                               ifelse(is.na(HUC8@data$NetWB_2016_t[i]),0,HUC8@data$NetWB_2016_t[i])+
+                               ifelse(is.na(HUC8@data$NetWB_2017_t[i]),0,HUC8@data$NetWB_2017_t[i]))
 }
 HUC8@data$NetWB_t_ave<-HUC8@data$NetWB_t_sum/8
 HUC8@data$NetWB_t_ave<-ifelse(HUC8@data$NetWB_t_ave==0,NA,HUC8@data$NetWB_t_ave)
 
 for (i in 1:length(HUC8@data$TNMID)){
   HUC8@data$Consumption_t_sum[i]<-(ifelse(is.na(HUC8@data$Consumption_2010_t[i]),0,HUC8@data$Consumption_2010_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2011_t[i]),0,HUC8@data$Consumption_2011_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2012_t[i]),0,HUC8@data$Consumption_2012_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2013_t[i]),0,HUC8@data$Consumption_2013_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2014_t[i]),0,HUC8@data$Consumption_2014_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2015_t[i]),0,HUC8@data$Consumption_2015_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2016_t[i]),0,HUC8@data$Consumption_2016_t[i])+
-                                   ifelse(is.na(HUC8@data$Consumption_2017_t[i]),0,HUC8@data$Consumption_2017_t[i]))
+                                     ifelse(is.na(HUC8@data$Consumption_2011_t[i]),0,HUC8@data$Consumption_2011_t[i])+
+                                     ifelse(is.na(HUC8@data$Consumption_2012_t[i]),0,HUC8@data$Consumption_2012_t[i])+
+                                     ifelse(is.na(HUC8@data$Consumption_2013_t[i]),0,HUC8@data$Consumption_2013_t[i])+
+                                     ifelse(is.na(HUC8@data$Consumption_2014_t[i]),0,HUC8@data$Consumption_2014_t[i])+
+                                     ifelse(is.na(HUC8@data$Consumption_2015_t[i]),0,HUC8@data$Consumption_2015_t[i])+
+                                     ifelse(is.na(HUC8@data$Consumption_2016_t[i]),0,HUC8@data$Consumption_2016_t[i])+
+                                     ifelse(is.na(HUC8@data$Consumption_2017_t[i]),0,HUC8@data$Consumption_2017_t[i]))
 }
 
 HUC8@data$Consumption_t_ave<-HUC8@data$Consumption_t_sum/8
@@ -757,7 +800,7 @@ ggplot()+
 ###################################################################################
 #----------------Discharge-----------------#
 
-#---Long Term Summed Discharge Average---#
+#---Long Term Average Discharge Average---#
 
 #--Discrete--#
 
@@ -768,13 +811,13 @@ ggplot()+
     data=HUC8.df,
     aes(x=long, y= lat, group=group,
         fill= cut(HUC8.df$Discharge_ave,breaks=c(0,
-                                             (quantile(HUC8.df$Discharge_ave,c(1/6),na.rm=T)),
-                                             (quantile(HUC8.df$Discharge_ave,c(2/6),na.rm=T)),
-                                             (quantile(HUC8.df$Discharge_ave,c(3/6),na.rm=T)),
-                                             (quantile(HUC8.df$Discharge_ave,c(4/6),na.rm=T)),
-                                             (quantile(HUC8.df$Discharge_ave,c(5/6),na.rm=T)),
-                                             (quantile(HUC8.df$Discharge_ave,c(1),na.rm=T))),include.lowest=T), colour=""))+
-  scale_fill_manual(name="Summed Discharge (MGD)", values=(Dis_Discrete), 
+                                                 (quantile(HUC8.df$Discharge_ave,c(1/6),na.rm=T)),
+                                                 (quantile(HUC8.df$Discharge_ave,c(2/6),na.rm=T)),
+                                                 (quantile(HUC8.df$Discharge_ave,c(3/6),na.rm=T)),
+                                                 (quantile(HUC8.df$Discharge_ave,c(4/6),na.rm=T)),
+                                                 (quantile(HUC8.df$Discharge_ave,c(5/6),na.rm=T)),
+                                                 (quantile(HUC8.df$Discharge_ave,c(1),na.rm=T))),include.lowest=T), colour=""))+
+  scale_fill_manual(name="Average Discharge (MGD)", values=(Dis_Discrete), 
                     labels=c(paste(0,"MGD -",round(quantile(HUC8.df$Discharge_ave,c(1/6),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Discharge_ave,c(1/6),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Discharge_ave,c(2/6),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Discharge_ave,c(2/6),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Discharge_ave,c(3/6),na.rm=T),digits=1),"MGD"),
@@ -792,13 +835,46 @@ ggplot()+
   guides(fill=guide_legend(order=1),
          shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
          colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-  labs(title = "Average Annual Summed Discharge (MGD) 2010-2017")+
-  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+  labs(title = "Average Daily Discharge (MGD) 2010-2017")+
   theme(line=element_blank(),
         axis.text=element_blank(),
         axis.title=element_blank(),
-        panel.background = element_blank())+coord_equal()
+        panel.background = element_blank())+coord_equal()+
+  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+
+
+#-----Refined Scale----#
+ggplot()+
+  geom_polygon(
+    data=HUC8.df,
+    aes(x=long, y= lat, group=group,
+        fill= cut(HUC8.df$Discharge_ave,breaks=c(0,5,25,50,100,250,max(HUC8.df$Discharge_ave,na.rm=T)),include.lowest=T,include.highest=T), colour=""))+
+  scale_fill_manual(name="Average Discharge (MGD)", values=(Dis_Discrete), 
+                    labels=c(paste(0,"to",5),
+                             paste(5,"to",25),
+                             paste(25,"to",50),
+                             paste(50,"to",100),
+                             paste(100,"to",250),
+                             paste(250,"<")),
+                    na.value="transparent")+
+  geom_polygon(
+    data=HUC8.df,
+    aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+  geom_point(data=ECHO_2010_2017.test, aes(x=Outfall_Longitude, y=Outfall_Latitude, shape="Outfall"),
+             size=1.25,colour="#252525")+
+  scale_shape_manual(name="", values=17)+
+  scale_colour_manual(values=NA)+
+  guides(fill=guide_legend(order=1),
+         shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
+         colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
+  labs(title = "Average Daily Discharge (MGD) 2010-2017")+
+  theme(line=element_blank(),
+        axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background = element_blank())+coord_equal()+
+  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
 
 #--By Sector--#
 Dis_Discrete_sector<- c("#bdd7e7","#6baed6","#3182bd","#08519c")
@@ -812,7 +888,7 @@ ggplot()+
                                                  (quantile(HUC8.df$Discharge_ave,c(2/4),na.rm=T)),
                                                  (quantile(HUC8.df$Discharge_ave,c(3/4),na.rm=T)),
                                                  (quantile(HUC8.df$Discharge_ave,c(1),na.rm=T))),include.lowest=T), colour=""))+
-  scale_fill_manual(name="Summed Discharge (MGD)", values=(Dis_Discrete_sector),
+  scale_fill_manual(name="Average Discharge (MGD)", values=(Dis_Discrete_sector),
                     labels=c(paste(0,"MGD -",round(quantile(HUC8.df$Discharge_ave,c(1/4),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Discharge_ave,c(1/4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Discharge_ave,c(2/4),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Discharge_ave,c(2/4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Discharge_ave,c(3/4),na.rm=T),digits=1),"MGD"),
@@ -828,7 +904,7 @@ ggplot()+
   guides(fill=guide_legend(order=1),
          shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
          colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-  labs(title = "Average Annual Summed Discharge (MGD) 2010-2017")+
+  labs(title = "Average Daily  Discharge (MGD) 2010-2017")+
   scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
             arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
   theme(line=element_blank(),
@@ -841,8 +917,8 @@ VWUDS_2010_2017.test<-VWUDS_2010_2017@data
 Mean_Withdrawal<-VWUDS_2010_2017.test%>%group_by(DEQ.ID.of.Source)%>%summarise(Mean_Withdrawal=mean(Withdrawals_MGD, na.rm=T))
 VWUDS_2010_2017.test<-merge(VWUDS_2010_2017.test,Mean_Withdrawal, by="DEQ.ID.of.Source",all.x=T)
 
-#---Long Term Summed Withdrawal Average---#
-  
+#---Long Term Average Withdrawal Average---#
+
 #---Discrete---#
 With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
 
@@ -851,13 +927,13 @@ ggplot()+
     data=HUC8.df,
     aes(x=long, y= lat, group=group,
         fill= cut(HUC8.df$Withdrawal_ave,breaks=c(0,
-                                                 (quantile(HUC8.df$Withdrawal_ave,c(1/6),na.rm=T)),
-                                                 (quantile(HUC8.df$Withdrawal_ave,c(2/6),na.rm=T)),
-                                                 (quantile(HUC8.df$Withdrawal_ave,c(3/6),na.rm=T)),
-                                                 (quantile(HUC8.df$Withdrawal_ave,c(4/6),na.rm=T)),
-                                                 (quantile(HUC8.df$Withdrawal_ave,c(5/6),na.rm=T)),
-                                                 (quantile(HUC8.df$Withdrawal_ave,c(1),na.rm=T))),include.lowest=T), colour=""))+
-  scale_fill_manual(name="Summed Withdrawal (MGD)", values=(With_Discrete),
+                                                  (quantile(HUC8.df$Withdrawal_ave,c(1/6),na.rm=T)),
+                                                  (quantile(HUC8.df$Withdrawal_ave,c(2/6),na.rm=T)),
+                                                  (quantile(HUC8.df$Withdrawal_ave,c(3/6),na.rm=T)),
+                                                  (quantile(HUC8.df$Withdrawal_ave,c(4/6),na.rm=T)),
+                                                  (quantile(HUC8.df$Withdrawal_ave,c(5/6),na.rm=T)),
+                                                  (quantile(HUC8.df$Withdrawal_ave,c(1),na.rm=T))),include.lowest=T), colour=""))+
+  scale_fill_manual(name="Average Withdrawal (MGD)", values=(With_Discrete),
                     labels=c(paste(0,"MGD -",round(quantile(HUC8.df$Withdrawal_ave,c(1/6),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Withdrawal_ave,c(1/6),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Withdrawal_ave,c(2/6),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Withdrawal_ave,c(2/6),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Withdrawal_ave,c(3/6),na.rm=T),digits=1),"MGD"),
@@ -868,20 +944,55 @@ ggplot()+
   geom_polygon(
     data=HUC8.df,
     aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
-  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, shape="Point Source"),
+  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, shape="Withdrawing Source"),
              size=1.54,colour="#252525")+
   scale_shape_manual(name="", values=20)+
   scale_colour_manual(values=NA)+
   guides(fill=guide_legend(order=1),
          shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
          colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-  labs(title = "Average Annual Summed Withdrawal (MGD) 2010-2017")+
+  labs(title = "Average Annual Average Withdrawal (MGD) 2010-2017")+
   scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
             arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
   theme(line=element_blank(),
         axis.text=element_blank(),
         axis.title=element_blank(),
         panel.background = element_blank())+coord_equal()
+
+
+
+#---Refined Scale----#
+ggplot()+
+  geom_polygon(
+    data=HUC8.df,
+    aes(x=long, y= lat, group=group,
+        fill= cut(HUC8.df$Withdrawal_ave,breaks=c(0,5,25,50,100,250,max(HUC8.df$Withdrawal_ave,na.rm=T)),include.lowest=T,include.highest=T), colour=""))+
+  scale_fill_manual(name="Average Withdrawal (MGD)", values=(With_Discrete), 
+                    labels=c(paste(0,"-",5),
+                             paste(5,"-",25),
+                             paste(25,"-",50),
+                             paste(50,"-",100),
+                             paste(100,"-",250),
+                             paste(250,"<")),
+                    na.value="transparent")+
+  geom_polygon(
+    data=HUC8.df,
+    aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, shape="Withdrawing Source"),
+             size=1.54,colour="#252525")+
+  scale_shape_manual(name="", values=20)+
+  scale_colour_manual(values=NA)+
+  guides(fill=guide_legend(order=1),
+         shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
+         colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
+  labs(title = "Average Daily Withdrawal (MGD) 2010-2017")+
+  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+  theme(line=element_blank(),
+        axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background = element_blank())+coord_equal()
+
 
 #--By Sectors--#
 With_Discrete_sector<- c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
@@ -895,7 +1006,7 @@ ggplot()+
                                                   (quantile(HUC8.df$Withdrawal_ave,c(2/4),na.rm=T)),
                                                   (quantile(HUC8.df$Withdrawal_ave,c(3/4),na.rm=T)),
                                                   (quantile(HUC8.df$Withdrawal_ave,c(4/4),na.rm=T))),include.lowest=T), colour=""))+
-  scale_fill_manual(name="Summed Withdrawal (MGD)", values=(With_Discrete_sector),
+  scale_fill_manual(name="Average Withdrawal (MGD)", values=(With_Discrete_sector),
                     labels=c(paste(0,"MGD -",round(quantile(HUC8.df$Withdrawal_ave,c(1/4),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Withdrawal_ave,c(1/4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Withdrawal_ave,c(2/4),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$Withdrawal_ave,c(2/4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$Withdrawal_ave,c(3/4),na.rm=T),digits=1),"MGD"),
@@ -904,14 +1015,14 @@ ggplot()+
   geom_polygon(
     data=HUC8.df,
     aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
-  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, shape="Point Source"),
+  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, shape="Withdrawing Source"),
              size=1.54,colour="#252525")+
   scale_shape_manual(name="", values=20)+
   scale_colour_manual(values=NA)+
   guides(fill=guide_legend(order=1),
          shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
          colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-  labs(title = "Average Annual Summed Withdrawal (MGD) 2010-2017")+
+  labs(title = "Average Annual Average Withdrawal (MGD) 2010-2017")+
   scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
             arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
   theme(line=element_blank(),
@@ -923,13 +1034,10 @@ ggplot()+
 #-----------------------------Without Transfers-----------------------------------------------------------------------#
 
 #----Long Term Average----#
-
-NWB <- c("#67000d","#a50f15","#cb181d","#ef3b2c","#fb6a4a","#fc9272","#fcbba1","#fee0d2","#fff5f0","#deebf7","#9ecae1")
-
 #---Net Water Balance---#
 
 #---Discrete---#
-NWB_Discrete<-c("#67000d","#cb181d","#ef3b2c","#fc9272","#fcbba1","#9ecae1","#2171b5")
+NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
 
 #--Cut and separate by positive and negative values--#
 
@@ -940,18 +1048,16 @@ ggplot()+
         fill= cut(HUC8.df$NetWB_ave,breaks=c(quantile(HUC8.df$NetWB_ave,c(0.0),na.rm=T),
                                              quantile(HUC8.df$NetWB_ave,c(0.20),na.rm=T),
                                              quantile(HUC8.df$NetWB_ave,c(0.40),na.rm=T),
-                                             quantile(HUC8.df$NetWB_ave,c(0.60),na.rm=T),
-                                             quantile(HUC8.df$NetWB_ave,c(0.80),na.rm=T),
+                                             quantile(HUC8.df$NetWB_ave,c(0.70),na.rm=T),
                                              0,
-                                             quantile(HUC8.df$NetWB_ave,c(0.95),na.rm=T),
                                              quantile(HUC8.df$NetWB_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
   scale_fill_manual(name="Net Water Balance (MGD)", values=NWB_Discrete,
-                    labels=c(paste(round(quantile(HUC8.df$NetWB_ave,c(0.0),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.2),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_ave,c(0.2),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.4),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_ave,c(0.4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.6),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_ave,c(0.8),na.rm=T),digits=1),"MGD -",0,"MGD"),
-                             paste(0,"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.95),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_ave,c(0.95),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(1),na.rm=T),digits=1),"MGD")),
+                    #labels=c(paste(round(quantile(HUC8.df$NetWB_ave,c(0.0),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.2),na.rm=T),digits=1),"MGD"),
+                    #paste(round(quantile(HUC8.df$NetWB_ave,c(0.2),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.4),na.rm=T),digits=1),"MGD"),
+                    #paste(round(quantile(HUC8.df$NetWB_ave,c(0.4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.6),na.rm=T),digits=1),"MGD"),
+                    # paste(round(quantile(HUC8.df$NetWB_ave,c(0.6),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_ave,c(0.8),na.rm=T),digits=1),"MGD"),
+                    #paste(round(quantile(HUC8.df$NetWB_ave,c(0.8),na.rm=T),digits=1),"MGD -",0,"MGD"),
+                    #paste(0,"MGD -",round(quantile(HUC8.df$NetWB_ave,c(1),na.rm=T),digits=1),"MGD")),
                     na.value="transparent")+
   geom_polygon(
     data=HUC8.df,
@@ -965,6 +1071,49 @@ ggplot()+
         axis.text=element_blank(),
         axis.title=element_blank(),
         panel.background = element_blank())+coord_equal()
+
+#--Refined Scale--#
+NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
+NWB_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+
+quantile(HUC8.df$NetWB_ave,na.rm=T)
+
+ggplot()+
+  geom_polygon(
+    data=HUC8.df,
+    aes(x=long, y= lat, group=group,
+        fill=cut(HUC8.df$NetWB_ave,breaks=c(quantile(HUC8.df$NetWB_ave,c(0.0),na.rm=T),0,5,10,50,quantile(HUC8.df$NetWB_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
+  scale_fill_manual(name="Volume Consumed (MGD)", values=NWB_Discrete, 
+                    labels=c(paste(round(quantile(HUC8.df$NetWB_ave,c(0.0),na.rm=T),digits=2),"-",0),
+                             paste(0,"-",5),
+                             paste(5,"-",10),
+                             paste(10,"-",50),
+                             paste(50,"<")),
+                    na.value="transparent", drop=FALSE)+
+  geom_polygon(
+    data=HUC8.df,
+    aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+  scale_colour_manual(values=NA)+
+  geom_point(data=ECHO_2010_2017.test, aes(x=Outfall_Longitude, y=Outfall_Latitude, shape="Outfall"),
+             size=1.75,colour="#252525")+
+  scale_shape_manual(name="", values=17)+
+  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, size="Withdrawing Source"),
+             colour="#252525")+
+  scale_size_manual(name="", values=1.75)+
+  guides(fill=guide_legend(order=1),
+         colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+         shape=guide_legend(order=3),
+         size=guide_legend(order=4))+
+  labs(title = "Average Volume Consumed (MGD) 2010-2017")+
+  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+  theme(line=element_blank(),
+        axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background = element_blank())+coord_equal()
+
+
+
 
 #--By Sector--#
 NWB_Discrete_sector<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#6baed6")
@@ -1001,6 +1150,7 @@ ggplot()+
         axis.title=element_blank(),
         panel.background = element_blank())+coord_equal()
 
+
 #--Energy--#
 ggplot()+
   geom_polygon(
@@ -1035,35 +1185,34 @@ ggplot()+
 
 #--Discrete--#
 
-CU_Discrete<-c("#2171b5","#9ecae1","#fcbba1","#fc9272","#ef3b2c","#cb181d","#67000d")
+CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
 
 ggplot()+
   geom_polygon(
     data=HUC8.df,
     aes(x=long, y= lat, group=group,
-        fill=cut(HUC8.df$Consumption_ave,breaks=c(quantile(HUC8.df$Consumption_ave,c(0.0),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_ave,c(0.05),na.rm=T),
-                                                  0,
-                                       quantile(HUC8.df$Consumption_ave,c(0.20),na.rm=T),
-                                       quantile(HUC8.df$Consumption_ave,c(0.40),na.rm=T),
-                                       quantile(HUC8.df$Consumption_ave,c(0.60),na.rm=T),
-                                       quantile(HUC8.df$Consumption_ave,c(0.80),na.rm=T),
-                                       quantile(HUC8.df$Consumption_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
+        fill=cut(HUC8.df$Consumption_ave,breaks=c(quantile(HUC8.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
   scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
-                    labels=c(paste(round(quantile(HUC8.df$Consumption_ave,c(0.0),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(0.05),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(0.05),na.rm=T),digits=2),"-",0),
-                             paste(0,"-",round(quantile(HUC8.df$Consumption_ave,c(0.20),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(0.20),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(0.40),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(0.40),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(0.60),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(0.60),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(0.80),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(0.80),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(1),na.rm=T),digits=2))),
-                    na.value="transparent")+
+                    labels=c(paste(round(quantile(HUC8.df$Consumption_ave,c(0.0),na.rm=T),digits=2),"-",0),
+                             paste(0,"-",0.25),
+                             paste(0.25,"-",0.5),
+                             paste(0.5,"-",0.75),
+                             paste(0.75,"-",1)),
+                    na.value="transparent", drop=FALSE)+
   geom_polygon(
     data=HUC8.df,
     aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
   scale_colour_manual(values=NA)+
+  geom_point(data=ECHO_2010_2017.test, aes(x=Outfall_Longitude, y=Outfall_Latitude, shape="Outfall"),
+             size=1.75,colour="#252525")+
+  scale_shape_manual(name="", values=17)+
+  geom_point(data=VWUDS_2010_2017.test, aes(x=Corrected_Longitude, y=Corrected_Latitude, size="Withdrawing Source"),
+             colour="#252525")+
+  scale_size_manual(name="", values=1.75)+
   guides(fill=guide_legend(order=1),
-    colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)))+
+         colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+         shape=guide_legend(order=3),
+         size=guide_legend(order=4))+
   labs(title = "Average Consumption Coefficient 2010-2017")+
   scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
             arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
@@ -1071,6 +1220,7 @@ ggplot()+
         axis.text=element_blank(),
         axis.title=element_blank(),
         panel.background = element_blank())+coord_equal()
+
 
 #--By Sectors--#
 CU_Discrete_sector<-c("#6baed6","#fcbba1","#fb6a4a","#de2d26","#a50f15")
@@ -1106,37 +1256,6 @@ ggplot()+
         axis.title=element_blank(),
         panel.background = element_blank())+coord_equal()
 
-#--Agriculture--#
-CU_Discrete_ag<-c("#6baed6","#fb6a4a","#de2d26","#a50f15")
-ggplot()+
-  geom_polygon(
-    data=HUC8.df,
-    aes(x=long, y= lat, group=group,
-        fill=cut(HUC8.df$Consumption_ave,breaks=c(quantile(HUC8.df$Consumption_ave,c(0.0),na.rm=T),
-                                                  0,
-                                                  quantile(HUC8.df$Consumption_ave,c(1/4),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_ave,c(.4),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
-  scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete_ag, 
-                    labels=c(paste(round(quantile(HUC8.df$Consumption_ave,c(0.0),na.rm=T),digits=2),"-",0),
-                             paste(0,"-",round(quantile(HUC8.df$Consumption_ave,c(1/4),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(1/4),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(0.4),na.rm=T),digits=2)),
-                             paste(round(quantile(HUC8.df$Consumption_ave,c(0.4),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_ave,c(1),na.rm=T),digits=2))),
-                    na.value="transparent")+
-  geom_polygon(
-    data=HUC8.df,
-    aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
-  scale_colour_manual(values=NA)+
-  guides(fill=guide_legend(order=1),
-         colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)))+
-  labs(title = "Average Consumption Coefficient 2010-2017")+
-  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
-  theme(line=element_blank(),
-        axis.text=element_blank(),
-        axis.title=element_blank(),
-        panel.background = element_blank())+coord_equal()
-
 #----Year by Year Net Water Balance-------#
 
 #--2010--#
@@ -1148,8 +1267,8 @@ ggplot()+
         fill= NetWB_2010, colour=""))+
   scale_fill_gradient2("Net Water Balance (MGD)", 
                        mid="#fcbba1",low="#67000d", high="#9ecae1", na.value="transparent", 
-                      limits=c(-2000,200),
-                      oob=scales::squish, guide="colourbar")+
+                       limits=c(-2000,200),
+                       oob=scales::squish, guide="colourbar")+
   geom_polygon(
     data=HUC8.df,
     aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
@@ -1432,27 +1551,24 @@ ggplot()+
 #---Net Water Balance---#
 
 #---Discrete---#
-NWB_Discrete<-c("#67000d","#cb181d","#ef3b2c","#fc9272","#fcbba1","#9ecae1","#2171b5")
+NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
 
 ggplot()+
   geom_polygon(
     data=HUC8.df,
     aes(x=long, y= lat, group=group,
         fill= cut(HUC8.df$NetWB_t_ave,breaks=c(quantile(HUC8.df$NetWB_t_ave,c(0.0),na.rm=T),
-                                             quantile(HUC8.df$NetWB_t_ave,c(0.20),na.rm=T),
-                                             quantile(HUC8.df$NetWB_t_ave,c(0.40),na.rm=T),
-                                             quantile(HUC8.df$NetWB_t_ave,c(0.60),na.rm=T),
-                                             quantile(HUC8.df$NetWB_t_ave,c(0.80),na.rm=T),
-                                             0,
-                                             quantile(HUC8.df$NetWB_t_ave,c(0.95),na.rm=T),
-                                             quantile(HUC8.df$NetWB_t_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
+                                               quantile(HUC8.df$NetWB_t_ave,c(0.20),na.rm=T),
+                                               quantile(HUC8.df$NetWB_t_ave,c(0.40),na.rm=T),
+                                               quantile(HUC8.df$NetWB_t_ave,c(0.70),na.rm=T),
+                                               0,
+                                               quantile(HUC8.df$NetWB_t_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
   scale_fill_manual(name="Net Water Balance (MGD)", 
                     labels=c(paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.0),na.rm=T),digits=2),"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(0.2),na.rm=T),digits=1),"MGD"),
                              paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.2),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(0.4),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(0.6),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.8),na.rm=T),digits=1),"MGD -",0,"MGD"),
-                             paste(0,"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(0.95),na.rm=T),digits=1),"MGD"),
-                             paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.95),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(1),na.rm=T),digits=1),"MGD")),
+                             paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.4),na.rm=T),digits=1),"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(0.7),na.rm=T),digits=1),"MGD"),
+                             paste(round(quantile(HUC8.df$NetWB_t_ave,c(0.7),na.rm=T),digits=1),"MGD -",0,"MGD"),
+                             paste(0,"MGD -",round(quantile(HUC8.df$NetWB_t_ave,c(1),na.rm=T),digits=1),"MGD")),
                     values=NWB_Discrete,na.value="transparent")+
   geom_polygon(
     data=HUC8.df,
@@ -1478,13 +1594,13 @@ ggplot()+
     data=HUC8.df,
     aes(x=long, y= lat, group=group,
         fill=cut(HUC8.df$Consumption_t_ave,breaks=c(quantile(HUC8.df$Consumption_t_ave,c(0.0),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_t_ave,c(0.05),na.rm=T),
-                                                  0,
-                                                  quantile(HUC8.df$Consumption_t_ave,c(0.20),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_t_ave,c(0.40),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_t_ave,c(0.60),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_t_ave,c(0.80),na.rm=T),
-                                                  quantile(HUC8.df$Consumption_t_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
+                                                    quantile(HUC8.df$Consumption_t_ave,c(0.05),na.rm=T),
+                                                    0,
+                                                    quantile(HUC8.df$Consumption_t_ave,c(0.20),na.rm=T),
+                                                    quantile(HUC8.df$Consumption_t_ave,c(0.40),na.rm=T),
+                                                    quantile(HUC8.df$Consumption_t_ave,c(0.60),na.rm=T),
+                                                    quantile(HUC8.df$Consumption_t_ave,c(0.80),na.rm=T),
+                                                    quantile(HUC8.df$Consumption_t_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
   scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
                     labels=c(paste(round(quantile(HUC8.df$Consumption_t_ave,c(0.0),na.rm=T),digits=2),"-",round(quantile(HUC8.df$Consumption_t_ave,c(0.05),na.rm=T),digits=2)),
                              paste(round(quantile(HUC8.df$Consumption_t_ave,c(0.05),na.rm=T),digits=2),"-",0),
@@ -1499,7 +1615,7 @@ ggplot()+
     aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
   scale_colour_manual(values=NA)+
   guides(fill=guide_legend(order=1),
-    colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)))+
+         colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)))+
   labs(title = "Average Consumption Coefficient with Transfers 2010-2017")+
   scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
             arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+

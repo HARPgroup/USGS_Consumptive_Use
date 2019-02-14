@@ -40,11 +40,11 @@ library(jsonlite)
 library(lubridate)
 library(httr)
 library(daff)#helps calculate the differences between two dataframes
+library(data.table)
 
 state<-"VA"
 startDate<-"01/01/2010" #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
 endDate<-Sys.Date()
-#endDate<-"12/31/2016"
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
 options(scipen=999) #Disable scientific notation
 options(digits = 9)
@@ -139,48 +139,7 @@ for (i in 1:length(ECHO_Facilities$SourceID)){
           violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
           violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
           nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l] 
-          
-        }else if(!is.na(outfall_DMR$statistical_base_code[l]=="DB")){ #if it is missing a monthly average, look at daily average in MGD
-          statistic_i[l]<-"day_ave"
-          dmr_value_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="DB"])[l] 
-          dmr_units_i[l]<-outfall_DMR$standard_unit_desc[outfall_DMR$statistical_base_code=="DB"][l]
-          eff_limit_i[l]<-as.numeric(outfall_DMR$limit_value_nmbr[outfall_DMR$statistical_base_code=="DB"])[l]
-          eff_limit_units_i<-outfall_DMR$limit_unit_desc[outfall_DMR$statistical_base_code=="DB"][l]
-          mp_end_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="DB"][l] 
-          mon_in_mp_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="DB"])[l]
-          mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month")) 
-          violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="DB"][l]
-          violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="DB"][l]
-          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="DB"][l] 
-          
-        }else if(!is.na(outfall_DMR$statistical_base_code[l]=="WA")){ #if it is also missing a daily average, look at weekly average in MGD
-          statistic_i[l]<-"wk_ave"
-          dmr_value_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="WA"])[l] 
-          dmr_units_i[l]<-outfall_DMR$standard_unit_desc[outfall_DMR$statistical_base_code=="WA"][l]
-          eff_limit_i[l]<-as.numeric(outfall_DMR$limit_value_nmbr[outfall_DMR$statistical_base_code=="WA"])[l]
-          eff_limit_units_i<-outfall_DMR$limit_unit_desc[outfall_DMR$statistical_base_code=="WA"][l]
-          mp_end_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="WA"][l] 
-          mon_in_mp_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="WA"])[l]
-          mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month"))
-          violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="WA"][l]
-          violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="WA"][l]
-          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="WA"][l] 
-          
-        }else if(!is.na(outfall_DMR$statistical_base_code[l]=="AB")){ #if it is also missing this, look at annual average in MGD
-          statistic_i[l]<-"yr_ave"
-          dmr_value_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="AB"])[l] 
-          dmr_units_i[l]<-outfall_DMR$standard_unit_desc[outfall_DMR$statistical_base_code=="AB"][l]
-          eff_limit_i[l]<-as.numeric(outfall_DMR$limit_value_nmbr[outfall_DMR$statistical_base_code=="AB"])[l]
-          eff_limit_units_i<-outfall_DMR$limit_unit_desc[outfall_DMR$statistical_base_code=="AB"][l]
-          mp_end_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="AB"][l] 
-          mon_in_mp_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="AB"])[l]
-          mp_begin_i[l]<-as.character(round_date(mdy(mp_end_i[l]) %m-% months(mon_in_mp_i[l]),unit="month")) 
-          violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="AB"][l]
-          violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="AB"][l]
-          nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="AB"][l] 
         }
-        
-        
       }
       #Now we store the values we get from each outfall in each facility[i] in a larger matrix
       #We do this so that results are not over written after each iteration
@@ -198,8 +157,7 @@ for (i in 1:length(ECHO_Facilities$SourceID)){
       violation<-c(violation,violation_i)
       violation_severity<-c(violation_severity,violation_severity_i)
       nodi<-c(nodi,nodi_i)
-      
-    }
+}
   }else{ #if the DMR contains no data, set variables to NA
     Facility_Name<-c(Facility_Name,NA)
     statistic<-c(statistic,NA)
@@ -217,6 +175,7 @@ for (i in 1:length(ECHO_Facilities$SourceID)){
     nodi<-c(nodi,NA)
   }
 }
+
 
 ##################################################################################################################################
 ################################################Compile Data######################################################################
@@ -277,7 +236,7 @@ for (i in 1:length(Annual_Submissions$Facility.ID)){
     Permitted_Limit_i<-rep(as.character(Annual_Submissions$Permitted_Limit[i]), as.numeric(Annual_Submissions$Mon_in_MP[i]))
     MP_Begin_Date_i<-seq(as.Date(Annual_Submissions$MP_Begin_Date[i]),length=12,by="1 month")
     MP_End_Date_i<-ceiling_date(MP_Begin_Date_i,"month")-days(1)
-    Mon_in_MP<-rep(1, as.numeric(Annual_Submissions$Mon_in_MP[i]))
+    Mon_in_MP<-rep(12, as.numeric(Annual_Submissions$Mon_in_MP[i]))
     Violation_Code_i<-rep(as.character(Annual_Submissions$Violation_Code[i]),as.numeric(Annual_Submissions$Mon_in_MP[i]))
     Violation_Severity_i<-rep(as.character(Annual_Submissions$Violation_Severity[i]),as.numeric(Annual_Submissions$Mon_in_MP[i]))
     NODI_i<-rep(as.character(Annual_Submissions$NODI[i]),as.numeric(Annual_Submissions$Mon_in_MP[i]))
@@ -354,7 +313,7 @@ for (i in 1:length(Semi_Annual_Submissions$Facility.ID)){
   Permitted_Limit_i<-rep(as.character(Semi_Annual_Submissions$Permitted_Limit[i]), as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
   MP_Begin_Date_i<-seq(as.Date(Semi_Annual_Submissions$MP_Begin_Date[i]),length=6,by="1 month")
   MP_End_Date_i<-ceiling_date(MP_Begin_Date_i,"month")-days(1)
-  Mon_in_MP<-rep(1, as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
+  Mon_in_MP<-rep(6, as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
   Violation_Code_i<-rep(as.character(Semi_Annual_Submissions$Violation_Code[i]),as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
   Violation_Severity_i<-rep(as.character(Semi_Annual_Submissions$Violation_Severity[i]),as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
   NODI_i<-rep(as.character(Semi_Annual_Submissions$NODI[i]),as.numeric(Semi_Annual_Submissions$Mon_in_MP[i]))
@@ -431,7 +390,7 @@ for (i in 1:length(Quarterly_Submissions$Facility.ID)){
   Permitted_Limit_i<-rep(as.character(Quarterly_Submissions$Permitted_Limit[i]), as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
   MP_Begin_Date_i<-seq(as.Date(Quarterly_Submissions$MP_Begin_Date[i]),length=3,by="1 month")
   MP_End_Date_i<-ceiling_date(MP_Begin_Date_i,"month")-days(1)
-  Mon_in_MP<-rep(1, as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
+  Mon_in_MP<-rep(3, as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
   Violation_Code_i<-rep(as.character(Quarterly_Submissions$Violation_Code[i]),as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
   Violation_Severity_i<-rep(as.character(Quarterly_Submissions$Violation_Severity[i]),as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
   NODI_i<-rep(as.character(Quarterly_Submissions$NODI[i]),as.numeric(Quarterly_Submissions$Mon_in_MP[i]))
@@ -482,7 +441,7 @@ ECHO_timeseries<-ECHO_timeseries[!duplicated(ECHO_timeseries, by=c("OutfallID","
 save.image("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/ECHO_Timeseries.RData") #Save the global environment for future reference
 
 #In personal file
-write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_11_29.txt",sep="\t",row.names = F)
+write.table(ECHO_timeseries,"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_1_29.txt",sep="\t",row.names = F)
 
 # Saved for Stat 5525 Final Project
 # ECHO_Discharge<-subset(ECHO_timeseries,subset=substr(ECHO_timeseries$MP_Begin_Date,1,4)=="2010")
