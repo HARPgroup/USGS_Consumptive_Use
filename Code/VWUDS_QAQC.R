@@ -122,15 +122,13 @@ rm(Corrected_Coordinates,VWUDS_1982_2015,VWUDS_1982_2015_Summary)
 VWUDS_2010_2017<-read.csv("G:/My Drive/VWUDS Data/vwuds_monthly_wateruse.csv", sep=",", header=T)
 VWUDS_2010_2017<-as.data.table(VWUDS_2010_2017)
 names(VWUDS_2010_2017)[2]<-c("Facility.ID")
-VWUDS_2010_2017<-subset(VWUDS_2010_2017,select=-c(3,4,15,16))
 
 #---------------------------------------------#
 #---------Set Data Type for Attributes--------#
 VWUDS_2010_2017$Million.Gallons.Month<-as.numeric(gsub(",", "", as.character(VWUDS_2010_2017$Million.Gallons.Month)))
-VWUDS_2010_2017$Date<-as.character(paste0("01-",VWUDS_2010_2017$Date))
-VWUDS_2010_2017$Date<-as.Date(VWUDS_2010_2017$Date, format="%d-%b-%y")
-
-VWUDS_2010_2017<-VWUDS_2010_2017[order(VWUDS_2010_2017[,1],VWUDS_2010_2017[,5],decreasing=F),]
+VWUDS_2010_2017$Date<-as.character(paste0("0",VWUDS_2010_2017$Date))
+VWUDS_2010_2017$Date<-as.Date(VWUDS_2010_2017$Date, format="%d/%m/%Y")
+VWUDS_2010_2017<-VWUDS_2010_2017[order(VWUDS_2010_2017[,c("Facility.ID")],VWUDS_2010_2017[,c("Date")],decreasing=F),]
 
 #---------------------------------------------#
 #----------Remove Duplicated Entries----------#
@@ -144,14 +142,14 @@ VWUDS_2010_2017<-VWUDS_2010_2017[!duplicated(VWUDS_2010_2017, by=c("DEQ.ID.of.So
 # Therefore, apply sum of those values to reduce data. 
 count(VWUDS_2010_2017[duplicated(VWUDS_2010_2017, by=c("DEQ.ID.of.Source","Date")),])
 
-VWUDS_2010_2017<-VWUDS_2010_2017[, lapply(.SD,sum),  by=list(DEQ.ID.of.Source,Facility.ID,Facility,Source.Name,Date,Facility.Status,Use.Type,Locality,Latitude,Longitude,Source.Type),
-                                 .SDcols=c(6)]
+VWUDS_2010_2017<-VWUDS_2010_2017[, lapply(.SD,sum),  by=list(DEQ.ID.of.Source,Facility.ID,Hydrocode,Owner,Facility,Source.Name,Date,Facility.Status,Use.Type,Locality,Latitude,Longitude,Source.Type),
+                                 .SDcols=c(8)]
 
 #---------------------------------------------#
 #--------Summarise Dataframe------------------#
 
 VWUDS_2010_2017%>%
-  summarise(no_Facilities=n_distinct(Facility.ID),no_sources=n_distinct(DEQ.ID.of.Source),
+  dplyr::summarise(no_Facilities=n_distinct(Facility.ID),no_sources=n_distinct(DEQ.ID.of.Source),
             Sum_Withdrawals=sum(Million.Gallons.Month,na.rm=T)/12,Mean_Withdrawal=mean(Million.Gallons.Month,na.rm=T),
             Median_Withdrawal=median(Million.Gallons.Month,na.rm=T),Range=(max(Date)-min(Date)))
 
@@ -447,6 +445,7 @@ for (i in 1:length(Wateruse$Facility.ID)){
 Wateruse$Reclass_Use_Type<-ifelse(is.na(Wateruse$Reclass_Use_Type),Wateruse$Facility_Type,Wateruse$Reclass_Use_Type)
 
 
+
 # This Section was Used to Test the Coverage and Accuracy of the Rules
 #Wateruse<-Wateruse%>%group_by(Facility_Name)%>%summarise(Facility_Type=first(Facility_Type),Reclass=first(Reclass_Use_Type))
 #Wateruse_pre<-subset(Wateruse,select = -c(4))
@@ -466,13 +465,31 @@ Wateruse$Reclass_Use_Type<-ifelse(is.na(Wateruse$Reclass_Use_Type),Wateruse$Faci
 Wateruse_m<-subset(Wateruse,select = c(1,4))
 VWUDS_2010_2017<-merge(VWUDS_2010_2017,Wateruse_m,by="Facility.ID",all.x=T)
 
+#---------------------------------------------#
+#-------Manual Change of Water Use Type-------#
+
+change_use<- function(VWUDSID,new_sector){
+  VWUDS_2010_2017$Reclass_Use_Type[VWUDS_2010_2017$Facility.ID==VWUDSID]<-new_sector
+  assign('VWUDS_2010_2017',VWUDS_2010_2017,envir=.GlobalEnv)
+}
+change_use("67334","Commercial")
+
+
+#--Number of Reporting Months for each Source per Year--#
+W_Months<-
+   VWUDS_2010_2017%>%
+   dplyr::group_by(DEQ.ID.of.Source,Year=substring(Date,1,4))%>%
+   dplyr::count(Month=substring(Date,6,7))%>%
+   dplyr::summarise(Mon_Reported=sum(n))
+ 
+VWUDS_2010_2017<-
+   VWUDS_2010_2017%>%add_column(Year=substring(VWUDS_2010_2017$Date,1,4), .after="Date")
+ 
+VWUDS_2010_2017<-merge(VWUDS_2010_2017,W_Months,by=c("DEQ.ID.of.Source","Year"),all.x=T)
 
 # Save Cleaned and Classified Withdrawal Data for Spatial Analysis 
 save(VWUDS_2010_2017,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
 
-# For Stat 5525
-# VWUDS_2010_2017<-subset(VWUDS_2010_2017,subset=substr(VWUDS_2010_2017$Date,1,4)=="2010")
-# save(VWUDS_2010_2017,file="G:/My Drive/VT Courses/Fall Semester Classes 2018/STAT 5525/McCarthy_Final_Code/RData for R Files/VWUDS_2010.RData")
 
 #----------------------------------------------#
 #------------Plot Use Type---------------------#

@@ -70,251 +70,276 @@ VA_FIPS<-VA_Counties_Overlay@data
 ###########################################################################################################################################
 ####Delivery Transfers (TO)####
 #Monthly Deliveries from 01/01/2010-12/31/2017
-#fstatus
 #http://deq1.bse.vt.edu/d.bet/admin/structure/views/view/echo_facilities_and_outfalls/edit/views_data_export_4
-GET('http://deq1.bse.vt.edu/d.bet/echo_transfer_to',write_disk(temp <- tempfile(fileext = ".csv")))
-deliveries<-read.csv(temp)
-deliveries$geom<-as.character(deliveries$geom)
-deliveries$Year<-substring(deliveries$tstime,1,4)
+GET('http://deq1.bse.vt.edu/d.bet/echo_transfer_to',write_disk(del <- tempfile(fileext = ".csv")))
 
-####Reformat Coordinates####
-#Transfer geometry comes in the form "LINESTRING(TO LONG TO LAT, FROM LONG FROM LAT)
-#The following lines extract the to and from geometry and store them in appropriate columns
-deliveries$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",deliveries$geom) 
-deliveries$geomFlon<-as.numeric(gsub(" [^ ]*$","\\1",deliveries$geomFlat)) #FROM
-deliveries$geomFlat<-as.numeric(gsub("^[^ ]* ","\\1",deliveries$geomFlat)) #FROM
-deliveries$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",deliveries$geom) 
-deliveries$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",deliveries$geomTlat)) #TO
-deliveries$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",deliveries$geomTlat)) #TO
-
-####Create Spatial Data Frame from Points and Overlay on Clipped VA_Counties Shapefile####
-####FROM Delivery Transfers####
-#Looks at all FROM delivery transfers with real geometry and creates a spatial dataframe 'dFrom'
-#Spatially overlays HUC boundaries on dFrom such that each FROM transfer is labeled by origin HUC
-dFrom<-deliveries[!(is.na(deliveries$geomFlat)&is.na(deliveries$geomFlon)),]
-dFrom<-SpatialPointsDataFrame(data.frame(lon=dFrom$geomFlon,lat=dFrom$geomFlat),dFrom,proj4string = CRS("+init=epsg:4269")) #Making data spatial
-VA_Counties_Facilities<-over(dFrom,VA_Counties_Overlay)#Spatial overlay
-dFrom@data$County<-VA_Counties_Facilities$County
-dFrom@data$FIPS<-VA_Counties_Facilities$FIPS
-
-####TO Delivery Transfers####
-#Looks at all TO delivery transfers with real geometry and creates a spatial dataframe 'dTo'
-#Spatially overlays HUC boundaries on dTo such that each TO transfer is labeled by origin HUC
-dTo<-deliveries[!(is.na(deliveries$geomTlat)&is.na(deliveries$geomTlon)),]
-dTo<-SpatialPointsDataFrame(data.frame(lon=dTo$geomTlon,lat=dTo$geomTlat),dTo,proj4string = CRS("+init=epsg:4269"))
-VA_Counties_Facilities<-over(dTo,VA_Counties_Overlay)#Spatial overlay
-dTo@data$County<-VA_Counties_Facilities$County
-dTo@data$FIPS<-VA_Counties_Facilities$FIPS
-
-####Determine if TO Transfers are leaving watershed boundaries####
-#Need to identify if transfers are leaving and entering the same HUC. If so, these may be ignored
-#We are only concerned with intercounty transfers and need to identify these with the following code
-dTo@data$intercounty<-NA
-dFrom@data$intercounty<-NA
-#Check each transfer in the delivery VA Hydro transfers to see if its FROM County is different than its TO County
-
-for (i in 1:length(dTo@data$hydroid)){
-  ToCounty<-as.character(dTo@data$FIPS[i])
-  FromCounty<-as.character(dFrom@data$FIPS[i])
-  if(is.na(ToCounty)){
-    ToCounty<-'Null County'
+deliveries_func<- function(temp_dir){
+  deliveries<-read.csv(temp_dir)
+  deliveries$geom<-as.character(deliveries$geom)
+  deliveries$Year<-substring(deliveries$tstime,1,4)
+  
+  ####Reformat Coordinates####
+  #Transfer geometry comes in the form "LINESTRING(TO LONG TO LAT, FROM LONG FROM LAT)
+  #The following lines extract the to and from geometry and store them in appropriate columns
+  deliveries$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",deliveries$geom) 
+  deliveries$geomFlon<-as.numeric(gsub(" [^ ]*$","\\1",deliveries$geomFlat)) #FROM
+  deliveries$geomFlat<-as.numeric(gsub("^[^ ]* ","\\1",deliveries$geomFlat)) #FROM
+  deliveries$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",deliveries$geom) 
+  deliveries$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",deliveries$geomTlat)) #TO
+  deliveries$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",deliveries$geomTlat)) #TO
+  
+  ####Create Spatial Data Frame from Points and Overlay on Clipped VA_Counties Shapefile####
+  ####FROM Delivery Transfers####
+  #Looks at all FROM delivery transfers with real geometry and creates a spatial dataframe 'dFrom'
+  #Spatially overlays HUC boundaries on dFrom such that each FROM transfer is labeled by origin HUC
+  dFrom<-deliveries[!(is.na(deliveries$geomFlat)&is.na(deliveries$geomFlon)),]
+  dFrom<-SpatialPointsDataFrame(data.frame(lon=dFrom$geomFlon,lat=dFrom$geomFlat),dFrom,proj4string = CRS("+init=epsg:4269")) #Making data spatial
+  VA_Counties_Facilities<-over(dFrom,VA_Counties_Overlay)#Spatial overlay
+  dFrom@data$County<-VA_Counties_Facilities$County
+  dFrom@data$FIPS<-VA_Counties_Facilities$FIPS
+  
+  ####TO Delivery Transfers####
+  #Looks at all TO delivery transfers with real geometry and creates a spatial dataframe 'dTo'
+  #Spatially overlays HUC boundaries on dTo such that each TO transfer is labeled by origin HUC
+  dTo<-deliveries[!(is.na(deliveries$geomTlat)&is.na(deliveries$geomTlon)),]
+  dTo<-SpatialPointsDataFrame(data.frame(lon=dTo$geomTlon,lat=dTo$geomTlat),dTo,proj4string = CRS("+init=epsg:4269"))
+  VA_Counties_Facilities<-over(dTo,VA_Counties_Overlay)#Spatial overlay
+  dTo@data$County<-VA_Counties_Facilities$County
+  dTo@data$FIPS<-VA_Counties_Facilities$FIPS
+  
+  ####Determine if TO Transfers are leaving watershed boundaries####
+  #Need to identify if transfers are leaving and entering the same HUC. If so, these may be ignored
+  #We are only concerned with intercounty transfers and need to identify these with the following code
+  dTo@data$intercounty<-NA
+  dFrom@data$intercounty<-NA
+  #Check each transfer in the delivery VA Hydro transfers to see if its FROM County is different than its TO County
+  
+  for (i in 1:length(dTo@data$hydroid)){
+    ToCounty<-as.character(dTo@data$FIPS[i])
+    FromCounty<-as.character(dFrom@data$FIPS[i])
+    if(is.na(ToCounty)){
+      ToCounty<-'Null County'
+    }
+    if(is.na(FromCounty)){
+      FromCounty<-'Null County' 
+    }
+    intercounty<-0
+    if(ToCounty!=FromCounty){ #if the County does not match, mark as intercounty delivery
+      intercounty<-1
+    }
+    dTo@data$intercounty[i]<-intercounty
+    dFrom@data$intercounty[i]<-intercounty
   }
-  if(is.na(FromCounty)){
-    FromCounty<-'Null County' 
-  }
-  intercounty<-0
-  if(ToCounty!=FromCounty){ #if the County does not match, mark as intercounty delivery
-    intercounty<-1
-  }
-  dTo@data$intercounty[i]<-intercounty
-  dFrom@data$intercounty[i]<-intercounty
+  
+  ####Sum Net Water In and Out for each County####
+  ###FROM Deliveries###
+  delf<-dFrom@data
+  delf<-delf[delf$intercounty==1,] #if intercounty is equal to 1, it is crossing boundaries---so just include those
+  
+  delf<-delf%>%
+    dplyr::group_by(County, Year)%>%
+    dplyr::summarize(FIPS=first(FIPS),intercounty=sum(intercounty), waterout=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)#units in MGM to MGD
+  
+  delf$County<-as.character(delf$County)
+  delf$County[is.na(delf$County)]<-'Fell Outside County Limits'
+  
+  ###TO Deliveries###
+  delt<-dTo@data
+  delt<-delt[delt$intercounty==1,] #narrow down to deliveries happening across borders
+  
+  delt<-
+    delt%>%
+    dplyr::group_by(County, Year)%>%
+    dplyr::summarize(FIPS=first(FIPS),intercounty=sum(intercounty), waterin=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)#units in MGM to MGD
+  
+  
+  delt$County<-as.character(delt$County)
+  delt$County[is.na(delt$County)]<-'Fell Outside County Limits'
+  
+  assign("delf",delf,envir=.GlobalEnv)
+  assign("delt",delt,envir=.GlobalEnv)
+  assign("deliveries",deliveries,envir=.GlobalEnv)
 }
+deliveries_func(del)
 
-####Sum Net Water In and Out for each County####
-###FROM Deliveries###
-delf<-dFrom@data
-delf<-delf[delf$intercounty==1,] #if intercounty is equal to 1, it is crossing boundaries---so just include those
-
-delf<-delf%>%
-  dplyr::group_by(County, Year)%>%
-  dplyr::summarize(FIPS=first(FIPS),intercounty=sum(intercounty), waterout=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)#units in MGM to MGD
-
-delf$County<-as.character(delf$County)
-delf$County[is.na(delf$County)]<-'Fell Outside County Limits'
-
-###TO Deliveries###
-delt<-dTo@data
-delt<-delt[delt$intercounty==1,] #narrow down to deliveries happening across borders
-
-delt<-
-  delt%>%
-  dplyr::group_by(County, Year)%>%
-  dplyr::summarize(FIPS=first(FIPS),intercounty=sum(intercounty), waterin=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)#units in MGM to MGD
-
-
-delt$County<-as.character(delt$County)
-delt$County[is.na(delt$County)]<-'Fell Outside County Limits'
 ###########################################################################################################################################
 ####Release Transfers (FROM)####
-#Ignoring repeat hydroids (same transfer reported from both recieving and transfer facility),
-#repeat the above steps using the remaining FROM transfers available at:
+
 #http://deq1.bse.vt.edu/d.bet/admin/structure/views/view/echo_facilities_and_outfalls/edit/views_data_export_5
-GET('http://deq1.bse.vt.edu/d.bet/echo_transfer_from',write_disk(temp <- tempfile(fileext = ".csv")))
-releases<-read.csv(temp)
-releases$geom<-as.character(releases$geom)
-releases<-releases[!(releases$hydroid%in%deliveries$hydroid),] #removing redundant data that exists in TO Transfer data frame
-releases$Year<-substring(releases$tstime,1,4)
+GET('http://deq1.bse.vt.edu/d.bet/echo_transfer_from',write_disk(rel <- tempfile(fileext = ".csv")))
 
-
-####Reformat Coordinates####
-#Transfer geometry comes in the form "LINESTRING(TO LONG TO LAT, FROM LONG FROM LAT)
-#The following lines extract the to and from geometry and store them in appropriate columns
-releases$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",releases$geom)
-releases$geomFlon<-as.numeric(gsub(" [^ ]*$","\\1",releases$geomFlat))
-releases$geomFlat<-as.numeric(gsub("^[^ ]* ","\\1",releases$geomFlat))
-releases$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",releases$geom)
-releases$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",releases$geomTlat))
-releases$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",releases$geomTlat))
-
-####Create Spatial Data Frame from Points and Overlay on Clipped County Shapefile####
-####FROM Release Transfers####
-rFrom<-releases[!(is.na(releases$geomFlat)&is.na(releases$geomFlon)),]
-rFrom<-SpatialPointsDataFrame(data.frame(lon=rFrom$geomFlon,lat=rFrom$geomFlat),rFrom,proj4string = CRS("+init=epsg:4269"))
-VA_Counties_Facilities<-over(rFrom,VA_Counties_Overlay)
-rFrom@data$FIPS<-VA_Counties_Facilities$FIPS
-rFrom@data$County<-VA_Counties_Facilities$County
-####TO Release Transfers####
-rTo<-releases[!(is.na(releases$geomTlat)&is.na(releases$geomTlon)),]
-rTo<-SpatialPointsDataFrame(data.frame(lon=rTo$geomTlon,lat=rTo$geomTlat),rTo,proj4string = CRS("+init=epsg:4269"))
-VA_Counties_Facilities<-over(rTo,VA_Counties_Overlay)
-rTo@data$FIPS<-VA_Counties_Facilities$FIPS
-rTo@data$County<-VA_Counties_Facilities$County
-
-####Determine if Release FROM Transfers are leaving County boundaries####
-rTo@data$intercounty<-NA
-rFrom@data$intercounty<-NA
-
-for (i in 1:length(rTo@data$hydroid)){
-  ToCounty<-as.character(rTo@data$FIPS[i])
-  FromCounty<-as.character(rFrom@data$FIPS[i])
-  if(is.na(ToCounty)){ #if the HUC code is NA
-    ToCounty<-'Null FIPS'
+releases_func<- function(temp_dir){
+  
+  #Ignoring repeat hydroids (same transfer reported from both recieving and transfer facility),
+  #repeat the above steps using the remaining FROM transfers available at:
+  releases<-read.csv(temp_dir)
+  releases$geom<-as.character(releases$geom)
+  releases<-releases[!(releases$hydroid%in%deliveries$hydroid),] #removing redundant data that exists in TO Transfer data frame
+  releases$Year<-substring(releases$tstime,1,4)
+  
+  
+  ####Reformat Coordinates####
+  #Transfer geometry comes in the form "LINESTRING(TO LONG TO LAT, FROM LONG FROM LAT)
+  #The following lines extract the to and from geometry and store them in appropriate columns
+  releases$geomFlat<-gsub(".*[(]([^,]+),\\s.*","\\1",releases$geom)
+  releases$geomFlon<-as.numeric(gsub(" [^ ]*$","\\1",releases$geomFlat))
+  releases$geomFlat<-as.numeric(gsub("^[^ ]* ","\\1",releases$geomFlat))
+  releases$geomTlat<-gsub(".*[,] ([^)]+)).*","\\1",releases$geom)
+  releases$geomTlon<-as.numeric(gsub(" [^ ]*$","\\1",releases$geomTlat))
+  releases$geomTlat<-as.numeric(gsub("^[^ ]* ","\\1",releases$geomTlat))
+  
+  ####Create Spatial Data Frame from Points and Overlay on Clipped County Shapefile####
+  ####FROM Release Transfers####
+  rFrom<-releases[!(is.na(releases$geomFlat)&is.na(releases$geomFlon)),]
+  rFrom<-SpatialPointsDataFrame(data.frame(lon=rFrom$geomFlon,lat=rFrom$geomFlat),rFrom,proj4string = CRS("+init=epsg:4269"))
+  VA_Counties_Facilities<-over(rFrom,VA_Counties_Overlay)
+  rFrom@data$FIPS<-VA_Counties_Facilities$FIPS
+  rFrom@data$County<-VA_Counties_Facilities$County
+  ####TO Release Transfers####
+  rTo<-releases[!(is.na(releases$geomTlat)&is.na(releases$geomTlon)),]
+  rTo<-SpatialPointsDataFrame(data.frame(lon=rTo$geomTlon,lat=rTo$geomTlat),rTo,proj4string = CRS("+init=epsg:4269"))
+  VA_Counties_Facilities<-over(rTo,VA_Counties_Overlay)
+  rTo@data$FIPS<-VA_Counties_Facilities$FIPS
+  rTo@data$County<-VA_Counties_Facilities$County
+  
+  ####Determine if Release FROM Transfers are leaving County boundaries####
+  rTo@data$intercounty<-NA
+  rFrom@data$intercounty<-NA
+  
+  for (i in 1:length(rTo@data$hydroid)){
+    ToCounty<-as.character(rTo@data$FIPS[i])
+    FromCounty<-as.character(rFrom@data$FIPS[i])
+    if(is.na(ToCounty)){ #if the HUC code is NA
+      ToCounty<-'Null FIPS'
+    }
+    if(is.na(FromCounty)){
+      FromCounty<-'Null FIPS' 
+    }
+    intercounty<-0
+    if(ToCounty!=FromCounty){
+      intercounty<-1
+    }
+    rTo@data$intercounty[i]<-intercounty #1 indicating transfer is crossing watershed boundaries
+    rFrom@data$intercounty[i]<-intercounty
   }
-  if(is.na(FromCounty)){
-    FromCounty<-'Null FIPS' 
-  }
-  intercounty<-0
-  if(ToCounty!=FromCounty){
-    intercounty<-1
-  }
-  rTo@data$intercounty[i]<-intercounty #1 indicating transfer is crossing watershed boundaries
-  rFrom@data$intercounty[i]<-intercounty
+  
+  ####Sum Net Water In and Out for each County####
+  ###FROM Releases###
+  relf<-rFrom@data
+  relf<-relf[relf$intercounty==1,]#remember intratransfers are indicated with a 0
+  
+  relf<-relf%>% #Summarise by FIPS and year
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS), intercounty=sum(intercounty), waterout=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)  #MGM to MGD
+  
+  relf$County<-as.character(relf$County)
+  relf$County[is.na(relf$County)]<-'Fell Outside County Limits'
+  
+  ###TO Releases###
+  relt<-rTo@data
+  relt<-relt[relt$intercounty==1,]
+  
+  relt<-relt%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS), intercounty=sum(intercounty), waterin=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)
+  
+  relt$County<-as.character(relt$County)
+  relt$County[is.na(relt$County)]<-'Fell Outside County Limits'
+  
+  assign("relf",relf,envir=.GlobalEnv)
+  assign("relt",relt,envir=.GlobalEnv)
+  
 }
+releases_func(rel)
 
-####Sum Net Water In and Out for each County####
-###FROM Releases###
-relf<-rFrom@data
-relf<-relf[relf$intercounty==1,]#remember intratransfers are indicated with a 0
-
-relf<-relf%>% #Summarise by FIPS and year
-  dplyr::group_by(County,Year)%>%
-  dplyr::summarise(FIPS=first(FIPS), intercounty=sum(intercounty), waterout=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)  #MGM to MGD
-
-relf$County<-as.character(relf$County)
-relf$County[is.na(relf$County)]<-'Fell Outside County Limits'
-
-###TO Releases###
-relt<-rTo@data
-relt<-relt[relt$intercounty==1,]
-
-relt<-relt%>%
-  dplyr::group_by(County,Year)%>%
-  dplyr::summarise(FIPS=first(FIPS), intercounty=sum(intercounty), waterin=sum(as.numeric(tsvalue)/30.4166667,na.rm=T)/12)
-
-relt$County<-as.character(relt$County)
-relt$County[is.na(relt$County)]<-'Fell Outside County Limits'
 ###########################################################################################################################################
 ####Calculate Net Transfers for Each FIPS Watershed####
-#Loop through each HUC 8 and check for summed releases and deliveries
+#Loop through each county and check for summed releases and deliveries
 #Water out is defined as the "from's" and Water in are the "to's"
 #This is net transfer- so negative number means more water is leaving watershed (in terms of transfers)
 
-County_waterout<-as.data.table(rbind(relf,delf))
-County_waterout<-County_waterout[, lapply(.SD,sum), by=list(County, Year, FIPS), .SDcols=c(4,5)]
+transfers<- function(relf,delf,relt,delt){
+  
+  County_waterout<-as.data.table(rbind(relf,delf))
+  County_waterout<-County_waterout[, lapply(.SD,sum), by=list(County, Year, FIPS), .SDcols=c(4,5)]
+  
+  County_waterin<-as.data.table(rbind(relt,delt))
+  County_waterin<-County_waterin[, lapply(.SD,sum), by=list(County, Year, FIPS), .SDcols=c(4,5)]
+  
+  #---Year 2010---#
+  VA_Counties@data$waterout_2010<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2010"],-County_waterout$waterout[County_waterout$Year=="2010"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2010"])],NA)
+  VA_Counties@data$waterin_2010<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2010"],County_waterin$waterin[County_waterin$Year=="2010"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2010"])],NA)
+  VA_Counties@data$transferred_2010<- (rowSums(VA_Counties@data[,(10:11)],na.rm=T))
+  VA_Counties@data$transferred_2010<-ifelse(is.na(VA_Counties@data$waterin_2010)&is.na(VA_Counties@data$waterout_2010),NA,VA_Counties@data$transferred_2010)
+  
+  #---Year 2011---#
+  VA_Counties@data$waterout_2011<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2011"],-County_waterout$waterout[County_waterout$Year=="2011"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2011"])],NA)
+  VA_Counties@data$waterin_2011<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2011"],County_waterin$waterin[County_waterin$Year=="2011"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2011"])],NA)
+  VA_Counties@data$transferred_2011<- (rowSums(VA_Counties@data[,(13:14)],na.rm=T))
+  VA_Counties@data$transferred_2011<-ifelse(is.na(VA_Counties@data$waterin_2011)&is.na(VA_Counties@data$waterout_2011),NA,VA_Counties@data$transferred_2011)
+  
+  #---Year 2012---#
+  VA_Counties@data$waterout_2012<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2012"],-County_waterout$waterout[County_waterout$Year=="2012"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2012"])],NA)
+  VA_Counties@data$waterin_2012<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2012"],County_waterin$waterin[County_waterin$Year=="2012"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2012"])],NA)
+  VA_Counties@data$transferred_2012<- (rowSums(VA_Counties@data[,(16:17)],na.rm=T))
+  VA_Counties@data$transferred_2012<-ifelse(is.na(VA_Counties@data$waterin_2012)&is.na(VA_Counties@data$waterout_2012),NA,VA_Counties@data$transferred_2012)
+  
+  #---Year 2013---#
+  VA_Counties@data$waterout_2013<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2013"],-County_waterout$waterout[County_waterout$Year=="2013"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2013"])],NA)
+  VA_Counties@data$waterin_2013<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2013"],County_waterin$waterin[County_waterin$Year=="2013"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2013"])],NA)
+  VA_Counties@data$transferred_2013<- (rowSums(VA_Counties@data[,(19:20)],na.rm=T))
+  VA_Counties@data$transferred_2013<-ifelse(is.na(VA_Counties@data$waterin_2013)&is.na(VA_Counties@data$waterout_2013),NA,VA_Counties@data$transferred_2013)
+  
+  #---Year 2014---#
+  VA_Counties@data$waterout_2014<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2014"],-County_waterout$waterout[County_waterout$Year=="2014"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2014"])],NA)
+  VA_Counties@data$waterin_2014<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2014"],County_waterin$waterin[County_waterin$Year=="2014"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2014"])],NA)
+  VA_Counties@data$transferred_2014<- (rowSums(VA_Counties@data[,(22:23)],na.rm=T))
+  VA_Counties@data$transferred_2014<-ifelse(is.na(VA_Counties@data$waterin_2014)&is.na(VA_Counties@data$waterout_2014),NA,VA_Counties@data$transferred_2014)
+  
+  #---Year 2015---#
+  VA_Counties@data$waterout_2015<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2015"],-County_waterout$waterout[County_waterout$Year=="2015"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2015"])],NA)
+  VA_Counties@data$waterin_2015<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2015"],County_waterin$waterin[County_waterin$Year=="2015"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2015"])],NA)
+  VA_Counties@data$transferred_2015<- (rowSums(VA_Counties@data[,(25:26)],na.rm=T))
+  VA_Counties@data$transferred_2015<-ifelse(is.na(VA_Counties@data$waterin_2015)&is.na(VA_Counties@data$waterout_2015),NA,VA_Counties@data$transferred_2015)
+  
+  #---Year 2016---#
+  VA_Counties@data$waterout_2016<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2016"],-County_waterout$waterout[County_waterout$Year=="2016"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2016"])],NA)
+  VA_Counties@data$waterin_2016<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2016"],County_waterin$waterin[County_waterin$Year=="2016"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2016"])],NA)
+  VA_Counties@data$transferred_2016<- (rowSums(VA_Counties@data[,(28:29)],na.rm=T))
+  VA_Counties@data$transferred_2016<-ifelse(is.na(VA_Counties@data$waterin_2016)&is.na(VA_Counties@data$waterout_2016),NA,VA_Counties@data$transferred_2016)
+  
+  #---Year 2017---#
+  VA_Counties@data$waterout_2017<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2017"],-County_waterout$waterout[County_waterout$Year=="2017"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2017"])],NA)
+  VA_Counties@data$waterin_2017<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2017"],County_waterin$waterin[County_waterin$Year=="2017"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2017"])],NA)
+  VA_Counties@data$transferred_2017<- (rowSums(VA_Counties@data[,(31:32)],na.rm=T))
+  VA_Counties@data$transferred_2017<-ifelse(is.na(VA_Counties@data$waterin_2017)&is.na(VA_Counties@data$waterout_2017),NA,VA_Counties@data$transferred_2017)
+  
+  
+  County_Transfers<-data.frame(County=VA_Counties@data$County,
+                               FIPS=VA_Counties@data$FIPS,
+                               Transfers_2010_MGD=VA_Counties@data$transferred_2010,
+                               Transfers_2011_MGD=VA_Counties@data$transferred_2011,
+                               Transfers_2012_MGD=VA_Counties@data$transferred_2012,
+                               Transfers_2013_MGD=VA_Counties@data$transferred_2013,
+                               Transfers_2014_MGD=VA_Counties@data$transferred_2014,
+                               Transfers_2015_MGD=VA_Counties@data$transferred_2015,
+                               Transfers_2016_MGD=VA_Counties@data$transferred_2016,
+                               Transfers_2017_MGD=VA_Counties@data$transferred_2017)
+  
+  assign("VA_Counties",VA_Counties,envir = .GlobalEnv)
+  assign("County_Transfers",County_Transfers,envir = .GlobalEnv)
+  
+}
+transfers(relf,delf,relt,delt)
 
-County_waterin<-as.data.table(rbind(relt,delt))
-County_waterin<-County_waterin[, lapply(.SD,sum), by=list(County, Year, FIPS), .SDcols=c(4,5)]
-
-#---Year 2010---#
-VA_Counties@data$waterout_2010<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2010"],-County_waterout$waterout[County_waterout$Year=="2010"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2010"])],NA)
-VA_Counties@data$waterin_2010<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2010"],County_waterin$waterin[County_waterin$Year=="2010"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2010"])],NA)
-VA_Counties@data$transferred_2010<- (rowSums(VA_Counties@data[,(10:11)],na.rm=T))
-VA_Counties@data$transferred_2010<-ifelse(is.na(VA_Counties@data$waterin_2010)&is.na(VA_Counties@data$waterout_2010),NA,VA_Counties@data$transferred_2010)
-
-#---Year 2011---#
-VA_Counties@data$waterout_2011<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2011"],-County_waterout$waterout[County_waterout$Year=="2011"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2011"])],NA)
-VA_Counties@data$waterin_2011<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2011"],County_waterin$waterin[County_waterin$Year=="2011"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2011"])],NA)
-VA_Counties@data$transferred_2011<- (rowSums(VA_Counties@data[,(13:14)],na.rm=T))
-VA_Counties@data$transferred_2011<-ifelse(is.na(VA_Counties@data$waterin_2011)&is.na(VA_Counties@data$waterout_2011),NA,VA_Counties@data$transferred_2011)
-
-#---Year 2012---#
-VA_Counties@data$waterout_2012<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2012"],-County_waterout$waterout[County_waterout$Year=="2012"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2012"])],NA)
-VA_Counties@data$waterin_2012<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2012"],County_waterin$waterin[County_waterin$Year=="2012"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2012"])],NA)
-VA_Counties@data$transferred_2012<- (rowSums(VA_Counties@data[,(16:17)],na.rm=T))
-VA_Counties@data$transferred_2012<-ifelse(is.na(VA_Counties@data$waterin_2012)&is.na(VA_Counties@data$waterout_2012),NA,VA_Counties@data$transferred_2012)
-
-#---Year 2013---#
-VA_Counties@data$waterout_2013<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2013"],-County_waterout$waterout[County_waterout$Year=="2013"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2013"])],NA)
-VA_Counties@data$waterin_2013<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2013"],County_waterin$waterin[County_waterin$Year=="2013"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2013"])],NA)
-VA_Counties@data$transferred_2013<- (rowSums(VA_Counties@data[,(19:20)],na.rm=T))
-VA_Counties@data$transferred_2013<-ifelse(is.na(VA_Counties@data$waterin_2013)&is.na(VA_Counties@data$waterout_2013),NA,VA_Counties@data$transferred_2013)
-
-#---Year 2014---#
-VA_Counties@data$waterout_2014<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2014"],-County_waterout$waterout[County_waterout$Year=="2014"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2014"])],NA)
-VA_Counties@data$waterin_2014<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2014"],County_waterin$waterin[County_waterin$Year=="2014"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2014"])],NA)
-VA_Counties@data$transferred_2014<- (rowSums(VA_Counties@data[,(22:23)],na.rm=T))
-VA_Counties@data$transferred_2014<-ifelse(is.na(VA_Counties@data$waterin_2014)&is.na(VA_Counties@data$waterout_2014),NA,VA_Counties@data$transferred_2014)
-
-#---Year 2015---#
-VA_Counties@data$waterout_2015<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2015"],-County_waterout$waterout[County_waterout$Year=="2015"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2015"])],NA)
-VA_Counties@data$waterin_2015<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2015"],County_waterin$waterin[County_waterin$Year=="2015"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2015"])],NA)
-VA_Counties@data$transferred_2015<- (rowSums(VA_Counties@data[,(25:26)],na.rm=T))
-VA_Counties@data$transferred_2015<-ifelse(is.na(VA_Counties@data$waterin_2015)&is.na(VA_Counties@data$waterout_2015),NA,VA_Counties@data$transferred_2015)
-
-#---Year 2016---#
-VA_Counties@data$waterout_2016<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2016"],-County_waterout$waterout[County_waterout$Year=="2016"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2016"])],NA)
-VA_Counties@data$waterin_2016<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2016"],County_waterin$waterin[County_waterin$Year=="2016"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2016"])],NA)
-VA_Counties@data$transferred_2016<- (rowSums(VA_Counties@data[,(28:29)],na.rm=T))
-VA_Counties@data$transferred_2016<-ifelse(is.na(VA_Counties@data$waterin_2016)&is.na(VA_Counties@data$waterout_2016),NA,VA_Counties@data$transferred_2016)
-
-#---Year 2017---#
-VA_Counties@data$waterout_2017<-ifelse(VA_Counties@data$FIPS%in%County_waterout$FIPS[County_waterout$Year=="2017"],-County_waterout$waterout[County_waterout$Year=="2017"][match(VA_Counties@data$FIPS,County_waterout$FIPS[County_waterout$Year=="2017"])],NA)
-VA_Counties@data$waterin_2017<-ifelse(VA_Counties@data$FIPS%in%County_waterin$FIPS[County_waterin$Year=="2017"],County_waterin$waterin[County_waterin$Year=="2017"][match(VA_Counties@data$FIPS,County_waterin$FIPS[County_waterin$Year=="2017"])],NA)
-VA_Counties@data$transferred_2017<- (rowSums(VA_Counties@data[,(31:32)],na.rm=T))
-VA_Counties@data$transferred_2017<-ifelse(is.na(VA_Counties@data$waterin_2017)&is.na(VA_Counties@data$waterout_2017),NA,VA_Counties@data$transferred_2017)
-
-
-County_Transfers<-data.frame(County=VA_Counties@data$County,
-                           FIPS=VA_Counties@data$FIPS,
-                           Transfers_2010_MGD=VA_Counties@data$transferred_2010,
-                           Transfers_2011_MGD=VA_Counties@data$transferred_2011,
-                           Transfers_2012_MGD=VA_Counties@data$transferred_2012,
-                           Transfers_2013_MGD=VA_Counties@data$transferred_2013,
-                           Transfers_2014_MGD=VA_Counties@data$transferred_2014,
-                           Transfers_2015_MGD=VA_Counties@data$transferred_2015,
-                           Transfers_2016_MGD=VA_Counties@data$transferred_2016,
-                           Transfers_2017_MGD=VA_Counties@data$transferred_2017)
-
-County_Transfers<-County_Transfers[order(County_Transfers$HUC8_Name,decreasing=F),]
-
-#rm(delf,delt,dFrom,dTo,relf,relt,rFrom,rTo)
 ###########################################################################################################################################
 ####################################################Calculating Discharges#################################################################
 
 #####Load in Discharge Data####
 
-ECHO_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC.txt", sep="\t", header=T)
+ECHO_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC_statewide.txt", sep="\t", header=T)
 
+#-Quick Summary-#
 ECHO_2010_2017%>%
   summarise(Facilities=n_distinct(Facility.ID),
             Outfalls=n_distinct(OutfallID),
@@ -323,10 +348,52 @@ ECHO_2010_2017%>%
             NPDES=sum(Permit_Type=="NPDES Individual Permit"),
             GP=sum(Permit_Type=="General Permit Covered Facility"))
 
-#Filtering out General Permits and Outfalls not ending in 001 
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Permit_Type=="NPDES Individual Permit"&str_sub(ECHO_2010_2017$OutfallID, start=-3)=="001")
 
 #---Separate by Water Use Sector---# Go through individually---don't do scenario with transfers
+
+sector_discharge<- function(sector){
+  
+  ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Use.Type==Sector)
+  ECHO_2010_2017<-SpatialPointsDataFrame(data.frame(Outfall_Longitude=ECHO_2010_2017$Outfall.Long,
+                                                    Outfall_Latitude=ECHO_2010_2017$Outfall.Lat),
+                                                    ECHO_2010_2017,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  ECHO_2010_2017@data$VPDES.Name<-as.character(ECHO_2010_2017@data$VPDES.Name)
+  ECHO_2010_2017@data$Discharges_MGD<-as.numeric(ECHO_2010_2017@data$Discharges_MGD)#after QA/QC
+  ECHO_2010_2017@data$Measured_Effluent<-as.numeric(ECHO_2010_2017@data$Measured_Effluent)#Before QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(ECHO_2010_2017,VA_Counties_Overlay)
+  ECHO_2010_2017@data$FIPS<-VA_Counties_Facilities$FIPS
+  ECHO_2010_2017@data$County<-VA_Counties_Facilities$County
+  
+  #--Sum Discharges in the Counties--#
+  ECHO_2010_2017.test<-as.data.frame(ECHO_2010_2017@data)
+  
+  ECHO_Resol_Mean_Med<-ECHO_2010_2017.test%>%dplyr::group_by(OutfallID)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
+  ECHO_2010_2017.test<-merge(ECHO_2010_2017.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
+  
+  Outfall_Discharges<<-ECHO_2010_2017@data%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility.ID=first(Facility.ID),
+                     Facility_Name=first(FacilityName),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Resolved_Measured_Effluent_Med, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Reclass_Use_Type),
+                     County=first(County),
+                     FIPS=first(FIPS))%>%arrange(desc(Discharges_MGD))
+  
+  
+  County_Discharges<<-Outfall_Discharges%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  
+}
+
+
+
 ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Agriculture/Irrigation")
 ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Commercial")
 ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Energy")
@@ -334,40 +401,8 @@ ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="
 ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Reclass_Use_Type=="Municipal")
 
 ECHO_2010_2017<-subset(ECHO_2010_2017, subset=!ECHO_2010_2017$Reclass_Use_Type=="Energy")
-ECHO_2010_2017<-SpatialPointsDataFrame(data.frame(Outfall_Longitude=ECHO_2010_2017$Outfall_Longitude,Outfall_Latitude=ECHO_2010_2017$Outfall_Latitude),ECHO_2010_2017,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
-
-#----Set Data Type----#
-ECHO_2010_2017@data$FacilityName<-as.character(ECHO_2010_2017@data$FacilityName)
-ECHO_2010_2017@data$Resolved_Measured_Effluent_NA<-as.numeric(ECHO_2010_2017@data$Resolved_Measured_Effluent_NA)#after QA/QC
-ECHO_2010_2017@data$Resolved_Measured_Effluent_Med<-as.numeric(ECHO_2010_2017@data$Resolved_Measured_Effluent_Med)#after QA/QC
-ECHO_2010_2017@data$Measured_Effluent<-as.numeric(ECHO_2010_2017@data$Measured_Effluent)#Before QA/QC
-
-####Overlay with County Shapefile####
-VA_Counties_Facilities<-over(ECHO_2010_2017,VA_Counties_Overlay)
-ECHO_2010_2017@data$FIPS<-VA_Counties_Facilities$FIPS
-ECHO_2010_2017@data$County<-VA_Counties_Facilities$County
-
-####Sum Discharges in the Counties####
-ECHO_2010_2017.test<-as.data.frame(ECHO_2010_2017@data)
-ECHO_Resol_Mean_NA<-ECHO_2010_2017.test%>%dplyr::group_by(OutfallID)%>%dplyr::summarise(Resolved_Mean_NA=mean(Resolved_Measured_Effluent_NA,na.rm=T))
-ECHO_Resol_Mean_Med<-ECHO_2010_2017.test%>%dplyr::group_by(OutfallID)%>%dplyr::summarise(Resolved_Mean_Med=mean(Resolved_Measured_Effluent_Med,na.rm=T))
-ECHO_2010_2017.test<-merge(ECHO_2010_2017.test,ECHO_Resol_Mean_NA,by="OutfallID",all.x=T)
-ECHO_2010_2017.test<-merge(ECHO_2010_2017.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-
-Outfall_Discharges<-ECHO_2010_2017@data%>%
-  dplyr::group_by(OutfallID,Year)%>%
-  dplyr::summarise(Facility.ID=first(Facility.ID),
-                   Facility_Name=first(FacilityName),
-                   Mon_Reported=first(Mon_Reported),
-                   Discharges_MGD=sum(Resolved_Measured_Effluent_Med, na.rm=T)/first(Mon_Reported),
-                   Sector=first(Reclass_Use_Type),
-                   County=first(County),
-                   FIPS=first(FIPS))%>%arrange(desc(Discharges_MGD))
 
 
-County_Discharges<-Outfall_Discharges%>%
-  dplyr::group_by(County,Year)%>%
-  dplyr::summarise(FIPS=first(FIPS),Discharge_MGD=sum(Discharges_MGD,na.rm=T))
 
 ###########################################################################################################################################
 ####################################################Calculating Withdrawals################################################################
@@ -387,6 +422,7 @@ VWUDS_2010_2017<-subset(VWUDS_2010_2017, subset=!VWUDS_2010_2017$Reclass_Use_Typ
 #Create a spatial dataframe of all facilities with real geometry
 VWUDS_2010_2017<-VWUDS_2010_2017[!(is.na(VWUDS_2010_2017$Corrected_Latitude)&is.na(VWUDS_2010_2017$Corrected_Longitude)),]
 VWUDS_2010_2017<-SpatialPointsDataFrame(data.frame(Longitude=VWUDS_2010_2017$Corrected_Longitude,Latitude=VWUDS_2010_2017$Corrected_Latitude),VWUDS_2010_2017,proj4string = CRS("+init=epsg:4269"))
+# VWUDS_2010_2017<-SpatialPointsDataFrame(data.frame(Longitude=Major_VWUDS_2010_2017$Corrected_Longitude,Latitude=Major_VWUDS_2010_2017$Corrected_Latitude),Major_VWUDS_2010_2017,proj4string = CRS("+init=epsg:4269"))
 VWUDS_2010_2017@data$Withdrawals_MGD<-as.numeric(VWUDS_2010_2017@data$Withdrawals_MGD)
 #Overlay with HUC names
 County_VWUDS<-over(VWUDS_2010_2017,VA_Counties_Overlay)
@@ -805,7 +841,7 @@ ggplot()+
   scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
             arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
 
-#---Distribution of Withdrawing Sources in HUC8-----#
+#---Distribution of Withdrawing Sources in County-----#
 VWUDS_2010_2017.test<-VWUDS_2010_2017@data
 Mean_Withdrawal<-VWUDS_2010_2017.test%>%group_by(DEQ.ID.of.Source)%>%summarise(Mean_Withdrawal=mean(Withdrawals_MGD, na.rm=T))
 VWUDS_2010_2017.test<-merge(VWUDS_2010_2017.test,Mean_Withdrawal, by="DEQ.ID.of.Source",all.x=T)
@@ -845,12 +881,13 @@ ggplot()+
          shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
          colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
   labs(title = "Average Annual Summed Withdrawal (MGD) 2010-2017")+
-  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
   theme(line=element_blank(),
         axis.text=element_blank(),
         axis.title=element_blank(),
-        panel.background = element_blank())+coord_equal()
+        panel.background = element_blank())+coord_equal()+
+  scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+            arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
 
 #######################################################################################################################
 #-----------------------------Without Transfers-----------------------------------------------------------------------#

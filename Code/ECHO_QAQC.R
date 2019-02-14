@@ -31,8 +31,6 @@ library(shiny)
 library(lubridate)
 library(RColorBrewer)
 library(tibble)
-Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre1.8.0_181')
-library(XLConnect)
 library(tm)
 
 #############################################################################################################################
@@ -69,10 +67,8 @@ rm(Req_URL,URL_Download,URL_Parse,GET_Facilities,QID,state) #Clear unnecessary v
 #**Rare to see averages other than monthly average**#
 #From ECHO_Timeseries.R Script: Uses Effluent Charts REST Services#
 
-# ECHO_2010_2017.RData for this! #
-
-ECHO_Discharge<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_11_29.txt",header=T, sep="\t")
-
+ECHO_Discharge<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Documentation/Imports/ECHO_timeseries_1_29.txt",header=T, sep="\t")
+# ECHO_Discharge<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/North_Anna.txt",sep='\t',header=T)
 #############################################################################################################################
 #############################################VPDES Permit Data###############################################################
 
@@ -103,11 +99,11 @@ names(ECHO_Facilities)[names(ECHO_Facilities)=="SourceID"]<-"Facility.ID"#Need t
 
 #Permits Website:http://www.deq.virginia.gov/Programs/Water/PermittingCompliance/PollutionDischargeElimination/PermitsFees.aspx#GGPs
 
-#Individual Permits updated as of October 2018--look for updates every few months
+#Individual Permits updated as of January 2019--look for updates every few months
 #Warnings about unknown or uninitiliased columns: previous IP contact sheets named the columns differently. It doesn't hinder any processes though. 
-GET('https://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20Individual%20Permits%20Contacts%20Oct%202018.xlsx?ver=2018-10-22-084800-947', 
+GET('https://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20Jan%202019.xlsx?ver=2019-01-23-151510-490', 
     write_disk(temp <- tempfile(fileext = ".xlsx")))
-VPDES_IP <- read_excel(temp, skip=1)
+VPDES_IP <- read_excel(temp)
 VPDES_IP<-VPDES_IP[!is.na(VPDES_IP$Facility),]
 VPDES_IP$`Design Flow (MGD)`<-as.numeric(VPDES_IP$`Design Flow (MGD)`)
 VPDES_IP<-VPDES_IP[!duplicated(VPDES_IP$`Permit Number`),] #getting rid of duplicates and looking at unique permits
@@ -206,8 +202,8 @@ VA_Discharge_DMR_Summary<-VA_Discharge_DMR%>%
 
 VA_Discharge_DMR<-merge(VA_Discharge_DMR,VA_Discharge_DMR_Summary,by=c("OutfallID","Year"),all.x=T)
 
-VA_Discharge_DMR$dmr_flag_units_100<-ifelse(VA_Discharge_DMR$Measured_Effluent>100*VA_Discharge_DMR$Median_ME,"dmr_flag_units_100",NA)
-VA_Discharge_DMR$dmr_flag_units_1000000<-ifelse(VA_Discharge_DMR$Measured_Effluent>1000000*VA_Discharge_DMR$Median_ME,"dmr_flag_units_1000000",NA)
+VA_Discharge_DMR$dmr_flag_units_100<-ifelse(VA_Discharge_DMR$Measured_Effluent>100*VA_Discharge_DMR$Median_ME & VA_Discharge_DMR$Median_ME>0 ,"dmr_flag_units_100",NA)
+VA_Discharge_DMR$dmr_flag_units_1000000<-ifelse(VA_Discharge_DMR$Measured_Effluent>1000000*VA_Discharge_DMR$Median_ME & VA_Discharge_DMR$Median_ME>0 ,"dmr_flag_units_1000000",NA)
 
 VA_Discharge_DMR<-VA_Discharge_DMR[-c(2)]
 #-----------------------------------------------------------------#
@@ -353,6 +349,7 @@ for (i in 1:length(Fac_Type_VPDES$Facility.ID)){
      length(grep('\\bENERGY\\b',Fac_Type_VPDES$Facility_Name[i]))>0){
     Fac_Type_VPDES$Reclass_Use_Type[i]<-'Energy'
   }else if (length(grep('\\bMUNICIPAL\\b',Fac_Type_VPDES$Facility_Name[i]))>0|
+            length(grep('\\bREVERSE OSMOSIS\\b',Fac_Type_VPDES$Facility_Name[i]))>0|
             length(grep('\\bSERVICE AREA\\b',Fac_Type_VPDES$Facility_Name[i]))>0|
             length(grep('\\bSERV AREA\\b',Fac_Type_VPDES$Facility_Name[i]))>0|
             length(grep('\\bREGIONAL WATER SYSTEM\\b',Fac_Type_VPDES$Facility_Name[i]))>0|
@@ -510,45 +507,29 @@ Fac_Type_VPDES$Reclass_Use_Type<-ifelse(is.na(Fac_Type_VPDES$Reclass_Use_Type)&F
 Fac_Type_VPDES_m<-subset(Fac_Type_VPDES,select = c(1,8))
 ECHO_2010_2017<-merge(ECHO_2010_2017,Fac_Type_VPDES_m,by="Facility.ID",all.x=T)
 
-#---Plot Facility Type---#
-ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Permit_Type=="NPDES Individual Permit"&str_sub(ECHO_2010_2017$OutfallID, start=-3)=="001")
 
-colors_10_16 <- colorspace::diverge_hcl(4)
+ECHO_2010_2017<-mutate_if(ECHO_2010_2017,is.factor,as.character)
+ECHO_2010_2017<-as.data.table(ECHO_2010_2017)
 
-# Before Classification
-ECHO_2010_2017%>%
-  dplyr::group_by(Facility.ID)%>%
-  dplyr::summarise(Use_Type=first(Use_Type))%>%
-  dplyr::count(Use_Type)%>%
-  plot_ly(labels=~Use_Type,values=~n,
-          textposition = 'inside',
-          textinfo = 'text',
-          text= ~paste(Use_Type,"\n", n, "Facilities"),
-          insidetextfont = list(color = '#FFFFFF'),
-          marker = list(colors=colors_10_16,
-                        line=list(color = '#FFFFFF', width =1)))%>%
-  add_pie(hole = 0.6)%>%
-  layout(title = 'Distribution of Water Sectors in Raw Discharge Data',
-         xaxis = list(showgrid=F, zeroline=F, showticklabels=F),
-         yaxis = list(showgrid=F, zeroline=F, showticklabels=F))
+change_use<- function(VPDESID,new_sector){
+  ECHO_2010_2017$Reclass_Use_Type[ECHO_2010_2017$Facility.ID == VPDESID]<- new_sector
+  assign('ECHO_2010_2017',ECHO_2010_2017,envir=.GlobalEnv)
+}
+change_use("VA0090824","Industrial")
+change_use("VA0092576","Industrial")
+change_use("VA0002674","Municipal")
+change_use("VA0025569","Municipal")
+change_use("VA0088404","Municipal")
+change_use("VA0084212","Municipal")
+change_use("VA0064599","Municipal")
+change_use("VA0091405","Municipal")
+change_use("VA0059072","Municipal")
+change_use("VA0023141","Municipal")
+change_use("VA0090654","Agriculture/Irrigation")
+change_use("VA0083097","Energy")
+change_use("VA0076473","Municipal")
+change_use("VA0028363","Commercial")
 
-# After Classification
-ECHO_2010_2017%>%
-  dplyr::group_by(Facility.ID)%>%
-  dplyr::summarise(Reclass_Use_Type=first(Reclass_Use_Type))%>%
-  dplyr::count(Reclass_Use_Type)%>%
-  plot_ly(labels=~Reclass_Use_Type,values=~n,
-          textposition = 'inside',
-          textinfo = 'text',
-          text= ~paste(Reclass_Use_Type,"\n", n, "Facilities"),
-          insidetextfont = list(color = '#FFFFFF'),
-          marker = list(colors=colors_10_16,
-                        line=list(color = '#FFFFFF', width =1)))%>%
-  add_pie(hole = 0.6)%>%
-  layout(title = 'Distribution of Water Sectors in QA/QC Discharge Data',
-         xaxis = list(showgrid=F, zeroline=F, showticklabels=F),
-         yaxis = list(showgrid=F, zeroline=F, showticklabels=F))
-  
 #-----------------------------------------------------------------#
 #--------------------Resolving Anomalous Entries--------------------#
 #---------------------------QA/QC---------------------------------#
@@ -563,10 +544,10 @@ Flagged_DMR_2010_2017<-subset(ECHO_2010_2017,subset= (!is.na(ECHO_2010_2017$fac_
 #---Assign weights to flags to create a weighted value---#
 ECHO_2010_2017<-ECHO_2010_2017%>%add_column(weighted_flag="", .after="dmr_flag_units_1000000")%>%add_column(resolution="",.after="weighted_flag")
 
-ECHO_2010_2017$fac_flag_zerodesflow<-ifelse(!is.na(ECHO_2010_2017$fac_flag_zerodesflow=="fac_flag_zerodesflow"),0.25,0)
-ECHO_2010_2017$dmr_flag_units_100<-ifelse(!is.na(ECHO_2010_2017$dmr_flag_units_100=="dmr_flag_units_100"),0.4,0)
-ECHO_2010_2017$dmr_flag_units_1000000<-ifelse(!is.na(ECHO_2010_2017$dmr_flag_units_1000000=="dmr_flag_units_1000000"),0.4,0)
-ECHO_2010_2017$dmr_flag_desflow<-ifelse(!is.na(ECHO_2010_2017$dmr_flag_desflow=="dmr_flag_desflow"),1,0)
+ECHO_2010_2017$fac_flag_zerodesflow<-ifelse(!is.na(ECHO_2010_2017$fac_flag_zerodesflow=="fac_flag_zerodesflow"),0.15,0)
+ECHO_2010_2017$dmr_flag_units_100<-ifelse(!is.na(ECHO_2010_2017$dmr_flag_units_100=="dmr_flag_units_100"),0.5,0)
+ECHO_2010_2017$dmr_flag_units_1000000<-ifelse(!is.na(ECHO_2010_2017$dmr_flag_units_1000000=="dmr_flag_units_1000000"),0.5,0)
+ECHO_2010_2017$dmr_flag_desflow<-ifelse(!is.na(ECHO_2010_2017$dmr_flag_desflow=="dmr_flag_desflow"),0.5,0)
 
 ECHO_2010_2017$weighted_flag<-ECHO_2010_2017$fac_flag_zerodesflow+
                                     ECHO_2010_2017$dmr_flag_desflow+
@@ -576,19 +557,19 @@ ECHO_2010_2017$weighted_flag<-ECHO_2010_2017$fac_flag_zerodesflow+
 #---If weighted value is greater than 1, set as a high concern for potential skewing---#
 ECHO_2010_2017$resolution<-ifelse(ECHO_2010_2017$weighted_flag>=1,1,0)
 
-library(FFTrees)    
-
-ECHO_2010_2017.train<-subset(ECHO_2010_2017,select = c(1,2,5,8,11,14,16,17,21,22,23,24,25,26))
-ECHO_2010_2017.test<-subset(ECHO_2010_2017,select = c(1,2,5,8,11,14,16,17,21,22,23,24,25,26))
-Flag.fft<-FFTrees(formula = resolution ~ .,
-                  data = ECHO_2010_2017.train,
-                  data.test = ECHO_2010_2017.test,
-                  main = "Anomalous Discharge",
-                  decision.labels = c("Low Concern","High Concern"),
-                  do.comp = FALSE)
-
-Flag.fft
-plot(Flag.fft, data="test")
+# library(FFTrees)    
+# 
+# ECHO_2010_2017.train<-subset(ECHO_2010_2017,select = c(1,2,5,8,11,14,16,17,21,22,23,24,25,26))
+# ECHO_2010_2017.test<-subset(ECHO_2010_2017,select = c(1,2,5,8,11,14,16,17,21,22,23,24,25,26))
+# Flag.fft<-FFTrees(formula = resolution ~ .,
+#                   data = ECHO_2010_2017.train,
+#                   data.test = ECHO_2010_2017.test,
+#                   main = "Anomalous Discharge",
+#                   decision.labels = c("Low Concern","High Concern"),
+#                   do.comp = FALSE)
+# 
+# Flag.fft
+# plot(Flag.fft, data="test")
 
 
 ECHO_2010_2017<-ECHO_2010_2017%>%add_column(Resolved_Measured_Effluent_NA="", .after="Measured_Effluent")
@@ -602,9 +583,31 @@ ECHO_2010_2017$Resolved_Measured_Effluent_Med[ECHO_2010_2017$Facility.ID=="VA009
 ECHO_2010_2017$Resolved_Measured_Effluent_Med[ECHO_2010_2017$Facility.ID=="VA0091995"&ECHO_2010_2017$MP_Begin_Date=="2017-08-01"]<-1.8
 ECHO_2010_2017$Resolved_Measured_Effluent_Med[ECHO_2010_2017$Facility.ID=="VA0091995"&ECHO_2010_2017$MP_Begin_Date=="2017-09-01"]<-1.8
 
+ECHO_2010_2017$Resolved_Measured_Effluent_Med[ECHO_2010_2017$Facility.ID=="VA0050181"&ECHO_2010_2017$MP_Begin_Date=="2016-11-01"]<-0.40
+ECHO_2010_2017$Resolved_Measured_Effluent_Med[ECHO_2010_2017$Facility.ID=="VA0050181"&ECHO_2010_2017$MP_Begin_Date=="2016-12-01"]<-0.40
+ECHO_2010_2017$Resolved_Measured_Effluent_Med[ECHO_2010_2017$Facility.ID=="VA0050181"&ECHO_2010_2017$MP_Begin_Date=="2016-10-01"]<-0.40
+
+D_Months<-
+ECHO_2010_2017%>%
+   dplyr::group_by(OutfallID,Year=substring(MP_Begin_Date,1,4))%>%
+   dplyr::count(Month=substring(MP_End_Date,6,7))%>%
+   dplyr::summarise(Mon_Reported=sum(n))
+
+ ECHO_2010_2017<-
+   ECHO_2010_2017%>%add_column(Year=substring(ECHO_2010_2017$MP_Begin_Date,1,4), .before="MP_Begin_Date")
+
+ ECHO_2010_2017<-merge(ECHO_2010_2017,D_Months,by=c("OutfallID","Year"),all.x=T)
+ 
+
+ 
+#--Define Class Types for Important Attributes--#
+ ECHO_2010_2017<-ECHO_2010_2017[order(ECHO_2010_2017[,1],ECHO_2010_2017[,18],decreasing=F),]
+ ECHO_2010_2017$Resolved_Measured_Effluent_Med<-as.numeric(ECHO_2010_2017$Resolved_Measured_Effluent_Med)
+ ECHO_2010_2017$MP_Begin_Date<-as.Date(ECHO_2010_2017$MP_Begin_Date,format="%Y-%m-%d")
+ 
+
 write.table(ECHO_2010_2017,paste0(path,"/ECHO_2010_2017_QAQC.txt"), sep="\t", row.names=F)
 
-# save(ECHO_2010_2017,file="G:\\My Drive\\VT Courses\\Fall Semester Classes 2018\\STAT 5525\\McCarthy_Final_Code\\RData for R Files\\ECHO_2010_QAQC.RData")
 
 rm(ECHO_2010_2017.test,ECHO_2010_2017.train, Use_Type, ECHO_Facility_Attributes,hydropower)
 
