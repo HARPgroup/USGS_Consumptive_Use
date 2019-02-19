@@ -280,53 +280,53 @@ transfers<- function(relf,delf,relt,delt){
   #---Year 2010---#
   HUC8@data$waterout_2010<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2010"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2010"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2010"])],NA)
   HUC8@data$waterin_2010<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2010"],HUC8_waterin$waterin[HUC8_waterin$Year=="2010"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2010"])],NA)
-  HUC8@data$transferred_2010<- (rowSums(HUC8@data[,(10:11)],na.rm=T))
+  HUC8@data$transferred_2010<- (rowSums(HUC8@data[,(15:16)],na.rm=T))
   HUC8@data$transferred_2010<-ifelse(is.na(HUC8@data$waterin_2010)&is.na(HUC8@data$waterout_2010),NA,HUC8@data$transferred_2010)
   
   #---Year 2011---#
   HUC8@data$waterout_2011<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2011"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2011"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2011"])],NA)
   HUC8@data$waterin_2011<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2011"],HUC8_waterin$waterin[HUC8_waterin$Year=="2011"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2011"])],NA)
-  HUC8@data$transferred_2011<- (rowSums(HUC8@data[,(13:14)],na.rm=T))
+  HUC8@data$transferred_2011<- (rowSums(HUC8@data[,(18:19)],na.rm=T))
   HUC8@data$transferred_2011<-ifelse(is.na(HUC8@data$waterin_2011)&is.na(HUC8@data$waterout_2011),NA,HUC8@data$transferred_2011)
   
   #---Year 2012---#
   HUC8@data$waterout_2012<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2012"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2012"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2012"])],NA)
   HUC8@data$waterin_2012<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2012"],HUC8_waterin$waterin[HUC8_waterin$Year=="2012"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2012"])],NA)
-  HUC8@data$transferred_2012<- (rowSums(HUC8@data[,(16:17)],na.rm=T))
+  HUC8@data$transferred_2012<- (rowSums(HUC8@data[,(21:22)],na.rm=T))
   HUC8@data$transferred_2012<-ifelse(is.na(HUC8@data$waterin_2012)&is.na(HUC8@data$waterout_2012),NA,HUC8@data$transferred_2012)
   
   #---Year 2013---#
   HUC8@data$waterout_2013<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2013"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2013"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2013"])],NA)
   HUC8@data$waterin_2013<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2013"],HUC8_waterin$waterin[HUC8_waterin$Year=="2013"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2013"])],NA)
-  HUC8@data$transferred_2013<- (rowSums(HUC8@data[,(19:20)],na.rm=T))
+  HUC8@data$transferred_2013<- (rowSums(HUC8@data[,(24:25)],na.rm=T))
   HUC8@data$transferred_2013<-ifelse(is.na(HUC8@data$waterin_2013)&is.na(HUC8@data$waterout_2013),NA,HUC8@data$transferred_2013)
   
   #---Year 2014---#
   HUC8@data$waterout_2014<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2014"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2014"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2014"])],NA)
   HUC8@data$waterin_2014<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2014"],HUC8_waterin$waterin[HUC8_waterin$Year=="2014"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2014"])],NA)
-  HUC8@data$transferred_2014<- (rowSums(HUC8@data[,(22:23)],na.rm=T))
+  HUC8@data$transferred_2014<- (rowSums(HUC8@data[,(27:28)],na.rm=T))
   HUC8@data$transferred_2014<-ifelse(is.na(HUC8@data$waterin_2014)&is.na(HUC8@data$waterout_2014),NA,HUC8@data$transferred_2014)
   
   #---Year 2015---#
   HUC8@data$waterout_2015<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2015"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2015"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2015"])],NA)
   HUC8@data$waterin_2015<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2015"],HUC8_waterin$waterin[HUC8_waterin$Year=="2015"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2015"])],NA)
-  HUC8@data$transferred_2015<- (rowSums(HUC8@data[,(25:26)],na.rm=T))
+  HUC8@data$transferred_2015<- (rowSums(HUC8@data[,(30:31)],na.rm=T))
   HUC8@data$transferred_2015<-ifelse(is.na(HUC8@data$waterin_2015)&is.na(HUC8@data$waterout_2015),NA,HUC8@data$transferred_2015)
   
   #---Year 2016---#
   HUC8@data$waterout_2016<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2016"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2016"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2016"])],NA)
   HUC8@data$waterin_2016<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2016"],HUC8_waterin$waterin[HUC8_waterin$Year=="2016"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2016"])],NA)
-  HUC8@data$transferred_2016<- (rowSums(HUC8@data[,(28:29)],na.rm=T))
+  HUC8@data$transferred_2016<- (rowSums(HUC8@data[,(33:34)],na.rm=T))
   HUC8@data$transferred_2016<-ifelse(is.na(HUC8@data$waterin_2016)&is.na(HUC8@data$waterout_2016),NA,HUC8@data$transferred_2016)
   
   #---Year 2017---#
   HUC8@data$waterout_2017<-ifelse(HUC8@data$HUC8%in%HUC8_waterout$HUC8[HUC8_waterout$Year=="2017"],-HUC8_waterout$waterout[HUC8_waterout$Year=="2017"][match(HUC8@data$HUC8,HUC8_waterout$HUC8[HUC8_waterout$Year=="2017"])],NA)
   HUC8@data$waterin_2017<-ifelse(HUC8@data$HUC8%in%HUC8_waterin$HUC8[HUC8_waterin$Year=="2017"],HUC8_waterin$waterin[HUC8_waterin$Year=="2017"][match(HUC8@data$HUC8,HUC8_waterin$HUC8[HUC8_waterin$Year=="2017"])],NA)
-  HUC8@data$transferred_2017<- (rowSums(HUC8@data[,(31:32)],na.rm=T))
+  HUC8@data$transferred_2017<- (rowSums(HUC8@data[,(36:37)],na.rm=T))
   HUC8@data$transferred_2017<-ifelse(is.na(HUC8@data$waterin_2017)&is.na(HUC8@data$waterout_2017),NA,HUC8@data$transferred_2017)
   
   
-  HUC8_Transfers<-data.frame(HUC8Name=HUC8@data$HUC8Name,
+  HUC8_Transfers<-data.frame(HUC8Name=HUC8@data$Name,
                              HUC8=HUC8@data$HUC8,
                              Transfers_2010_MGD=HUC8@data$transferred_2010,
                              Transfers_2011_MGD=HUC8@data$transferred_2011,
@@ -340,10 +340,10 @@ transfers<- function(relf,delf,relt,delt){
   assign("HUC8",HUC8,envir = .GlobalEnv)
   assign("HUC8_Transfers",HUC8_Transfers,envir = .GlobalEnv)
   
+  rm(relf,delf,relt,delt,deliveries,envir = .GlobalEnv)
   
 }
 transfers(relf,delf,relt,delt)
-rm(relf,delf,relt,delt,deliveries)
 
 ###########################################################################################################################################
 #----------------------------------------------------Calculating Discharges---------------------------------------------------------------#
@@ -1049,8 +1049,8 @@ Ave_NWB_CU<- function(HUC8,label){
   HUC8@data$Consumption_t_ave<-ifelse(HUC8@data$Consumption_t_ave==0,NA,HUC8@data$Consumption_t_ave)
   
   HUC8_glimpse<-HUC8@data
-  HUC8_glimpse[10:93]<-sapply(HUC8_glimpse[10:93],as.numeric)
-  HUC8_glimpse[10:93]<<-round(HUC8_glimpse[10:93], digits=2)
+  HUC8_glimpse[15:98]<-sapply(HUC8_glimpse[15:98],as.numeric)
+  HUC8_glimpse[15:98]<<-round(HUC8_glimpse[15:98], digits=2)
   
   assign(paste0("HUC8",label),HUC8,envir = .GlobalEnv)
   
@@ -1171,13 +1171,13 @@ scale_bar <- function(lon, lat, distance_lon, distance_lat, distance_legend, dis
 HUC8_labels<- function(HUC8){
   HUC8_Centroids<-as.data.frame(coordinates(HUC8))
   names(HUC8_Centroids)<-c("Longitude","Latitude")
-  HUC8_Centroids$HUC8<-HUC8_glimpse$HUC8
-  HUC8_Names<-subset(HUC8_glimpse,select=c(2,3))
+  HUC8_Centroids$HUC8<-HUC8@data$HUC8
+  HUC8_Names<-subset(HUC8@data,select=c(11,12))
   HUC8_Centroids<-merge(HUC8_Centroids,HUC8_Names,by="HUC8")
   
   ggplot()+
     geom_polygon(data=HUC8,aes(x=long, y= lat, group=group), colour='black', fill=NA)+
-    geom_text(data=HUC8_Centroids,aes(x=Longitude,y=Latitude,label=HUC8Name),size=1)+
+    geom_label_repel(data=HUC8_Centroids,aes(x=Longitude,y=Latitude,label=Name))+
     scale_colour_manual(values=c("#252525"))+
     theme(line=element_blank(),
           axis.text=element_blank(),
@@ -1193,9 +1193,13 @@ HUC8_labels(HUC8)
 
 HUC8_discharge<- function(HUC8,ECHO_points, label){
   
-  HUC8.df<-broom::tidy(HUC8)
-  HUC8$polyID<-sapply(slot(HUC8,"polygons"), function(x) slot(x, "ID"))
-  HUC8.df<-merge(HUC8.df, HUC8, by.x="id", by.y="polyID")
+  HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+  HUC8_Clipped<-SpatialPolygonsDataFrame(HUC8_Clipped,HUC8@data[as.character(HUC8@data$HUC8)%in%names(HUC8_Clipped),],match.ID = "HUC8")
+  
+  HUC8.df<-broom::tidy(HUC8_Clipped)
+  HUC8_Clipped$polyID<-sapply(slot(HUC8_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC8.df<-merge(HUC8.df, HUC8_Clipped, by.x="id", by.y="polyID")
+  
   
   Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
   
@@ -1269,9 +1273,12 @@ HUC8_discharge(HUC8_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Faci
 
 HUC8_withdrawal<- function(HUC8,VWUDS_points,label){
   
-  HUC8.df<-broom::tidy(HUC8)
-  HUC8$polyID<-sapply(slot(HUC8,"polygons"), function(x) slot(x, "ID"))
-  HUC8.df<-merge(HUC8.df, HUC8, by.x="id", by.y="polyID")
+  HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+  HUC8_Clipped<-SpatialPolygonsDataFrame(HUC8_Clipped,HUC8@data[as.character(HUC8@data$HUC8)%in%names(HUC8_Clipped),],match.ID = "HUC8")
+  
+  HUC8.df<-broom::tidy(HUC8_Clipped)
+  HUC8_Clipped$polyID<-sapply(slot(HUC8_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC8.df<-merge(HUC8.df, HUC8_Clipped, by.x="id", by.y="polyID")
   
   With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
   
@@ -1343,9 +1350,13 @@ HUC8_withdrawal(HUC8_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Fa
 #---------------------------------------------------Consumption over HUC8 Watersheds-------------------------------------------------------------#
 
 HUC8_consumption<- function(HUC8, ECHO_points ,VWUDS_points, label){
-  HUC8.df<-broom::tidy(HUC8)
-  HUC8$polyID<-sapply(slot(HUC8,"polygons"), function(x) slot(x, "ID"))
-  HUC8.df<-merge(HUC8.df, HUC8, by.x="id", by.y="polyID")
+  
+  HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+  HUC8_Clipped<-SpatialPolygonsDataFrame(HUC8_Clipped,HUC8@data[as.character(HUC8@data$HUC8)%in%names(HUC8_Clipped),],match.ID = "HUC8")
+  
+  HUC8.df<-broom::tidy(HUC8_Clipped)
+  HUC8_Clipped$polyID<-sapply(slot(HUC8_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC8.df<-merge(HUC8.df, HUC8_Clipped, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
@@ -1419,9 +1430,13 @@ HUC8_consumption(HUC8_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonen
 #-----------------------------------------Consumption over HUC8 Watersheds (without points)------------------------------------------------------#
 
 HUC8_consumption_nopnt<- function(HUC8, label){
-  HUC8.df<-broom::tidy(HUC8)
-  HUC8$polyID<-sapply(slot(HUC8,"polygons"), function(x) slot(x, "ID"))
-  HUC8.df<-merge(HUC8.df, HUC8, by.x="id", by.y="polyID")
+ 
+  HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+  HUC8_Clipped<-SpatialPolygonsDataFrame(HUC8_Clipped,HUC8@data[as.character(HUC8@data$HUC8)%in%names(HUC8_Clipped),],match.ID = "HUC8")
+  
+  HUC8.df<-broom::tidy(HUC8_Clipped)
+  HUC8_Clipped$polyID<-sapply(slot(HUC8_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC8.df<-merge(HUC8.df, HUC8_Clipped, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
@@ -1492,9 +1507,12 @@ HUC8_consumption_nopnt(HUC8_nonenergy,"Matched Non-Energy Facilities")
 
 HUC8_NWB<- function(HUC8,label){
   
-  HUC8.df<-broom::tidy(HUC8)
-  HUC8$polyID<-sapply(slot(HUC8,"polygons"), function(x) slot(x, "ID"))
-  HUC8.df<-merge(HUC8.df, HUC8, by.x="id", by.y="polyID")
+  HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+  HUC8_Clipped<-SpatialPolygonsDataFrame(HUC8_Clipped,HUC8@data[as.character(HUC8@data$HUC8)%in%names(HUC8_Clipped),],match.ID = "HUC8")
+  
+  HUC8.df<-broom::tidy(HUC8_Clipped)
+  HUC8_Clipped$polyID<-sapply(slot(HUC8_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC8.df<-merge(HUC8.df, HUC8_Clipped, by.x="id", by.y="polyID")
   
   NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
   
@@ -1545,9 +1563,12 @@ case.study.location<- function(VPDES.ID,VWUDS.ID){
   full_match_2010_2017_summary$VPDES_HUC8<-ECHO.test_matched$HUC8Name[match(full_match_2010_2017_summary$VPDES.Facility.ID,ECHO.test_matched$VPDES.Facility.ID)]
   full_match_2010_2017_summary$VWUDS_HUC8<-VWUDS.test_matched$HUC8Name[match(full_match_2010_2017_summary$VWUDS.Facility.ID,VWUDS.test_matched$VWUDS.Facility.ID)]
   
-  HUC8.df<-broom::tidy(HUC8)
-  HUC8$polyID<-sapply(slot(HUC8,"polygons"), function(x) slot(x, "ID"))
-  HUC8.df<-merge(HUC8.df, HUC8, by.x="id", by.y="polyID")
+  HUC8_Clipped<-gIntersection(HUC8,VA,id=as.character(HUC8@data$HUC8),byid=TRUE,drop_lower_td=TRUE)
+  HUC8_Clipped<-SpatialPolygonsDataFrame(HUC8_Clipped,HUC8@data[as.character(HUC8@data$HUC8)%in%names(HUC8_Clipped),],match.ID = "HUC8")
+  
+  HUC8.df<-broom::tidy(HUC8_Clipped)
+  HUC8_Clipped$polyID<-sapply(slot(HUC8_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC8.df<-merge(HUC8.df, HUC8_Clipped, by.x="id", by.y="polyID")
   
   ggplot()+
     geom_polygon(data=HUC8.df,aes(x=long, y= lat, group=group),color="#252525",fill="transparent",alpha=0.5)+
