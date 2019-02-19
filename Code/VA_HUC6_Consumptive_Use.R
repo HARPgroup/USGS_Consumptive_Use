@@ -280,53 +280,53 @@ transfers<- function(relf,delf,relt,delt){
   #---Year 2010---#
   HUC6@data$waterout_2010<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2010"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2010"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2010"])],NA)
   HUC6@data$waterin_2010<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2010"],HUC6_waterin$waterin[HUC6_waterin$Year=="2010"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2010"])],NA)
-  HUC6@data$transferred_2010<- (rowSums(HUC6@data[,(10:11)],na.rm=T))
+  HUC6@data$transferred_2010<- (rowSums(HUC6@data[,(15:16)],na.rm=T))
   HUC6@data$transferred_2010<-ifelse(is.na(HUC6@data$waterin_2010)&is.na(HUC6@data$waterout_2010),NA,HUC6@data$transferred_2010)
   
   #---Year 2011---#
   HUC6@data$waterout_2011<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2011"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2011"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2011"])],NA)
   HUC6@data$waterin_2011<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2011"],HUC6_waterin$waterin[HUC6_waterin$Year=="2011"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2011"])],NA)
-  HUC6@data$transferred_2011<- (rowSums(HUC6@data[,(13:14)],na.rm=T))
+  HUC6@data$transferred_2011<- (rowSums(HUC6@data[,(18:19)],na.rm=T))
   HUC6@data$transferred_2011<-ifelse(is.na(HUC6@data$waterin_2011)&is.na(HUC6@data$waterout_2011),NA,HUC6@data$transferred_2011)
   
   #---Year 2012---#
   HUC6@data$waterout_2012<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2012"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2012"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2012"])],NA)
   HUC6@data$waterin_2012<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2012"],HUC6_waterin$waterin[HUC6_waterin$Year=="2012"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2012"])],NA)
-  HUC6@data$transferred_2012<- (rowSums(HUC6@data[,(16:17)],na.rm=T))
+  HUC6@data$transferred_2012<- (rowSums(HUC6@data[,(21:22)],na.rm=T))
   HUC6@data$transferred_2012<-ifelse(is.na(HUC6@data$waterin_2012)&is.na(HUC6@data$waterout_2012),NA,HUC6@data$transferred_2012)
   
   #---Year 2013---#
   HUC6@data$waterout_2013<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2013"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2013"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2013"])],NA)
   HUC6@data$waterin_2013<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2013"],HUC6_waterin$waterin[HUC6_waterin$Year=="2013"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2013"])],NA)
-  HUC6@data$transferred_2013<- (rowSums(HUC6@data[,(19:20)],na.rm=T))
+  HUC6@data$transferred_2013<- (rowSums(HUC6@data[,(24:25)],na.rm=T))
   HUC6@data$transferred_2013<-ifelse(is.na(HUC6@data$waterin_2013)&is.na(HUC6@data$waterout_2013),NA,HUC6@data$transferred_2013)
   
   #---Year 2014---#
   HUC6@data$waterout_2014<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2014"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2014"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2014"])],NA)
   HUC6@data$waterin_2014<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2014"],HUC6_waterin$waterin[HUC6_waterin$Year=="2014"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2014"])],NA)
-  HUC6@data$transferred_2014<- (rowSums(HUC6@data[,(22:23)],na.rm=T))
+  HUC6@data$transferred_2014<- (rowSums(HUC6@data[,(27:28)],na.rm=T))
   HUC6@data$transferred_2014<-ifelse(is.na(HUC6@data$waterin_2014)&is.na(HUC6@data$waterout_2014),NA,HUC6@data$transferred_2014)
   
   #---Year 2015---#
   HUC6@data$waterout_2015<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2015"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2015"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2015"])],NA)
   HUC6@data$waterin_2015<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2015"],HUC6_waterin$waterin[HUC6_waterin$Year=="2015"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2015"])],NA)
-  HUC6@data$transferred_2015<- (rowSums(HUC6@data[,(25:26)],na.rm=T))
+  HUC6@data$transferred_2015<- (rowSums(HUC6@data[,(30:31)],na.rm=T))
   HUC6@data$transferred_2015<-ifelse(is.na(HUC6@data$waterin_2015)&is.na(HUC6@data$waterout_2015),NA,HUC6@data$transferred_2015)
   
   #---Year 2016---#
   HUC6@data$waterout_2016<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2016"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2016"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2016"])],NA)
   HUC6@data$waterin_2016<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2016"],HUC6_waterin$waterin[HUC6_waterin$Year=="2016"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2016"])],NA)
-  HUC6@data$transferred_2016<- (rowSums(HUC6@data[,(28:29)],na.rm=T))
+  HUC6@data$transferred_2016<- (rowSums(HUC6@data[,(33:34)],na.rm=T))
   HUC6@data$transferred_2016<-ifelse(is.na(HUC6@data$waterin_2016)&is.na(HUC6@data$waterout_2016),NA,HUC6@data$transferred_2016)
   
   #---Year 2017---#
   HUC6@data$waterout_2017<-ifelse(HUC6@data$HUC6%in%HUC6_waterout$HUC6[HUC6_waterout$Year=="2017"],-HUC6_waterout$waterout[HUC6_waterout$Year=="2017"][match(HUC6@data$HUC6,HUC6_waterout$HUC6[HUC6_waterout$Year=="2017"])],NA)
   HUC6@data$waterin_2017<-ifelse(HUC6@data$HUC6%in%HUC6_waterin$HUC6[HUC6_waterin$Year=="2017"],HUC6_waterin$waterin[HUC6_waterin$Year=="2017"][match(HUC6@data$HUC6,HUC6_waterin$HUC6[HUC6_waterin$Year=="2017"])],NA)
-  HUC6@data$transferred_2017<- (rowSums(HUC6@data[,(31:32)],na.rm=T))
+  HUC6@data$transferred_2017<- (rowSums(HUC6@data[,(36:37)],na.rm=T))
   HUC6@data$transferred_2017<-ifelse(is.na(HUC6@data$waterin_2017)&is.na(HUC6@data$waterout_2017),NA,HUC6@data$transferred_2017)
   
   
-  HUC6_Transfers<-data.frame(HUC6Name=HUC6@data$HUC6Name,
+  HUC6_Transfers<-data.frame(HUC6Name=HUC6@data$Name,
                                HUC6=HUC6@data$HUC6,
                                Transfers_2010_MGD=HUC6@data$transferred_2010,
                                Transfers_2011_MGD=HUC6@data$transferred_2011,
@@ -340,10 +340,10 @@ transfers<- function(relf,delf,relt,delt){
   assign("HUC6",HUC6,envir = .GlobalEnv)
   assign("HUC6_Transfers",HUC6_Transfers,envir = .GlobalEnv)
   
+  rm(relf,delf,relt,delt,deliveries,envir = .GlobalEnv)
   
 }
 transfers(relf,delf,relt,delt)
-rm(relf,delf,relt,delt,deliveries)
 
 ###########################################################################################################################################
 #----------------------------------------------------Calculating Discharges---------------------------------------------------------------#
@@ -916,7 +916,8 @@ NWB_CU<- function(HUC6,label){
   HUC6@data$Consumption_2017<-ifelse(is.nan(HUC6@data$Consumption_2017)|is.infinite(HUC6@data$Consumption_2017),NA,HUC6@data$Consumption_2017)
   
   
-  HUC6_glimpse<<-HUC6@data
+  HUC6_glimpse<-HUC6@data
+  assign("HUC6_glimpse",HUC6_glimpse,envir = .GlobalEnv)
   
   assign(paste0("HUC6",label),HUC6,envir = .GlobalEnv)
   
@@ -952,7 +953,6 @@ NWB_CU(HUC6_nonenergy,"_nonenergy")
 
 #-Fully Matched Facilities-#
 NWB_CU(HUC6_match_nonenergy,"_match_nonenergy")
-
 
 ###########################################################################################################################################
 #--------------------------------Long Term Average (2010-2017) Net Water Balance and Consumtpive Use--------------------------------------#
@@ -1049,9 +1049,10 @@ Ave_NWB_CU<- function(HUC6,label){
   HUC6@data$Consumption_t_ave<-ifelse(HUC6@data$Consumption_t_ave==0,NA,HUC6@data$Consumption_t_ave)
   
   HUC6_glimpse<-HUC6@data
-  HUC6_glimpse[10:93]<-sapply(HUC6_glimpse[10:93],as.numeric)
-  HUC6_glimpse[10:93]<<-round(HUC6_glimpse[10:93], digits=2)
+  HUC6_glimpse[15:98]<-sapply(HUC6_glimpse[15:98],as.numeric)
+  HUC6_glimpse[15:98]<<-round(HUC6_glimpse[15:98], digits=2)
   
+  asign()
   assign(paste0("HUC6",label),HUC6,envir = .GlobalEnv)
   
 }
@@ -1171,13 +1172,13 @@ scale_bar <- function(lon, lat, distance_lon, distance_lat, distance_legend, dis
 HUC6_labels<- function(HUC6){
   HUC6_Centroids<-as.data.frame(coordinates(HUC6))
   names(HUC6_Centroids)<-c("Longitude","Latitude")
-  HUC6_Centroids$HUC6<-HUC6_glimpse$HUC6
-  HUC6_Names<-subset(HUC6_glimpse,select=c(2,3))
+  HUC6_Centroids$HUC6<-HUC6@data$HUC6
+  HUC6_Names<-subset(HUC6@data,select=c(11,12))
   HUC6_Centroids<-merge(HUC6_Centroids,HUC6_Names,by="HUC6")
   
   ggplot()+
     geom_polygon(data=HUC6,aes(x=long, y= lat, group=group), colour='black', fill=NA)+
-    geom_text(data=HUC6_Centroids,aes(x=Longitude,y=Latitude,label=HUC6Name),size=1)+
+    geom_label_repel(data=HUC6_Centroids,aes(x=Longitude,y=Latitude,label=Name))+
     scale_colour_manual(values=c("#252525"))+
     theme(line=element_blank(),
           axis.text=element_blank(),
@@ -1193,9 +1194,13 @@ HUC6_labels(HUC6)
 
 HUC6_discharge<- function(HUC6,ECHO_points, label){
   
-  HUC6.df<-broom::tidy(HUC6)
-  HUC6$polyID<-sapply(slot(HUC6,"polygons"), function(x) slot(x, "ID"))
-  HUC6.df<-merge(HUC6.df, HUC6, by.x="id", by.y="polyID")
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
   
   Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
   
@@ -1269,9 +1274,12 @@ HUC6_discharge(HUC6_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Faci
 
 HUC6_withdrawal<- function(HUC6,VWUDS_points,label){
   
-  HUC6.df<-broom::tidy(HUC6)
-  HUC6$polyID<-sapply(slot(HUC6,"polygons"), function(x) slot(x, "ID"))
-  HUC6.df<-merge(HUC6.df, HUC6, by.x="id", by.y="polyID")
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
   
   With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
   
@@ -1340,12 +1348,16 @@ HUC6_withdrawal(HUC6_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Fa
 
 
 ###########################################################################################################################################
-#---------------------------------------------------Consumption over HUC 6 Watersheds-------------------------------------------------------------#
+#---------------------------------------------------Consumption over HUC6 Watersheds-------------------------------------------------------------#
 
 HUC6_consumption<- function(HUC6, ECHO_points ,VWUDS_points, label){
-  HUC6.df<-broom::tidy(HUC6)
-  HUC6$polyID<-sapply(slot(HUC6,"polygons"), function(x) slot(x, "ID"))
-  HUC6.df<-merge(HUC6.df, HUC6, by.x="id", by.y="polyID")
+  
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
@@ -1416,12 +1428,16 @@ HUC6_consumption(HUC6_nonenergy,ECHO.test_nonenergy,VWUDS.test_nonenergy,"Non-En
 HUC6_consumption(HUC6_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities")
 
 ###########################################################################################################################################
-#-----------------------------------------Consumption over HUC 6 Watersheds (without points)------------------------------------------------------#
+#-----------------------------------------Consumption over HUC6 Watersheds (without points)------------------------------------------------------#
 
 HUC6_consumption_nopnt<- function(HUC6, label){
-  HUC6.df<-broom::tidy(HUC6)
-  HUC6$polyID<-sapply(slot(HUC6,"polygons"), function(x) slot(x, "ID"))
-  HUC6.df<-merge(HUC6.df, HUC6, by.x="id", by.y="polyID")
+  
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
@@ -1487,14 +1503,17 @@ HUC6_consumption_nopnt(HUC6_nonenergy,"Matched Non-Energy Facilities")
 
 
 ###########################################################################################################################################
-#---------------------------------------------Net Water Balance over HUC 6 Watersheds-------------------------------------------------------------#
+#---------------------------------------------Net Water Balance over HUC6 Watersheds-------------------------------------------------------------#
 
 
 HUC6_NWB<- function(HUC6,label){
   
-  HUC6.df<-broom::tidy(HUC6)
-  HUC6$polyID<-sapply(slot(HUC6,"polygons"), function(x) slot(x, "ID"))
-  HUC6.df<-merge(HUC6.df, HUC6, by.x="id", by.y="polyID")
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
   
   NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
   
@@ -1545,9 +1564,12 @@ case.study.location<- function(VPDES.ID,VWUDS.ID){
   full_match_2010_2017_summary$VPDES_HUC6<-ECHO.test_matched$HUC6Name[match(full_match_2010_2017_summary$VPDES.Facility.ID,ECHO.test_matched$VPDES.Facility.ID)]
   full_match_2010_2017_summary$VWUDS_HUC6<-VWUDS.test_matched$HUC6Name[match(full_match_2010_2017_summary$VWUDS.Facility.ID,VWUDS.test_matched$VWUDS.Facility.ID)]
   
-  HUC6.df<-broom::tidy(HUC6)
-  HUC6$polyID<-sapply(slot(HUC6,"polygons"), function(x) slot(x, "ID"))
-  HUC6.df<-merge(HUC6.df, HUC6, by.x="id", by.y="polyID")
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
   
   ggplot()+
     geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),color="#252525",fill="transparent",alpha=0.5)+
@@ -1604,7 +1626,7 @@ MK_HUC6_Compile<- function(ECHO_2010_2017,VWUDS_2010_2017,label){
   TS_HUC6_Withdrawals[Missing]<-NA
   TS_HUC6_Withdrawals<-TS_HUC6_Withdrawals[HUC6]
   
-  # Timeseries Consumption in HUC8 for Mann Kendall Analysis
+  # Timeseries Consumption in HUC6 for Mann Kendall Analysis
   CU_Function<-function(x,y) (ifelse(is.na(x),0,x)-ifelse(is.na(y),0,y))/(ifelse(is.na(x),0,x))
   TS_HUC6_Withdrawals<-TS_HUC6_Withdrawals[,order(names(TS_HUC6_Withdrawals))]
   TS_HUC6_Discharges<-TS_HUC6_Discharges[,order(names(TS_HUC6_Discharges))]

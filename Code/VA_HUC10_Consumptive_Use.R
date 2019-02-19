@@ -280,53 +280,53 @@ transfers<- function(relf,delf,relt,delt){
   #---Year 2010---#
   HUC10@data$waterout_2010<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2010"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2010"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2010"])],NA)
   HUC10@data$waterin_2010<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2010"],HUC10_waterin$waterin[HUC10_waterin$Year=="2010"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2010"])],NA)
-  HUC10@data$transferred_2010<- (rowSums(HUC10@data[,(10:11)],na.rm=T))
+  HUC10@data$transferred_2010<- (rowSums(HUC10@data[,(15:16)],na.rm=T))
   HUC10@data$transferred_2010<-ifelse(is.na(HUC10@data$waterin_2010)&is.na(HUC10@data$waterout_2010),NA,HUC10@data$transferred_2010)
   
   #---Year 2011---#
   HUC10@data$waterout_2011<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2011"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2011"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2011"])],NA)
   HUC10@data$waterin_2011<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2011"],HUC10_waterin$waterin[HUC10_waterin$Year=="2011"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2011"])],NA)
-  HUC10@data$transferred_2011<- (rowSums(HUC10@data[,(13:14)],na.rm=T))
+  HUC10@data$transferred_2011<- (rowSums(HUC10@data[,(18:19)],na.rm=T))
   HUC10@data$transferred_2011<-ifelse(is.na(HUC10@data$waterin_2011)&is.na(HUC10@data$waterout_2011),NA,HUC10@data$transferred_2011)
   
   #---Year 2012---#
   HUC10@data$waterout_2012<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2012"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2012"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2012"])],NA)
   HUC10@data$waterin_2012<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2012"],HUC10_waterin$waterin[HUC10_waterin$Year=="2012"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2012"])],NA)
-  HUC10@data$transferred_2012<- (rowSums(HUC10@data[,(16:17)],na.rm=T))
+  HUC10@data$transferred_2012<- (rowSums(HUC10@data[,(21:22)],na.rm=T))
   HUC10@data$transferred_2012<-ifelse(is.na(HUC10@data$waterin_2012)&is.na(HUC10@data$waterout_2012),NA,HUC10@data$transferred_2012)
   
   #---Year 2013---#
   HUC10@data$waterout_2013<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2013"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2013"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2013"])],NA)
   HUC10@data$waterin_2013<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2013"],HUC10_waterin$waterin[HUC10_waterin$Year=="2013"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2013"])],NA)
-  HUC10@data$transferred_2013<- (rowSums(HUC10@data[,(19:20)],na.rm=T))
+  HUC10@data$transferred_2013<- (rowSums(HUC10@data[,(24:25)],na.rm=T))
   HUC10@data$transferred_2013<-ifelse(is.na(HUC10@data$waterin_2013)&is.na(HUC10@data$waterout_2013),NA,HUC10@data$transferred_2013)
   
   #---Year 2014---#
   HUC10@data$waterout_2014<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2014"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2014"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2014"])],NA)
   HUC10@data$waterin_2014<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2014"],HUC10_waterin$waterin[HUC10_waterin$Year=="2014"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2014"])],NA)
-  HUC10@data$transferred_2014<- (rowSums(HUC10@data[,(22:23)],na.rm=T))
+  HUC10@data$transferred_2014<- (rowSums(HUC10@data[,(27:28)],na.rm=T))
   HUC10@data$transferred_2014<-ifelse(is.na(HUC10@data$waterin_2014)&is.na(HUC10@data$waterout_2014),NA,HUC10@data$transferred_2014)
   
   #---Year 2015---#
   HUC10@data$waterout_2015<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2015"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2015"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2015"])],NA)
   HUC10@data$waterin_2015<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2015"],HUC10_waterin$waterin[HUC10_waterin$Year=="2015"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2015"])],NA)
-  HUC10@data$transferred_2015<- (rowSums(HUC10@data[,(25:26)],na.rm=T))
+  HUC10@data$transferred_2015<- (rowSums(HUC10@data[,(30:31)],na.rm=T))
   HUC10@data$transferred_2015<-ifelse(is.na(HUC10@data$waterin_2015)&is.na(HUC10@data$waterout_2015),NA,HUC10@data$transferred_2015)
   
   #---Year 2016---#
   HUC10@data$waterout_2016<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2016"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2016"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2016"])],NA)
   HUC10@data$waterin_2016<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2016"],HUC10_waterin$waterin[HUC10_waterin$Year=="2016"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2016"])],NA)
-  HUC10@data$transferred_2016<- (rowSums(HUC10@data[,(28:29)],na.rm=T))
+  HUC10@data$transferred_2016<- (rowSums(HUC10@data[,(33:34)],na.rm=T))
   HUC10@data$transferred_2016<-ifelse(is.na(HUC10@data$waterin_2016)&is.na(HUC10@data$waterout_2016),NA,HUC10@data$transferred_2016)
   
   #---Year 2017---#
   HUC10@data$waterout_2017<-ifelse(HUC10@data$HUC10%in%HUC10_waterout$HUC10[HUC10_waterout$Year=="2017"],-HUC10_waterout$waterout[HUC10_waterout$Year=="2017"][match(HUC10@data$HUC10,HUC10_waterout$HUC10[HUC10_waterout$Year=="2017"])],NA)
   HUC10@data$waterin_2017<-ifelse(HUC10@data$HUC10%in%HUC10_waterin$HUC10[HUC10_waterin$Year=="2017"],HUC10_waterin$waterin[HUC10_waterin$Year=="2017"][match(HUC10@data$HUC10,HUC10_waterin$HUC10[HUC10_waterin$Year=="2017"])],NA)
-  HUC10@data$transferred_2017<- (rowSums(HUC10@data[,(31:32)],na.rm=T))
+  HUC10@data$transferred_2017<- (rowSums(HUC10@data[,(36:37)],na.rm=T))
   HUC10@data$transferred_2017<-ifelse(is.na(HUC10@data$waterin_2017)&is.na(HUC10@data$waterout_2017),NA,HUC10@data$transferred_2017)
   
   
-  HUC10_Transfers<-data.frame(HUC10Name=HUC10@data$HUC10Name,
+  HUC10_Transfers<-data.frame(HUC10Name=HUC10@data$Name,
                              HUC10=HUC10@data$HUC10,
                              Transfers_2010_MGD=HUC10@data$transferred_2010,
                              Transfers_2011_MGD=HUC10@data$transferred_2011,
@@ -340,10 +340,10 @@ transfers<- function(relf,delf,relt,delt){
   assign("HUC10",HUC10,envir = .GlobalEnv)
   assign("HUC10_Transfers",HUC10_Transfers,envir = .GlobalEnv)
   
+  rm(relf,delf,relt,delt,deliveries,envir = .GlobalEnv)
   
 }
 transfers(relf,delf,relt,delt)
-rm(relf,delf,relt,delt,deliveries)
 
 ###########################################################################################################################################
 #----------------------------------------------------Calculating Discharges---------------------------------------------------------------#
@@ -1049,8 +1049,8 @@ Ave_NWB_CU<- function(HUC10,label){
   HUC10@data$Consumption_t_ave<-ifelse(HUC10@data$Consumption_t_ave==0,NA,HUC10@data$Consumption_t_ave)
   
   HUC10_glimpse<-HUC10@data
-  HUC10_glimpse[10:93]<-sapply(HUC10_glimpse[10:93],as.numeric)
-  HUC10_glimpse[10:93]<<-round(HUC10_glimpse[10:93], digits=2)
+  HUC10_glimpse[15:98]<-sapply(HUC10_glimpse[15:98],as.numeric)
+  HUC10_glimpse[15:98]<<-round(HUC10_glimpse[15:98], digits=2)
   
   assign(paste0("HUC10",label),HUC10,envir = .GlobalEnv)
   
@@ -1171,13 +1171,13 @@ scale_bar <- function(lon, lat, distance_lon, distance_lat, distance_legend, dis
 HUC10_labels<- function(HUC10){
   HUC10_Centroids<-as.data.frame(coordinates(HUC10))
   names(HUC10_Centroids)<-c("Longitude","Latitude")
-  HUC10_Centroids$HUC10<-HUC10_glimpse$HUC10
-  HUC10_Names<-subset(HUC10_glimpse,select=c(2,3))
+  HUC10_Centroids$HUC10<-HUC10@data$HUC10
+  HUC10_Names<-subset(HUC10@data,select=c(11,12))
   HUC10_Centroids<-merge(HUC10_Centroids,HUC10_Names,by="HUC10")
   
   ggplot()+
     geom_polygon(data=HUC10,aes(x=long, y= lat, group=group), colour='black', fill=NA)+
-    geom_text(data=HUC10_Centroids,aes(x=Longitude,y=Latitude,label=HUC10Name),size=1)+
+    geom_label_repel(data=HUC10_Centroids,aes(x=Longitude,y=Latitude,label=Name))+
     scale_colour_manual(values=c("#252525"))+
     theme(line=element_blank(),
           axis.text=element_blank(),
@@ -1193,9 +1193,13 @@ HUC10_labels(HUC10)
 
 HUC10_discharge<- function(HUC10,ECHO_points, label){
   
-  HUC10.df<-broom::tidy(HUC10)
-  HUC10$polyID<-sapply(slot(HUC10,"polygons"), function(x) slot(x, "ID"))
-  HUC10.df<-merge(HUC10.df, HUC10, by.x="id", by.y="polyID")
+  HUC10_Clipped<-gIntersection(HUC10,VA,id=as.character(HUC10@data$HUC10),byid=TRUE,drop_lower_td=TRUE)
+  HUC10_Clipped<-SpatialPolygonsDataFrame(HUC10_Clipped,HUC10@data[as.character(HUC10@data$HUC10)%in%names(HUC10_Clipped),],match.ID = "HUC10")
+  
+  HUC10.df<-broom::tidy(HUC10_Clipped)
+  HUC10_Clipped$polyID<-sapply(slot(HUC10_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC10.df<-merge(HUC10.df, HUC10_Clipped, by.x="id", by.y="polyID")
+  
   
   Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
   
@@ -1269,9 +1273,12 @@ HUC10_discharge(HUC10_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Fa
 
 HUC10_withdrawal<- function(HUC10,VWUDS_points,label){
   
-  HUC10.df<-broom::tidy(HUC10)
-  HUC10$polyID<-sapply(slot(HUC10,"polygons"), function(x) slot(x, "ID"))
-  HUC10.df<-merge(HUC10.df, HUC10, by.x="id", by.y="polyID")
+  HUC10_Clipped<-gIntersection(HUC10,VA,id=as.character(HUC10@data$HUC10),byid=TRUE,drop_lower_td=TRUE)
+  HUC10_Clipped<-SpatialPolygonsDataFrame(HUC10_Clipped,HUC10@data[as.character(HUC10@data$HUC10)%in%names(HUC10_Clipped),],match.ID = "HUC10")
+  
+  HUC10.df<-broom::tidy(HUC10_Clipped)
+  HUC10_Clipped$polyID<-sapply(slot(HUC10_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC10.df<-merge(HUC10.df, HUC10_Clipped, by.x="id", by.y="polyID")
   
   With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
   
@@ -1340,12 +1347,16 @@ HUC10_withdrawal(HUC10_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy 
 
 
 ###########################################################################################################################################
-#---------------------------------------------------Consumption over HUC 10 Watersheds-------------------------------------------------------------#
+#---------------------------------------------------Consumption over HUC10 Watersheds-------------------------------------------------------------#
 
 HUC10_consumption<- function(HUC10, ECHO_points ,VWUDS_points, label){
-  HUC10.df<-broom::tidy(HUC10)
-  HUC10$polyID<-sapply(slot(HUC10,"polygons"), function(x) slot(x, "ID"))
-  HUC10.df<-merge(HUC10.df, HUC10, by.x="id", by.y="polyID")
+  
+  HUC10_Clipped<-gIntersection(HUC10,VA,id=as.character(HUC10@data$HUC10),byid=TRUE,drop_lower_td=TRUE)
+  HUC10_Clipped<-SpatialPolygonsDataFrame(HUC10_Clipped,HUC10@data[as.character(HUC10@data$HUC10)%in%names(HUC10_Clipped),],match.ID = "HUC10")
+  
+  HUC10.df<-broom::tidy(HUC10_Clipped)
+  HUC10_Clipped$polyID<-sapply(slot(HUC10_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC10.df<-merge(HUC10.df, HUC10_Clipped, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
@@ -1416,12 +1427,16 @@ HUC10_consumption(HUC10_nonenergy,ECHO.test_nonenergy,VWUDS.test_nonenergy,"Non-
 HUC10_consumption(HUC10_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities")
 
 ###########################################################################################################################################
-#-----------------------------------------Consumption over HUC 10 Watersheds (without points)------------------------------------------------------#
+#-----------------------------------------Consumption over HUC10 Watersheds (without points)------------------------------------------------------#
 
 HUC10_consumption_nopnt<- function(HUC10, label){
-  HUC10.df<-broom::tidy(HUC10)
-  HUC10$polyID<-sapply(slot(HUC10,"polygons"), function(x) slot(x, "ID"))
-  HUC10.df<-merge(HUC10.df, HUC10, by.x="id", by.y="polyID")
+  
+  HUC10_Clipped<-gIntersection(HUC10,VA,id=as.character(HUC10@data$HUC10),byid=TRUE,drop_lower_td=TRUE)
+  HUC10_Clipped<-SpatialPolygonsDataFrame(HUC10_Clipped,HUC10@data[as.character(HUC10@data$HUC10)%in%names(HUC10_Clipped),],match.ID = "HUC10")
+  
+  HUC10.df<-broom::tidy(HUC10_Clipped)
+  HUC10_Clipped$polyID<-sapply(slot(HUC10_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC10.df<-merge(HUC10.df, HUC10_Clipped, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
@@ -1487,14 +1502,17 @@ HUC10_consumption_nopnt(HUC10_nonenergy,"Matched Non-Energy Facilities")
 
 
 ###########################################################################################################################################
-#---------------------------------------------Net Water Balance over HUC 10 Watersheds-------------------------------------------------------------#
+#---------------------------------------------Net Water Balance over HUC10 Watersheds-------------------------------------------------------------#
 
 
 HUC10_NWB<- function(HUC10,label){
   
-  HUC10.df<-broom::tidy(HUC10)
-  HUC10$polyID<-sapply(slot(HUC10,"polygons"), function(x) slot(x, "ID"))
-  HUC10.df<-merge(HUC10.df, HUC10, by.x="id", by.y="polyID")
+  HUC10_Clipped<-gIntersection(HUC10,VA,id=as.character(HUC10@data$HUC10),byid=TRUE,drop_lower_td=TRUE)
+  HUC10_Clipped<-SpatialPolygonsDataFrame(HUC10_Clipped,HUC10@data[as.character(HUC10@data$HUC10)%in%names(HUC10_Clipped),],match.ID = "HUC10")
+  
+  HUC10.df<-broom::tidy(HUC10_Clipped)
+  HUC10_Clipped$polyID<-sapply(slot(HUC10_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC10.df<-merge(HUC10.df, HUC10_Clipped, by.x="id", by.y="polyID")
   
   NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
   
@@ -1545,9 +1563,12 @@ case.study.location<- function(VPDES.ID,VWUDS.ID){
   full_match_2010_2017_summary$VPDES_HUC10<-ECHO.test_matched$HUC10Name[match(full_match_2010_2017_summary$VPDES.Facility.ID,ECHO.test_matched$VPDES.Facility.ID)]
   full_match_2010_2017_summary$VWUDS_HUC10<-VWUDS.test_matched$HUC10Name[match(full_match_2010_2017_summary$VWUDS.Facility.ID,VWUDS.test_matched$VWUDS.Facility.ID)]
   
-  HUC10.df<-broom::tidy(HUC10)
-  HUC10$polyID<-sapply(slot(HUC10,"polygons"), function(x) slot(x, "ID"))
-  HUC10.df<-merge(HUC10.df, HUC10, by.x="id", by.y="polyID")
+  HUC10_Clipped<-gIntersection(HUC10,VA,id=as.character(HUC10@data$HUC10),byid=TRUE,drop_lower_td=TRUE)
+  HUC10_Clipped<-SpatialPolygonsDataFrame(HUC10_Clipped,HUC10@data[as.character(HUC10@data$HUC10)%in%names(HUC10_Clipped),],match.ID = "HUC10")
+  
+  HUC10.df<-broom::tidy(HUC10_Clipped)
+  HUC10_Clipped$polyID<-sapply(slot(HUC10_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC10.df<-merge(HUC10.df, HUC10_Clipped, by.x="id", by.y="polyID")
   
   ggplot()+
     geom_polygon(data=HUC10.df,aes(x=long, y= lat, group=group),color="#252525",fill="transparent",alpha=0.5)+
