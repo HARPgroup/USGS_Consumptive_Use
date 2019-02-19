@@ -45,6 +45,10 @@ options(scipen=999) #Disable scientific notation
 #--Load Discharge Timeseries Data--#
 ECHO_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC.txt", sep="\t", header=T)
 
+# This function narrows down the outfalls that are analyzed. Typically outfall 001 represents a facility,
+# however that is not always the case. This function swaps out the 001 outfall for one that represents the actual discharge
+# leaving the facility and going into open waters. 
+outfall.switch<- function(ECHO_2010_2017){
 #--Facilties that are represented with a different outfall rather than 001--#
 North_Anna<-subset(ECHO_2010_2017,ECHO_2010_2017$Permit_Type=="NPDES Individual Permit"&ECHO_2010_2017$OutfallID=="VA0052451101") 
 Mecklenburg<-subset(ECHO_2010_2017,ECHO_2010_2017$Permit_Type=="NPDES Individual Permit"&ECHO_2010_2017$OutfallID=="VA0084069101")
@@ -74,12 +78,17 @@ ECHO_2010_2017<-subset(ECHO_2010_2017, subset=ECHO_2010_2017$Permit_Type=="NPDES
                        &!ECHO_2010_2017$OutfallID=="VA0002160001")
 
 ECHO_2010_2017<-rbind(ECHO_2010_2017,North_Anna,Mecklenburg,Clinch,Chesterfield,Yorktown,Glen_Lyn,Hopewell,Franklin,GP,AAT)
-rm(Clinch, Mecklenburg, North_Anna,Chesterfield,Yorktown,Glen_Lyn,Franklin,Hopewell,GP,AAT)
 
-
+assign("ECHO_2010_2017",ECHO_2010_2017,envir = .GlobalEnv)
+}
+outfall.switch(ECHO_2010_2017)
 
 #--Facilities with Matched Withdrawal Facility--#
 Matched<-read.csv("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Matched Facilities/Runninglist_Matches.csv")
+
+# This function looks at the list of matched facilities and pulls relevant attributes and DMR data for the discharging facilities
+matched_discharge<- function(Matched){
+  
 Match_ECHO_2010_2017<-subset(ECHO_2010_2017,ECHO_2010_2017$Facility.ID%in%gsub("echo_","",Matched$VPDES.Hydrocode), select=c(1,3:8,12,19,33,42,43))
 colnames(Match_ECHO_2010_2017)<-c("OutfallID","VPDES.Facility.ID","VPDES.Name","Fac.Lat","Fac.Long","VPDES.Outfall.Long",
                                   "VPDES.Outfall.Lat", "Discharges_MGD", "Date","County","Waterbody","Use.Type")
@@ -88,10 +97,17 @@ Match_ECHO_2010_2017$Date<-as.Date(Match_ECHO_2010_2017$Date,format="%Y-%m-%d")
 
 ECHO_2010_2017<-subset(ECHO_2010_2017,select=c(1:8,10,12,19,33,39,42,43,44))
 colnames(ECHO_2010_2017)<-c("OutfallID","Year","VPDES.Facility.ID","VPDES.Name","Fac.Lat","Fac.Long",
-                            "Outfall.Lat","Outfall.Long","Measured_Effluent","Discharges_MGD","Date","County",
+                            "Outfall.Long","Outfall.Lat","Measured_Effluent","Discharges_MGD","Date","County",
                             "Permit_Type","Waterbody","Use.Type","Mon_Reported")
 
+
+assign("ECHO_2010_2017",ECHO_2010_2017,envir=.GlobalEnv)
+assign("Match_ECHO_2010_2017",Match_ECHO_2010_2017,envir=.GlobalEnv)
 write.table(ECHO_2010_2017,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC_statewide.txt",sep="\t")
+
+}
+matched_discharge(Matched)
+
 
 #------------------------------------------------------------------------------------------------------------------------------------------#
 #-----------------------------------------------Cleaned Withdrawal Data--------------------------------------------------------------------#
@@ -101,6 +117,8 @@ write.table(ECHO_2010_2017,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Upd
 #--Load Withdrawal Timeseries Data--#
 load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
 
+# This function looks at the list of matched facilities and pulls relevant attributes and DMR data for the withdrawing facilities
+matched_withdrawal<- function(Matched){
 # load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_Owners.RData")
 # Owners<-read.csv("G:/My Drive/VWUDS Data/vwuds_monthly_wateruse.csv", sep=",", header=T)
 
@@ -121,9 +139,19 @@ colnames(Match_VWUDS_2010_2017)<-c("VWUDS.Facility.ID","Date","VWUDS.Name","With
                                    "VWUDS.Long","VWUDS.Use.Type")
 Match_VWUDS_2010_2017$MatchID<-Matched$MatchID[match(Match_VWUDS_2010_2017$VWUDS.Facility.ID,Matched$VWUDS.HydroID)]
 
-#-----------------------------Matched Data----------------------------------#
-# Look for "fully" matched results for each month. 
+assign("VWUDS_2010_2017",VWUDS_2010_2017,envir=.GlobalEnv)
+assign("Match_VWUDS_2010_2017",Match_VWUDS_2010_2017,envir=.GlobalEnv)
 
+}
+matched_withdrawal(Matched)
+
+#-----------------------------Matched Data---------------------------------#
+# Look for "fully" matched results for each month. This function merges DMR entries reported by both the withdrawing and discharging 
+# facilities. This ensures that we aren't looking at incomplete data. i.e. facilities that report a discharge but not a withdrawal for that reporting period.
+
+# We are also concerned with energy facilities that report a 0.0 MGD discharge or withdrawal. Is it becuase they didn't report, or because it was actually 0?
+
+fully_matched<- function(Match_VWUDS_2010_2017,Match_ECHO_2010_2017){
 full_match_2010_2017<-merge(Match_VWUDS_2010_2017,Match_ECHO_2010_2017,by=c("MatchID","Date"))
 full_match_2010_2017<-full_match_2010_2017[,c("VPDES.Facility.ID","OutfallID","VWUDS.Facility.ID","VWUDS.Name","VPDES.Name","Use.Type",
                       "Fac.Lat","Fac.Long","VWUDS.Lat","VWUDS.Long","Date","Withdrawals_MGD","Discharges_MGD","County","Waterbody")]
@@ -131,14 +159,35 @@ full_match_2010_2017<-full_match_2010_2017[,c("VPDES.Facility.ID","OutfallID","V
 full_match_2010_2017<-full_match_2010_2017%>%add_column(CU=(full_match_2010_2017$Withdrawals_MGD-full_match_2010_2017$Discharges_MGD)/full_match_2010_2017$Withdrawals_MGD, .after="Discharges_MGD")
 
 full_match_2010_2017_summary<-full_match_2010_2017%>%dplyr::group_by(VPDES.Facility.ID)%>%
-  summarise(VWUDS.Facility.ID=first(VWUDS.Facility.ID),OutfallID=first(OutfallID),VWUDS.Name=first(VWUDS.Name),VPDES.Name=first(VPDES.Name),
+  dplyr::summarise(VWUDS.Facility.ID=first(VWUDS.Facility.ID),OutfallID=first(OutfallID),VWUDS.Name=first(VWUDS.Name),VPDES.Name=first(VPDES.Name),
             Use.Type=first(Use.Type), VPDES.Fac.Lat=first(Fac.Lat),VPDES.Fac.Long=first(Fac.Long),VWUDS.Fac.Lat=first(VWUDS.Lat),VWUDS.Fac.Long=first(VWUDS.Long),
             Ave_Withdrawal_mgd=mean(Withdrawals_MGD,na.rm=T),Ave_Discharge_mgd=mean(Discharges_MGD,na.rm=T),County=first(County),Waterbody=first(Waterbody))
 
 full_match_2010_2017_summary$VPDES_perc<-Matched$VPDES...total[match(full_match_2010_2017_summary$VWUDS.Facility.ID,Matched$VWUDS.HydroID)]
 full_match_2010_2017_summary$VWUDS_perc<-Matched$VWUDS...total[match(full_match_2010_2017_summary$VWUDS.Facility.ID,Matched$VWUDS.HydroID)]
 
-# write.csv(full_match_2010_2017_summary,file="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Statewide Analysis/fully_matched_summary.csv",row.names=F)
+
+# Not all facilities report 12 months out of the year. Therefore, if we want to aggregate monthly withdrawals into yearly estimates for each
+# facility, we must divide by the number of reporting months.
+W_Months<-
+  full_match_2010_2017%>%
+  dplyr::group_by(VWUDS.Facility.ID,Year=substring(Date,1,4))%>%
+  dplyr::count(Month=substring(Date,6,7))%>%
+  dplyr::summarise(Mon_Reported=sum(n))
+
+full_match_2010_2017<-full_match_2010_2017%>%add_column(Year=substring(full_match_2010_2017$Date,1,4), .after="Date")
+full_match_2010_2017<-merge(full_match_2010_2017,W_Months,by=c("VWUDS.Facility.ID","Year"),all.x=T)
+
+# Saves into global environment
+assign("full_match_2010_2017",full_match_2010_2017,envir=.GlobalEnv)
+assign("full_match_2010_2017_summary",full_match_2010_2017_summary,envir=.GlobalEnv)
+
+write.table(full_match_2010_2017,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/full_match_2010_2017.txt",sep="\t")
+write.table(full_match_2010_2017_summary,file="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Statewide Analysis/fully_matched_summary.txt",row.names=F,sep="|")
+
+
+}
+fully_matched(Match_VWUDS_2010_2017,Match_ECHO_2010_2017)
 
 #############################################################Analysis########################################################################
 
@@ -148,21 +197,12 @@ full_match_2010_2017_summary$VWUDS_perc<-Matched$VWUDS...total[match(full_match_
 #--------------------------------Cumulative Percentage of Total Water Withdrawn by each Facility------------------------------------------#
 
 #--------------------Withdrawals------------------#
-# Not all facilities report 12 months out of the year. Therefore, if we want to aggregate monthly withdrawals into yearly estimates for each
-# facility, we must divide by the number of reporting months. 
 
-W_Months<-
-   full_match_2010_2017%>%
-   dplyr::group_by(VWUDS.Facility.ID,Year=substring(Date,1,4))%>%
-   dplyr::count(Month=substring(Date,6,7))%>%
-   dplyr::summarise(Mon_Reported=sum(n))
- 
-full_match_2010_2017<-full_match_2010_2017%>%add_column(Year=substring(full_match_2010_2017$Date,1,4), .after="Date")
-full_match_2010_2017<-merge(full_match_2010_2017,W_Months,by=c("VWUDS.Facility.ID","Year"),all.x=T)
-
-#--------------------------------------------#
-
-Facility_Withdrawals<-VWUDS_2010_2017%>%
+# This function compiles DMR data for withdrawals on a facility level
+facility_level_withdrawal<- function(VWUDS_2010_2017,full_match_2010_2017){
+  
+  # the <<- is another way to save data created in a function to the global environment
+Facility_Withdrawals<<-VWUDS_2010_2017%>%
   dplyr::group_by(VWUDS.Facility.ID,Year)%>%
   dplyr::summarise(Facility_Name=first(Facility),
                    Sources=n_distinct(DEQ.ID.of.Source),
@@ -171,14 +211,19 @@ Facility_Withdrawals<-VWUDS_2010_2017%>%
                    Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
                    Sector=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
 
-Matched_Facility_Withdrawals<-full_match_2010_2017%>%
+Matched_Facility_Withdrawals<<-full_match_2010_2017%>%
   dplyr::group_by(VWUDS.Facility.ID,Year=substr(Date,1,4))%>%
   dplyr::summarise(Facility_Name=first(VWUDS.Name),
                    Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
                    Sector=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
 
+}
+facility_level_withdrawal(VWUDS_2010_2017,full_match_2010_2017)
+
 #--Aggregated withdrawals and % of total water withdrawn per year (on average)--#
 
+# This function takes all reported withdrawals and calculates the cumulative % of total water withdrawn for each facility.
+# Major withdrawers are presented at the top, with higher total % water withdrawn.
 Cum_Withdrawal<- function(Facility_Withdrawals,label){
   
   Withdrawal<-data.frame("VWUDS.Facility.ID"=unique(Facility_Withdrawals$VWUDS.Facility.ID))
@@ -289,18 +334,16 @@ Cum_Withdrawal<- function(Facility_Withdrawals,label){
   return(list(Yearly_Withdrawal,plot1))
   
 }
-Cum_Withdrawal(Matched_Facility_Withdrawals,"Matched")
-# Cum_Withdrawal(Facility_Withdrawals, "All")
+Cum_Withdrawal(Matched_Facility_Withdrawals,"Matched") #Focuses on Matched Facilities
+# Cum_Withdrawal(Facility_Withdrawals, "All") # Focuses on all facilities
 
-#-----Major Withdrawers----#
-# Major_With<-subset(Withdrawal,subset=Withdrawal$cum_total<=0.95)
-# Major_VWUDS_2010_2017<-subset(VWUDS_2010_2017,subset=VWUDS_2010_2017$VWUDS.Facility.ID%in%Major_With$Facility.ID)
-# Major_VWUDS_2010_2017%>%dplyr::group_by(VWUDS.Facility.ID)%>%summarise(Facility=first(Facility))
-# 
-# #-----Matched Withdrawers--#
-# Match_With<-subset(Withdrawal,subset=Withdrawal$VWUDS.Facility.ID%in%full_match_2010_2017$VWUDS.Facility.ID)
 
 #----------------------Discharges-------------------------#
+
+# This function compiles DMR data for discharges on a facility level
+facility_level_discharge<- function(ECHO_2010_2017,full_match_2010_2017){
+
+# All reporting discharging facilities
 Facility_Discharges<-ECHO_2010_2017%>%
   dplyr::group_by(VPDES.Facility.ID,Year)%>%
   dplyr::summarise(Facility_Name=first(VPDES.Name),
@@ -311,15 +354,25 @@ Facility_Discharges<-ECHO_2010_2017%>%
 
 Facility_Discharges$Facility_Name<-lapply(Facility_Discharges$Facility_Name,as.character)
 
+# Fully matched discharging facilities
 Matched_Facility_Discharges<-full_match_2010_2017%>%
   dplyr::group_by(VPDES.Facility.ID,Year)%>%
   dplyr::summarise(Facility_Name=first(VPDES.Name),
                    Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
                    Sector=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+
 Matched_Facility_Discharges$Facility_Name<-lapply(Matched_Facility_Discharges$Facility_Name,as.character)
 
-#--Aggregated dischareges and % of total water discharged per year (on average)--#
+assign("Facility_Discharges",Facility_Discharges,envir=.GlobalEnv)
+assign("Matched_Facility_Discharges",Matched_Facility_Discharges,envir=.GlobalEnv)
 
+}
+facility_level_discharge(ECHO_2010_2017,full_match_2010_2017)
+
+#--Aggregated discharges and % of total water discharged per year (on average)--#
+
+# This function takes all reported withdrawals and calculates the cumulative % of total water withdrawn for each facility.
+# Major withdrawers are presented at the top, with higher total % water withdrawn.
 Cum_Discharge<- function(Facility_Discharges,label){
   Discharge<-data.frame("VPDES.Facility.ID"=unique(Facility_Discharges$VPDES.Facility.ID),stringsAsFactors = F)
   Discharge$Facility_Name<-ifelse(Discharge$VPDES.Facility.ID%in%Facility_Discharges$VPDES.Facility.ID,Facility_Discharges$Facility_Name[match(Discharge$VPDES.Facility.ID,Facility_Discharges$VPDES.Facility.ID)],NA)
@@ -427,15 +480,9 @@ Cum_Discharge<- function(Facility_Discharges,label){
   
   return(list(Yearly_Discharge,plot1))
 }
-Cum_Discharge(Matched_Facility_Discharges,"Matched")
-# Cum_Discharge(Facility_Discharges,"All")
+Cum_Discharge(Matched_Facility_Discharges,"Matched") # Focus on matched facilities
+# Cum_Discharge(Facility_Discharges,"All") # All reporting facilities
 
-#-----Major Dischargers------#
-# Major_dis<-subset(Discharge, subset=Discharge$cum_total<=.95)
-# Major_ECHO_2010_2017<-subset(ECHO_2010_2017,subset=ECHO_2010_2017$VPDES.VPDES.Facility.ID%in%Major_dis$VPDES.Facility.ID)
-# 
-# #-----Matched Dischargers--#
-# Match_dis<-subset(Discharge,subset=Discharge$VPDES.Facility.ID%in%gsub("echo_","",full_match_2010_2017$VPDES.Facility.ID))
 
 #-------------------------------------------------------Timeseries of Withdrawals vs Discharges-------------------------------------------#
 
@@ -490,7 +537,7 @@ timeseries%>%
 Statewide_Withdrawals(Facility_Withdrawals,VWUDS_2010_2017,"All Facilities in All Sectors")
 Statewide_Withdrawals(Matched_Facility_Withdrawals,full_match_2010_2017, "Matched Facilities in All Sectors")
 
-#----Comparing Matched Water Users to Total----#
+#----Comparing Matched Water Users to Total Reported----#
 
 Compare_Withdrawals<- function(All_Facilities,Full_Match,Sector){
 
@@ -614,7 +661,7 @@ timeseries%>%
 Statewide_Discharges(Facility_Discharges,ECHO_2010_2017,"All Facilities in All Sectors")
 Statewide_Discharges(Matched_Facility_Discharges,full_match_2010_2017,"Matched Facilities in All Sectors")
 
-#----Comparing Matched Water Users to Total----#
+#----Comparing Matched Water Users to Total Reported----#
 
 Compare_Discharges<- function(All_Facilities,Full_Match,Sector){
   
@@ -686,7 +733,7 @@ Compare_Discharges(ECHO_2010_2017,full_match_2010_2017,"Municipal")
 Compare_Discharges(ECHO_2010_2017,full_match_2010_2017,"Commercial")
 Compare_Discharges(ECHO_2010_2017,full_match_2010_2017,"Agriculture/Irrigation")
 
-#-----Monthly Withdrawals vs Discharges with Consumption lines-------#
+#-----Monthly Withdrawals vs Discharges with Consumption Rates-------#
 
 #---All Facilities--#
 
@@ -1070,6 +1117,7 @@ Full.Match.Fac.Plots("Energy","Fully Matched Non-Energy Facilities")
 
 #----Single Systems----#
 
+# This function goes through each matched facility to observe gaps in reporting between withdrawals and discharges
 case.study<- function(VPDESID,VWUDSID,FacilityName){
   Matched_Monthly_Discharge<-
     subset(Match_ECHO_2010_2017,Match_ECHO_2010_2017$VPDES.Facility.ID==VPDESID)%>%
@@ -1110,26 +1158,20 @@ case.study<- function(VPDESID,VWUDSID,FacilityName){
            legend=list(x=0.8, y=-0.2))
 }
 
-case.study("VA0052451","72023","North Anna Power Station")
-case.study("VA0004090","67224","Surry Power Station")
-case.study("VA0004146","73183","Chesterfield Power Station")
-case.study("VA0004103","72566","Yorktown Fossil Power Plant")
-case.study("VA0002071","73170","Possum Point Power Station")
-case.study("VA0005291","72489","Advansix Resins & Chemicals LLC")
-case.study("VA0004138","73872","Bremo Bluff Power Plant")
-case.study("VA0000370","72173","Glen Lyn Power Plant")
-case.study("VA0063177","73032","Richmond (City) WTP")
-case.study("DC0022004","74082","Potomac River Generation Station")
-case.study("VA0004669","72744","Spruance Plant")
-case.study("VA0066630","72251","Hopewell District")
-case.study("VA0003115","67052","West Point Mill Water System")
-case.study("VA0050181","72460","Manassas Service Area")
-case.study("VA0004162","67380","Franklin Virginia")
-case.study("VA0001015","72546","Clinch River Plant")
-case.study("VA0084069","73042","Mecklenburg Power Station")
-case.study("VA0087645","67174","Birchwood Power Facility")
-case.study("VA0083402","74466","Altavista Power Station")
-case.study("VA0087033","73049","Gordonsville Power Station")
+
+for (i in 1:length(full_match_2010_2017_summary$VPDES.Facility.ID)){
+  print(paste("Matched Facility ",i," of ", length(full_match_2010_2017_summary$VPDES.Facility.ID)))
+  full_match_2010_2017_summary<-full_match_2010_2017_summary%>%arrange(desc(Ave_Withdrawal_mgd))
+  case.study(full_match_2010_2017_summary$VPDES.Facility.ID[i],
+                        full_match_2010_2017_summary$VWUDS.Facility.ID[i],
+                        full_match_2010_2017_summary$VWUDS.Name[i])
+  print(list(full_match_2010_2017_summary$VWUDS.Facility.ID[i],
+             full_match_2010_2017_summary$Use.Type[i],
+             full_match_2010_2017_summary$Waterbody[i],
+             full_match_2010_2017_summary$VWUDS_perc[i],
+             full_match_2010_2017_summary$VPDES_perc[i]))
+}
+
 
 #--Case Studies of Outfalls--#
 
@@ -1175,8 +1217,9 @@ outfall.compare<- function(VPDESID,VWUDSID){
          legend=list(x=0.8, y=-0.2))
   
     for (i in 1:length(unique(Discharge$OutfallID))){
-      plot1<-add_trace(plot1,x=Discharge$Date[Discharge$OutfallID==unique(Discharge$OutfallID[i])],
-                y=Discharge$Discharges[Discharge$OutfallID==unique(Discharge$OutfallID[i])],
+      plot1<-add_trace(plot1,
+                x=subset(Discharge,Discharge$OutfallID==unique(Discharge$OutfallID[i]),select=c("Date")),
+                y=subset(Discharge,Discharge$OutfallID==unique(Discharge$OutfallID[i]),select=c("Discharges")),
                 name=paste0("Outfall ",substr(Discharge$OutfallID[i],10,13)),type='scatter',mode='lines+markers')
     }
   
@@ -1224,6 +1267,7 @@ outfall.compare("VA0050351","71661","Coke Ovens","001","003")
 
 #---Fully Matched: Case Studies---#
 
+# This function goes through each matched facility and plots its withdrawals, discharges, and consumption over time.
 Full.Match.case.study<- function(VPDESID,VWUDSID,FacilityName){
   
   Full_Matched_Monthly_Discharge<-
@@ -1243,7 +1287,7 @@ Full.Match.case.study<- function(VPDESID,VWUDSID,FacilityName){
                               CU=(Full_Matched_Monthly_Withdrawal$Withdrawals-Full_Matched_Monthly_Discharge$Discharges)/
                                 Full_Matched_Monthly_Withdrawal$Withdrawals,stringsAsFactors = F)
   
-  Yearly_CU<-Full_Matched_CU%>%dplyr::group_by(Year=substr(Date,1,4))%>%dplyr::summarise(Ave_CU=mean(CU,na.rm=T))
+  Yearly_CU<-Full_Matched_CU%>%dplyr::group_by(Year=substr(Date,1,4))%>%dplyr::summarise(Median_CU=median(CU,na.rm=T))
   
   plot1<-subset(full_match_2010_2017,full_match_2010_2017$VWUDS.Facility.ID==VWUDSID)%>%
     group_by(Date)%>%
@@ -1292,6 +1336,7 @@ Full.Match.case.study<- function(VPDESID,VWUDSID,FacilityName){
 }
 
 
+# This for loop goes through each facility to speed up getting results. Major water users are at top of list
 for (i in 1:length(full_match_2010_2017_summary$VPDES.Facility.ID)){
   print(paste("Matched Facility ",i," of ", length(full_match_2010_2017_summary$VPDES.Facility.ID)))
   full_match_2010_2017_summary<-full_match_2010_2017_summary%>%arrange(desc(Ave_Withdrawal_mgd))
@@ -1626,7 +1671,7 @@ TS_CU_Match_Fac<-full_match_2010_2017%>%
                    Use.Type=first(Use.Type),Withdrawals_MGD=first(Withdrawals_MGD),Discharges_MGD=first(Discharges_MGD),
                    CU=first(CU))
 
- save(TS_CU_Match_Fac,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/TS_CU_Match_Fac.RData")
+save(TS_CU_Match_Fac,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/TS_CU_Match_Fac.RData")
 
 #----------------------------------------------------------------------------------------------------------------------------------------------#
 

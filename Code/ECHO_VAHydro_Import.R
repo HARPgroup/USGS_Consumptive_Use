@@ -1013,7 +1013,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("wbgnis.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-waterbody_import(wb_gnis_name,1)
+waterbody_import(wb_gnis_name,9936)
 
 ############################################################################################ 
 #Combined Sewer System (css): The discharge from a combined sewer system at a point prior to a treatment plant
@@ -1055,7 +1055,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("css.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-css_import(css,1)
+css_import(css,5855)
 
 ############################################################################################ 
 #Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
@@ -1146,7 +1146,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("impair.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-impair_import(impair_cause,1)
+impair_import(impair_cause,7253)
 
 ############################################################################################ 
 #Date of most recent inspection of the facility (last_inspect)
@@ -1233,7 +1233,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 
 assign("reachcode.dataframe",propoerty.dataframe,envir = .GlobalEnv)
 }
-reachcode_import(reachcode_rad,1)
+reachcode_import(reachcode_rad,10265)
 
 ############################################################################################ 
 # Facility Design Flow in MGD (design_flow)
@@ -1274,7 +1274,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 
 assign("df.dataframe",property.dataframe,envir = .GlobalEnv)
 }
-df_import(design_flow,1)
+df_import(design_flow,12331)
 
 ############################################################################################
 # RETRIEVE/CREATE/UPDATE RELEASE DH FEATURE
