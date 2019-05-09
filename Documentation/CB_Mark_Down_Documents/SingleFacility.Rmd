@@ -1,0 +1,89 @@
+---
+title: "SingleFacility.R"
+author: "Connor Brogan"
+date: "March 11, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+library(dplyr)
+```
+
+## Summary
+The goal of this code is to extract discharge data from Discharge Monitoring Records (DMR) for a single facility within a given state using the EPA's Enforcement and Compliance History Online (ECHO) RESTful services. The code will first download a list of active and inactive facilities across the state. Then, a user may select a single facility using ECHO's *SourceID* to download associated DMR data. SingleFacility.R automatically limits the DMR to discharge data, but users may change the *parameter_code* to fit their desired metrics.This code has been written into a function and is avialble at the bottom of the script to be called repeatedly for easy analysis of DMRs. Scripts ECHOInterface.R and AnalysisCode.R have been written to perform similar analysis on a state-wide basis. This script has only been tested for Virginia. Although it likely loads data for other states, data completeness and quality should first be reviewed on the ECHO webpage [here](https://echo.epa.gov/resources/echo-data/about-the-data#completeness).
+
+## Data Initialization
+SingleFacility.R begins by calling relevant libraries. It uses *XML* and *RCurl* to facilitate downloads, parsing, and formatting of ECHO data. These libraries are largely used to run ECHO queries and hande returned data.
+```{r,warning=FALSE,message=FALSE}
+library(XML)
+library(RCurl)
+```
+In this section, users must define their **state** of interest using it's two letter code (demonstration is for Virginia, VA) and a **date range** of interest for DMR statistics. ECHO is limited to the past three years and any date outside of that range will be defaulted by ECHO to available data within the three year period. Optional lines are commented out using the pound sign that will automatically fill the end date with the current computer system date (these can be activated by deleting the pound sign). 
+```{r,warning=FALSE,message=FALSE}
+state<-"VA"
+startDate<-"01/01/2016"
+endDate<-"12/31/2016"
+#endDate<-Sys.Date()
+#endDate<-format(as.Date(endDate), "%m/%d/%Y")
+```
+
+## Execution
+This portion of the script queries ECHO to develop a data frame *a* containing all active and inactive effluent monitoring facilities across the state. This list is not exclusive to those monitoring discharge under the Clean Water Act, but instead represent a list of all facilities that are or have previously been moniroted under federal regulations include the CWA, CAA, SWDA, and RCRA. The facilities have a name, ECHO identifier (*SourceID*), and a physical adress.
+```{r,warning=FALSE,message=FALSE}
+uri_query<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&p_st=",state,"&p_tribedist=0")
+ECHO_xml<-getURL(uri_query)
+ECHO_query<-xmlParse(ECHO_xml)
+QID<-xmlToList(ECHO_query)
+QID<-QID$QueryID
+uri_summary<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qid=",QID)
+a<-read.csv(uri_summary,stringsAsFactors = F)
+```
+```{r,echo=FALSE}
+glimpse(a[1:10])
+```
+
+No latitude and longitude coordinates are available for the facilities in this code. An optional secondary query can be run to give facility coordinates, as shown below. This will loop through each facility within **a** and add facility coordiantes. It requires the *jsonlite* package, which facilitates the download and formatting of javascript object notation. Note that coordinates are associated with a NAD 83 datum. Please note that this download will take a while to complete and it is recommended that you first narrow the list of facilities to those necessary in the intended geospatial analysis.
+```{r,warning=FALSE,message=FALSE,eval=FALSE}
+library(jsonlite)
+for (i in 1:length(a$CWPName)){
+  json_file<-paste0("https://ofmpub.epa.gov/echo/dfr_rest_services.get_dfr?output=JSON&p_id=",a$SourceID[i])
+  json_data<-fromJSON(txt=json_file)
+  if(length(json_data$Results$SpatialMetadata$Latitude83)>0){
+    a$Faclat[i]<-json_data$Results$SpatialMetadata$Latitude83
+    a$Faclong[i]<-json_data$Results$SpatialMetadata$Longitude83
+  } else {
+    a$Faclat[i]<-NA
+    a$Faclong[i]<-NA
+  }
+}
+```
+Upon review of data frame *a*, users may input a facility *SourceID* below to download DMR data associated with that facility for the given date range. As an example, the below code shows some of the DMR data for the Surry Power Station, ECHO source identifier VA0004090. Note how the identifier is input as charater data using quotations. 
+```{r}
+sourceID<-"VA0004090"
+uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate)
+facility<-read.csv(uri_effluent,stringsAsFactors = F)
+facility<-facility[facility$parameter_code==50050,]
+```
+```{r,echo=FALSE}
+glimpse(facility[1:10])
+```
+## Function for Easy Use
+At the end of SingleFacility.R is a function that can be called elsewhere for easy use to draw in DMR data. It outputs the DMR data frame and takes in a start date, end date, source ID, and parameter code. It assumes discharge data is desired and has a default parameter code of 50050 as such. An example of its use is shown below:
+```{r}
+DMR<-function(sourceID,startDate,endDate,parameter_code=50050){
+uri_effluent<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",sourceID,"&start_date=",startDate,"&end_date=",endDate)
+facility<-read.csv(uri_effluent,stringsAsFactors = F)
+facility<-facility[facility$parameter_code==parameter_code,]
+return(facility)
+}
+exampleDMR<-DMR(sourceID = "VA0004090",startDate = "01/01/2016",endDate = "12/31/2016",parameter_code = 50050)
+```
+```{r,echo=FALSE}
+glimpse(exampleDMR[1:10])
+```
+
+
+
