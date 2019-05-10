@@ -1,0 +1,1 @@
+The tables found in this folder contain the results of discharge monitoring reports pulled from ECHO across multiple weeks. They can be used to observe differences or any changes that facilities make to specific DMRs.
