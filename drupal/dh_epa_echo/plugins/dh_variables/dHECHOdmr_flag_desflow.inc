@@ -19,7 +19,7 @@ $plugin = array(
     'timeunits' => 'n/a',
     'nodataval' => 0,
     'data_entry' => 'value,code',
-    'plugin' => 'dHECHOdmr_flag_desflow',
+    'plugin' => 'dHVariablePluginDefault',
     'options' => '',
     'varabbrev' => 'dmr_flag_desflow',
   ),
