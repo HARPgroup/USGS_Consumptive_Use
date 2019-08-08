@@ -1,5 +1,5 @@
 <?php
-
+// this is a pluginless plugin (only a variable def)
 $plugin = array(
   'variable' =>  array(
     'varname' => 'dmr_flag_desflow', // choose a unique, descriptive name here, can be the same as plugin label above
@@ -21,3 +21,4 @@ $plugin = array(
 );
 
 ?>
+
