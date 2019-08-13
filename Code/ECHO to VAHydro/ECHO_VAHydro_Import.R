@@ -46,7 +46,7 @@ library(jsonlite)
 library(lubridate)
 library(httr)
 library(stringr)
-library(RCurl)
+library(proj4)
 library(xml2)
 library(tibble)
 library(data.table)
@@ -55,8 +55,8 @@ library(magrittr)
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
 
-Inputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated"
-Outputpath<-"G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports"
+Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
+Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
 
 ####################################################################
 #----------States Contributing to HUC6 Watersheds in VA------------#
@@ -69,23 +69,25 @@ ECHO_pull<- function(state){
   QID<-QID$QueryID
   GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID)
   Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
-  Facilities$CWPName<-toupper(VA_Facilities$CWPName)
+  Facilities$CWPName<-toupper(Facilities$CWPName) 
   
-  assign(paste0(state),"_Facilities",Facilities,envir=.GlobalEnv)
+  #assign(paste0((state),"_Facilities"),Facilities,envir=.GlobalEnv)
+  Facilities
 }
 
-ECHO_pull("VA") # Virginia
-ECHO_pull("DC") # District of Columbia
-ECHO_pull("MD") # Maryland
-ECHO_pull("NC") # North Carolina
-ECHO_pull("PA") # Pennsylvania
-ECHO_pull("WV") # West Virginia
+#merge all of these into 1 facilities object (maybe be able to pass in multiple states? in the function arguments)
+VA_Facilities <- ECHO_pull("VA") # Virginia
+DC_Facilities <- ECHO_pull("DC") # District of Columbia
+MD_Facilities <- ECHO_pull("MD") # Maryland
+NC_Facilities <- ECHO_pull("NC") # North Carolina
+PA_Facilities <- ECHO_pull("PA") # Pennsylvania
+WV_Facilities <- ECHO_pull("WV") # West Virginia
 
 #-----Combine if they contribute to VA's HUC6 watersheds-----#
 
 HUC6_overlay<- function(ECHO_Facility,name){
 
-HUC6<-readOGR("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/HUC.gdb",layer='WBDHU6')
+HUC6<-readOGR("C:/Users/maf95834/Documents/Github/USGS_Consumptive_Use/Code/Watershed Analysis/HUC.gdb",layer='WBDHU6')
 HUC6<-spTransform(HUC6, CRS("+init=epsg:4269"))
 HUC6@data<-HUC6@data[,c(10,11,12)]
 
@@ -93,7 +95,7 @@ state<-SpatialPointsDataFrame(data.frame(Longitude=ECHO_Facility$FacLong,Latitud
                               ECHO_Facility,proj4string = CRS("+init=epsg:4269"))
 state<-over(state,HUC6)
 state$SourceID<-ECHO_Facility$SourceID
-ECHO_Facility<-merge(ECHO_Facility,VA,by="SourceID")
+ECHO_Facility<-merge(ECHO_Facility,state,by="SourceID")
 ECHO_Facility<-subset(ECHO_Facility,subset=!is.na(ECHO_Facility$HUC6))
 ECHO_Facility<-subset(ECHO_Facility,subset=ECHO_Facility$CWPPermitTypeDesc=="NPDES Individual Permit"|
                         ECHO_Facility$CWPPermitTypeDesc=="General Permit Covered Facility")
@@ -109,13 +111,19 @@ HUC6_overlay(NC_Facilities,"NC_Facilities")
 HUC6_overlay(PA_Facilities,"PA_Facilities")
 HUC6_overlay(WV_Facilities,"WV_Facilities")
 
-ECHO_Facilities<-rbind(NC_Facilities,WV_Facilities,MD_Facilities,VA_Facilities,DC_Facilities,PA_Facilities)
+ECHO_Facilities<-rbind(NC_Facilities,MD_Facilities,VA_Facilities,DC_Facilities
+                       #,PA_Facilities, 
+                       #WV_Facilities
+                       )
+
 ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
+
 ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit"|
                           ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
+
 colnames(ECHO_Facilities)[1]<-c("Facility.ID")
 
-write.table(ECHO_Facilities,file="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/VADCPAMDWVNC Import.csv",sep="|",row.names=F)
+write.table(ECHO_Facilities,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/Facilities_Table.csv",sep="|",row.names=F)
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
 
@@ -164,7 +172,13 @@ df_coord_pull<- function(){
   assign("VPDES_Outfalls",VPDES_Outfalls,envir = .GlobalEnv)
   assign("ECHO_Facilities",ECHO_Facilities,envir = .GlobalEnv)
   
-  rm(NC_Facilities,VA_Facilities,WV_Facilities,MD_Facilities,DC_Facilities,PA_Facilities)
+  rm(NC_Facilities,
+     VA_Facilities,
+     #WV_Facilities,
+     MD_Facilities,
+     DC_Facilities
+     #,PA_Facilities
+     )
 }
 df_coord_pull()
 
@@ -217,10 +231,13 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration){
   #from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
   #outfall located in VA. 
   for (i in iteration:length(ECHO_Facilities$Facility.ID)){
+    
     Facility.ID<-ECHO_Facilities$Facility.ID[i]
     print(paste("Processing Facility ID: ", Facility.ID, "(",i," of ",length(ECHO_Facilities$Facility.ID),")", sep=""))
-    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility.ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
-    DMR_data<-read.csv(DMR_data,stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+ 
+   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility.ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+    
+     DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
     DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
     data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
     if(data_length>0){ #if the value is NOT NA, enter loop
@@ -297,6 +314,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration){
     }
   }
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode,nodi=nodi,violation=violation,violation_severity=violation_severity)
+#line 315 is where the facilities are checked and recorded to have outfalls and it starts listing them all - the next 5 lines are not run 
   timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
   timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
   
@@ -307,11 +325,13 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration){
   
   
   
-  write.table(timeseries,file=paste0(Outputpath"/timeseries.txt"), sep='\t', row.names = F)
+  write.table(timeseries,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/timeseries.txt", sep='\t', row.names = F)
 }
 ts_ECHO_pull(ECHO_Facilities,1)
 
-save.image(file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/timeseries_2010_present.RData")
+save.image(file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/timeseries_2010_present.RData")
+
+
 #------------------Timeseries Flags-------------------#
 
 ts_flagging<- function(timeseries){
