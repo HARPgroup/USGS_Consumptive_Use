@@ -39,6 +39,8 @@ library(ggrepel)
 library(GISTools)
 library(maps)
 library(grid)
+library(ggrepel)
+library(ggpubr)
 
 options(scipen=999) #Disable scientific notation
 options(digits = 9)
@@ -337,10 +339,9 @@ transfers<- function(relf,delf,relt,delt){
   assign("VA_Counties",VA_Counties,envir = .GlobalEnv)
   assign("County_Transfers",County_Transfers,envir = .GlobalEnv)
   
-  
+  rm(relf,delf,relt,delt,deliveries,envir = .GlobalEnv)
 }
 transfers(relf,delf,relt,delt)
-rm(relf,delf,relt,delt,deliveries)
 
 ###########################################################################################################################################
 #----------------------------------------------------Calculating Discharges---------------------------------------------------------------#
@@ -348,17 +349,16 @@ rm(relf,delf,relt,delt,deliveries)
 #---Load in Discharge Data previously cleaned---#
 
 ECHO_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC_statewide.txt", sep="\t", header=T)
-ECHO_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VPDES.Facility.ID),Outfalls=n_distinct(OutfallID),Summed_D=sum(Measured_Effluent,na.rm=T),Summed_D_QAQC=sum(Discharges_MGD,na.rm=T))
+
+ECHO_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VPDES.Facility.ID),Outfalls=n_distinct(OutfallID))
 
 #---Load in fully matched Discharge Data previously cleaned---#
 
 full_match_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/full_match_2010_2017.txt", sep="\t", header=T)
-full_match_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VPDES.Facility.ID),Outfalls=n_distinct(OutfallID))
 
 #-------------Sector Analysis---------------#
 
 # All of these functions are independent. So you can run each of them.
-
 #---Option to Analyze all Sectors at once---#
 all_discharge<- function(discharge_db,label){
 
@@ -377,9 +377,6 @@ all_discharge<- function(discharge_db,label){
   #--Sum Discharges in the Counties--#
   discharge_db.test<-as.data.frame(discharge_db@data)
   
-  ECHO_Resol_Mean_Med<-discharge_db.test%>%dplyr::group_by(OutfallID,Year)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
-  discharge_db.test<-merge(discharge_db.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-  
   Outfall_Discharges<-discharge_db@data%>%
     dplyr::group_by(OutfallID,Year)%>%
     dplyr::summarise(Facility.ID=first(VPDES.Facility.ID),
@@ -389,17 +386,105 @@ all_discharge<- function(discharge_db,label){
                      Sector=first(Use.Type),
                      County=first(County),
                      FIPS=first(FIPS))%>%arrange(desc(Discharges_MGD))
-  
-  
+
   County_Discharges<-Outfall_Discharges%>%
     dplyr::group_by(County,Year)%>%
     dplyr::summarise(FIPS=first(FIPS),
                      Discharge_MGD=sum(Discharges_MGD,na.rm=T))
   
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     VPDES.Facility.ID=first(VPDES.Facility.ID),
+                     Outfalls=n_distinct(OutfallID),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Outfalls=sum(Outfalls),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))
+  
   assign(paste0("County_Discharges",label),County_Discharges,envir = .GlobalEnv)
   assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
 }
 all_discharge(ECHO_2010_2017,"") # All Facilities
+
+all_discharge<- function(discharge_db,label){
+  
+  discharge_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=discharge_db$Fac.Long,Facility_Latitude=discharge_db$Fac.Lat),discharge_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  discharge_db@data$VPDES.Name<-as.character(discharge_db@data$VPDES.Name)
+  discharge_db@data$Discharges_MGD<-as.numeric(discharge_db@data$Discharges_MGD)#after QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(discharge_db,VA_Counties_Overlay)
+  discharge_db@data$FIPS<-VA_Counties_Facilities$FIPS
+  discharge_db@data$County<-VA_Counties_Facilities$County
+  
+  
+  #--Sum Discharges in the Counties--#
+  discharge_db.test<-as.data.frame(discharge_db@data)
+  
+  Facility_Discharges<-discharge_db@data%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     County=first(County),
+                     FIPS=first(FIPS))%>%arrange(desc(Discharges_MGD))
+  
+  County_Discharges<-Facility_Discharges%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),
+                     Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  assign(paste0("County_Discharges",label),County_Discharges,envir = .GlobalEnv)
+  assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
+}
 all_discharge(full_match_2010_2017,"_matched") # Fully Matched Facilities
 
 #---Option to separate by Water Use Sector---#
@@ -421,9 +506,6 @@ sector_discharge<- function(discharge_db,sector,label){
   #--Sum Discharges in the Counties--#
   discharge_db.test<-as.data.frame(discharge_db@data)
   
-  ECHO_Resol_Mean_Med<-discharge_db.test%>%dplyr::group_by(OutfallID,Year)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
-  discharge_db.test<-merge(discharge_db.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-  
   Outfall_Discharges<-discharge_db@data%>%
     dplyr::group_by(OutfallID,Year)%>%
     dplyr::summarise(Facility.ID=first(VPDES.Facility.ID),
@@ -440,20 +522,115 @@ sector_discharge<- function(discharge_db,sector,label){
     dplyr::summarise(FIPS=first(FIPS),
                      Discharge_MGD=sum(Discharges_MGD,na.rm=T))
   
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     VPDES.Facility.ID=first(VPDES.Facility.ID),
+                     Outfalls=n_distinct(OutfallID),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Outfalls=sum(Outfalls),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))
+  
   assign(paste0("County_Discharges",label),County_Discharges,envir = .GlobalEnv)
   assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
 }
 sector_discharge(ECHO_2010_2017,"Energy","_energy")
-sector_discharge(ECHO_2010_2017,"Agriculture/Irrigation","_ag")
+sector_discharge(ECHO_2010_2017,"Aquaculture","_aq")
 sector_discharge(ECHO_2010_2017,"Commercial","_commercial")
 sector_discharge(ECHO_2010_2017,"Industrial","_industrial")
 sector_discharge(ECHO_2010_2017,"Municipal","_municipal")
+#sector_discharge(ECHO_2010_2017,"Agriculture/Irrigation","_ag")
 
+sector_discharge<- function(discharge_db,sector,label){
+  
+  discharge_db<-subset(discharge_db,subset=discharge_db$Use.Type==sector)
+  
+  discharge_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=discharge_db$Fac.Long,Facility_Latitude=discharge_db$Fac.Lat),discharge_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  discharge_db@data$VPDES.Name<-as.character(discharge_db@data$VPDES.Name)
+  discharge_db@data$Discharges_MGD<-as.numeric(discharge_db@data$Discharges_MGD)#after QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(discharge_db,VA_Counties_Overlay)
+  discharge_db@data$FIPS<-VA_Counties_Facilities$FIPS
+  discharge_db@data$County<-VA_Counties_Facilities$County
+  
+  #--Sum Discharges in the Counties--#
+  discharge_db.test<-as.data.frame(discharge_db@data)
+  
+  Facility_Discharges<-discharge_db@data%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     County=first(County),
+                     FIPS=first(FIPS))%>%arrange(desc(Discharges_MGD))
+  
+  County_Discharges<-Facility_Discharges%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),
+                     Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  
+  #-----For later Use-------#
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  assign(paste0("County_Discharges",label),County_Discharges,envir = .GlobalEnv)
+  assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
+}
 sector_discharge(full_match_2010_2017,"Energy","_match_energy")
-sector_discharge(full_match_2010_2017,"Agriculture/Irrigation","_match_ag")
+sector_discharge(full_match_2010_2017,"Aquaculture","_match_aq")
 sector_discharge(full_match_2010_2017,"Commercial","_match_commercial")
 sector_discharge(full_match_2010_2017,"Industrial","_match_industrial")
-sector_discharge(full_match_2010_2017,"Municipal","_match_municipal")
+# sector_discharge(full_match_2010_2017,"Municipal","_match_municipal")
+# sector_discharge(full_match_2010_2017,"Agriculture/Irrigation","_match_ag")
 
 #--Option to look at Non-Energy Sectors--#
 nonenergy_discharge<- function(discharge_db,label){
@@ -473,9 +650,6 @@ nonenergy_discharge<- function(discharge_db,label){
   #--Sum Discharges in the Counties--#
   discharge_db.test<-as.data.frame(discharge_db@data)
   
-  ECHO_Resol_Mean_Med<-discharge_db.test%>%dplyr::group_by(OutfallID,Year)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
-  discharge_db.test<-merge(discharge_db.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-  
   Outfall_Discharges<-discharge_db@data%>%
     dplyr::group_by(OutfallID,Year)%>%
     dplyr::summarise(Facility.ID=first(VPDES.Facility.ID),
@@ -492,10 +666,98 @@ nonenergy_discharge<- function(discharge_db,label){
     dplyr::summarise(FIPS=first(FIPS),
                      Discharge_MGD=sum(Discharges_MGD,na.rm=T))
   
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     VPDES.Facility.ID=first(VPDES.Facility.ID),
+                     Outfalls=n_distinct(OutfallID),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Outfalls=sum(Outfalls),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))
+  
   assign(paste0("County_Discharges",label),County_Discharges,envir = .GlobalEnv)
   assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
 }
 nonenergy_discharge(ECHO_2010_2017,"_nonenergy")
+
+nonenergy_discharge<- function(discharge_db,label){
+  
+  discharge_db<-subset(discharge_db,subset=!discharge_db$Use.Type=="Energy")
+  discharge_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=discharge_db$Fac.Long,Facility_Latitude=discharge_db$Fac.Lat),discharge_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  discharge_db@data$VPDES.Name<-as.character(discharge_db@data$VPDES.Name)
+  discharge_db@data$Discharges_MGD<-as.numeric(discharge_db@data$Discharges_MGD)#after QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(discharge_db,VA_Counties_Overlay)
+  discharge_db@data$FIPS<-VA_Counties_Facilities$FIPS
+  discharge_db@data$County<-VA_Counties_Facilities$County
+  
+  #--Sum Discharges in the Counties--#
+  discharge_db.test<-as.data.frame(discharge_db@data)
+  
+  Facility_Discharges<-discharge_db@data%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     County=first(County),
+                     FIPS=first(FIPS))%>%arrange(desc(Discharges_MGD))
+  
+  County_Discharges<-Facility_Discharges%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),
+                     Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  assign(paste0("County_Discharges",label),County_Discharges,envir = .GlobalEnv)
+  assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
+}
 nonenergy_discharge(full_match_2010_2017,"_match_nonenergy")
 
 
@@ -503,10 +765,11 @@ nonenergy_discharge(full_match_2010_2017,"_match_nonenergy")
 #----------------------------------------------------Calculating Withdrawals--------------------------------------------------------------#
 
 #---Load in Withdrawal Data previously cleaned in VWUDS_QAQC.R---#
-load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
+load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017_statewide.RData")
 VWUDS_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VWUDS.Facility.ID),Sources=n_distinct(DEQ.ID.of.Source),Summed_W=sum(Withdrawals_MGD,na.rm=T))
 colnames(VWUDS_2010_2017)[18:19]<-c("VWUDS.Lat","VWUDS.Long")
 colnames(VWUDS_2010_2017)[6]<-c("VWUDS.Name")
+
 #-------------Sector Analysis---------------#
 
 # All of these functions are independent. So you can run each of them.
@@ -545,10 +808,96 @@ all_withdrawal<- function(withdrawal_db,label){
     dplyr::summarise(FIPS=first(FIPS),
                      Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
   
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Facility.ID=first(VWUDS.Facility.ID),
+                     Sources=n_distinct(DEQ.ID.of.Source),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Sources=sum(Sources),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
   assign(paste0("County_Withdrawals",label),County_Withdrawals,envir = .GlobalEnv)
   assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
 }
 all_withdrawal(VWUDS_2010_2017,"") # All Facilities
+
+all_withdrawal<- function(withdrawal_db,label){
+  
+  # use same location as matched discharge facility
+  withdrawal_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=withdrawal_db$Fac.Long,
+                                                       Facility_Latitude=withdrawal_db$Fac.Lat),
+                                            withdrawal_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  withdrawal_db@data$VWUDS.Name<-as.character(withdrawal_db@data$VWUDS.Name)
+  withdrawal_db@data$Withdrawals_MGD<-as.numeric(withdrawal_db@data$Withdrawals_MGD)#after QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(withdrawal_db,VA_Counties_Overlay)
+  withdrawal_db@data$FIPS<-VA_Counties_Facilities$FIPS
+  withdrawal_db@data$County<-VA_Counties_Facilities$County
+  
+  #--Sum Discharges in the Counties--#
+  withdrawal_db.test<-as.data.frame(withdrawal_db@data)
+  
+  Facility_Withdrawals<-withdrawal_db@data%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     County=first(County),
+                     FIPS=first(FIPS))
+  
+  
+  County_Withdrawals<-Facility_Withdrawals%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  assign(paste0("County_Withdrawals",label),County_Withdrawals,envir = .GlobalEnv)
+  assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
+}
 all_withdrawal(full_match_2010_2017,"_matched") # Fully Matched Facilities
 
 #---Option to separate by Water Use Sector---#
@@ -586,20 +935,108 @@ sector_withdrawal<- function(withdrawal_db,sector,label){
     dplyr::summarise(FIPS=first(FIPS),
                      Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
   
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Facility.ID=first(VWUDS.Facility.ID),
+                     Sources=n_distinct(DEQ.ID.of.Source),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Sources=sum(Sources),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
   assign(paste0("County_Withdrawals",label),County_Withdrawals,envir = .GlobalEnv)
   assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
 }
 sector_withdrawal(VWUDS_2010_2017,"Energy","_energy")
 sector_withdrawal(VWUDS_2010_2017,"Agriculture/Irrigation","_ag")
+sector_withdrawal(VWUDS_2010_2017,"Aquaculture","_aq")
 sector_withdrawal(VWUDS_2010_2017,"Commercial","_commercial")
 sector_withdrawal(VWUDS_2010_2017,"Industrial","_industrial")
 sector_withdrawal(VWUDS_2010_2017,"Municipal","_municipal")
 
+
+sector_withdrawal<- function(withdrawal_db,sector,label){
+  
+  # use one facility location for matched facilities
+  withdrawal_db<-subset(withdrawal_db,subset=withdrawal_db$Use.Type==sector)
+  withdrawal_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=withdrawal_db$Fac.Long,
+                                                       Facility_Latitude=withdrawal_db$Fac.Lat),
+                                            withdrawal_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  withdrawal_db@data$VWUDS.Name<-as.character(withdrawal_db@data$VWUDS.Name)
+  withdrawal_db@data$Withdrawals_MGD<-as.numeric(withdrawal_db@data$Withdrawals_MGD)#after QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(withdrawal_db,VA_Counties_Overlay)
+  withdrawal_db@data$FIPS<-VA_Counties_Facilities$FIPS
+  withdrawal_db@data$County<-VA_Counties_Facilities$County
+  
+  #--Sum Discharges in the Counties--#
+  withdrawal_db.test<-as.data.frame(withdrawal_db@data)
+  
+  Facility_Withdrawals<-withdrawal_db@data%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     County=first(County),
+                     FIPS=first(FIPS))
+  
+  
+  County_Withdrawals<-Facility_Withdrawals%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  assign(paste0("County_Withdrawals",label),County_Withdrawals,envir = .GlobalEnv)
+  assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
+}
 sector_withdrawal(full_match_2010_2017,"Energy","_match_energy")
-sector_withdrawal(full_match_2010_2017,"Agriculture/Irrigation","_match_ag")
+# sector_withdrawal(full_match_2010_2017,"Agriculture/Irrigation","_match_ag")
+sector_withdrawal(full_match_2010_2017,"Aquaculture","_match_aq")
 sector_withdrawal(full_match_2010_2017,"Commercial","_match_commercial")
 sector_withdrawal(full_match_2010_2017,"Industrial","_match_industrial")
-sector_withdrawal(full_match_2010_2017,"Municipal","_match_municipal")
+# sector_withdrawal(full_match_2010_2017,"Municipal","_match_municipal")
 
 #--Option to look at Non-Energy Sectors--#
 nonenergy_withdrawal<- function(withdrawal_db,label){
@@ -636,293 +1073,280 @@ nonenergy_withdrawal<- function(withdrawal_db,label){
     dplyr::summarise(FIPS=first(FIPS),
                      Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
   
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Facility.ID=first(VWUDS.Facility.ID),
+                     Sources=n_distinct(DEQ.ID.of.Source),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Sources=sum(Sources),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
   assign(paste0("County_Withdrawals",label),County_Withdrawals,envir = .GlobalEnv)
   assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
 }
 nonenergy_withdrawal(VWUDS_2010_2017,"_nonenergy")
+
+nonenergy_withdrawal<- function(withdrawal_db,label){
+  
+  # Use same location of matched VPDES facility
+  withdrawal_db<-subset(withdrawal_db,subset=!withdrawal_db$Use.Type=="Energy")
+  withdrawal_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=withdrawal_db$Fac.Long,
+                                                       Facility_Latitude=withdrawal_db$Fac.Lat),
+                                            withdrawal_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  withdrawal_db@data$VWUDS.Name<-as.character(withdrawal_db@data$VWUDS.Name)
+  withdrawal_db@data$Withdrawals_MGD<-as.numeric(withdrawal_db@data$Withdrawals_MGD)#after QA/QC
+  
+  #--Overlay with County Shapefile--#
+  VA_Counties_Facilities<-over(withdrawal_db,VA_Counties_Overlay)
+  withdrawal_db@data$FIPS<-VA_Counties_Facilities$FIPS
+  withdrawal_db@data$County<-VA_Counties_Facilities$County
+  
+  #--Sum Discharges in the Counties--#
+  withdrawal_db.test<-as.data.frame(withdrawal_db@data)
+  
+  Facility_Withdrawals<-withdrawal_db@data%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     County=first(County),
+                     FIPS=first(FIPS))
+  
+  
+  County_Withdrawals<-Facility_Withdrawals%>%
+    dplyr::group_by(County,Year)%>%
+    dplyr::summarise(FIPS=first(FIPS),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  assign(paste0("County_Withdrawals",label),County_Withdrawals,envir = .GlobalEnv)
+  assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
+}
 nonenergy_withdrawal(full_match_2010_2017,"_match_nonenergy")
 
 ###########################################################################################################################################
 #------------------------------------------Apply Withdrawals and Discharges into County Spatial Dataframe-----------------------------------#
 
-county_discharge_withdrawal<- function(County_Discharges,County_Withdrawals,label){
+county_discharge_withdrawal<- function(County_Discharges_db,County_Withdrawals_db,label){
 #---Year 2010----#
-VA_Counties@data$Discharges_2010<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2010"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2010"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2010"])],NA)
-VA_Counties@data$Withdrawals_2010<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2010"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2010"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2010"])],NA)
+VA_Counties@data$Discharges_2010<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2010"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2010"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2010"])],NA)
+VA_Counties@data$Withdrawals_2010<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2010"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2010"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2010"])],NA)
 
 #---Year 2011----#
-VA_Counties@data$Discharges_2011<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2011"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2011"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2011"])],NA)
-VA_Counties@data$Withdrawals_2011<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2011"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2011"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2011"])],NA)
+VA_Counties@data$Discharges_2011<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2011"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2011"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2011"])],NA)
+VA_Counties@data$Withdrawals_2011<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2011"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2011"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2011"])],NA)
 
 #---Year 2012----#
-VA_Counties@data$Discharges_2012<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2012"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2012"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2012"])],NA)
-VA_Counties@data$Withdrawals_2012<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2012"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2012"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2012"])],NA)
+VA_Counties@data$Discharges_2012<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2012"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2012"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2012"])],NA)
+VA_Counties@data$Withdrawals_2012<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2012"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2012"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2012"])],NA)
 
 #---Year 2013----#
-VA_Counties@data$Discharges_2013<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2013"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2013"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2013"])],NA)
-VA_Counties@data$Withdrawals_2013<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2013"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2013"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2013"])],NA)
+VA_Counties@data$Discharges_2013<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2013"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2013"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2013"])],NA)
+VA_Counties@data$Withdrawals_2013<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2013"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2013"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2013"])],NA)
 
 #---Year 2014----#
-VA_Counties@data$Discharges_2014<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2014"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2014"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2014"])],NA)
-VA_Counties@data$Withdrawals_2014<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2014"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2014"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2014"])],NA)
+VA_Counties@data$Discharges_2014<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2014"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2014"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2014"])],NA)
+VA_Counties@data$Withdrawals_2014<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2014"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2014"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2014"])],NA)
 
 #---Year 2015----#
-VA_Counties@data$Discharges_2015<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2015"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2015"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2015"])],NA)
-VA_Counties@data$Withdrawals_2015<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2015"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2015"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2015"])],NA)
+VA_Counties@data$Discharges_2015<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2015"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2015"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2015"])],NA)
+VA_Counties@data$Withdrawals_2015<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2015"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2015"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2015"])],NA)
 
 #---Year 2016----#
-VA_Counties@data$Discharges_2016<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2016"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2016"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2016"])],NA)
-VA_Counties@data$Withdrawals_2016<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2016"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2016"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2016"])],NA)
-
-#---Year 2017----#
-VA_Counties@data$Discharges_2017<-ifelse(VA_Counties@data$FIPS%in%County_Discharges$FIPS[County_Discharges$Year=="2017"],County_Discharges$Discharge_MGD[County_Discharges$Year=="2017"][match(VA_Counties@data$FIPS,County_Discharges$FIPS[County_Discharges$Year=="2017"])],NA)
-VA_Counties@data$Withdrawals_2017<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals$FIPS[County_Withdrawals$Year=="2017"],County_Withdrawals$Withdrawals_MGD[County_Withdrawals$Year=="2017"][match(VA_Counties@data$FIPS,County_Withdrawals$FIPS[County_Withdrawals$Year=="2017"])],NA)
+VA_Counties@data$Discharges_2016<-ifelse(VA_Counties@data$FIPS%in%County_Discharges_db$FIPS[County_Discharges_db$Year=="2016"],County_Discharges_db$Discharge_MGD[County_Discharges_db$Year=="2016"][match(VA_Counties@data$FIPS,County_Discharges_db$FIPS[County_Discharges_db$Year=="2016"])],NA)
+VA_Counties@data$Withdrawals_2016<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2016"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2016"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2016"])],NA)
 
 assign(paste0("VA_Counties",label),VA_Counties,envir = .GlobalEnv)
+
+
 }
 
+#----------------------------------------------------------#
+#-------------------All Available Data---------------------#
+
 #---All Sectors---#
+county_discharge_withdrawal(County_Discharges,County_Withdrawals,"_all")
 
-#-All Facilities-#
-county_discharge_withdrawal(County_Discharges,County_Withdrawals,"")
+#--Non-Energy--#
+county_discharge_withdrawal(County_Discharges_nonenergy,County_Withdrawals_nonenergy,"_nonenergy")
 
-#-Fully Matched Facilities-#
-county_discharge_withdrawal(County_Discharges_matched,County_Withdrawals_matched,"_matched")
-
-#---Subsetted by Sector---#
-
-#-All Facilities-#
 county_discharge_withdrawal(County_Discharges_energy,County_Withdrawals_energy,"_energy")
-county_discharge_withdrawal(County_Discharges_ag,County_Withdrawals_ag,"_ag")
 county_discharge_withdrawal(County_Discharges_commercial,County_Withdrawals_commercial,"_commercial")
 county_discharge_withdrawal(County_Discharges_industrial,County_Withdrawals_industrial,"_industrial")
 county_discharge_withdrawal(County_Discharges_municipal,County_Withdrawals_municipal,"_municipal")
+county_discharge_withdrawal(County_Discharges_aq,County_Withdrawals_aq,"_aq")
 
-#-Fully Matched Facilities-#
-county_discharge_withdrawal(County_Discharges_match_energy,County_Withdrawals_match_energy,"_match_energy")
-county_discharge_withdrawal(County_Discharges_match_ag,County_Withdrawals_match_ag,"_match_ag")
-county_discharge_withdrawal(County_Discharges_match_commercial,County_Withdrawals_match_commercial,"_match_commercial")
-county_discharge_withdrawal(County_Discharges_match_industrial,County_Withdrawals_match_industrial,"_match_industrial")
-county_discharge_withdrawal(County_Discharges_match_municipal,County_Withdrawals_match_municipal,"_match_municipal")
+#--Agriculture--#
+ag.county_discharge_withdrawal<- function(County_Withdrawals_db,label){
+  #---Year 2010----#
+  VA_Counties@data$Withdrawals_2010<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2010"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2010"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2010"])],NA)
+  
+  #---Year 2011----#
+  VA_Counties@data$Withdrawals_2011<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2011"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2011"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2011"])],NA)
+  
+  #---Year 2012----#
+  VA_Counties@data$Withdrawals_2012<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2012"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2012"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2012"])],NA)
+  
+  #---Year 2013----#
+  VA_Counties@data$Withdrawals_2013<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2013"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2013"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2013"])],NA)
+  
+  #---Year 2014----#
+  VA_Counties@data$Withdrawals_2014<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2014"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2014"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2014"])],NA)
+  
+  #---Year 2015----#
+  VA_Counties@data$Withdrawals_2015<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2015"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2015"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2015"])],NA)
+  
+  #---Year 2016----#
+  VA_Counties@data$Withdrawals_2016<-ifelse(VA_Counties@data$FIPS%in%County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2016"],County_Withdrawals_db$Withdrawals_MGD[County_Withdrawals_db$Year=="2016"][match(VA_Counties@data$FIPS,County_Withdrawals_db$FIPS[County_Withdrawals_db$Year=="2016"])],NA)
+  
+  assign(paste0("VA_Counties",label),VA_Counties,envir = .GlobalEnv)
+}
+ag.county_discharge_withdrawal(County_Withdrawals_ag,"_ag")
 
-#---Non-Energy Sectors---#
+#----------------------------------------------------------#
+#-------------------Matched Facility Data------------------#
 
-#-All Facilities-#
-county_discharge_withdrawal(County_Discharges_nonenergy,County_Withdrawals_nonenergy,"_nonenergy")
+#-All Sectors-#
+county_discharge_withdrawal(County_Discharges_matched,County_Withdrawals_matched,"_matched")
 
-#-Fully Matched Facilities-#
+#--Non-Energy--#
 county_discharge_withdrawal(County_Discharges_match_nonenergy,County_Withdrawals_match_nonenergy,"_match_nonenergy")
 
+county_discharge_withdrawal(County_Discharges_match_energy,County_Withdrawals_match_energy,"_match_energy")
+county_discharge_withdrawal(County_Discharges_match_aq,County_Withdrawals_match_aq,"_match_aq")
+county_discharge_withdrawal(County_Discharges_match_commercial,County_Withdrawals_match_commercial,"_match_commercial")
+county_discharge_withdrawal(County_Discharges_match_industrial,County_Withdrawals_match_industrial,"_match_industrial")
 
-rm(County_Discharges,County_Discharges_ag,County_Discharges_commercial,County_Discharges_energy,County_Discharges_industrial,County_Discharges_match_ag,
+rm(County_Discharges,County_Discharges_aq,County_Discharges_match_aq,County_Discharges_commercial,County_Discharges_energy,County_Discharges_industrial,County_Discharges_match_ag,
    County_Discharges_match_commercial,County_Discharges_match_energy,County_Discharges_match_industrial,County_Discharges_match_municipal,County_Discharges_match_nonenergy,
    County_Discharges_matched,County_Withdrawals,County_Withdrawals_ag,County_Withdrawals_commercial,County_Withdrawals_energy,County_Withdrawals_industrial,
    County_Withdrawals_match_ag,County_Withdrawals_match_commercial,County_Withdrawals_match_energy,County_Withdrawals_match_industrial,County_Withdrawals_match_municipal,
-   County_Withdrawals_match_nonenergy,County_Discharges_municipal,County_Discharges_nonenergy,County_Withdrawals_matched,County_Withdrawals_municipal,County_Withdrawals_nonenergy)
+   County_Withdrawals_match_aq,County_Withdrawals_aq,County_Withdrawals_match_nonenergy,County_Discharges_municipal,County_Discharges_nonenergy,County_Withdrawals_matched,County_Withdrawals_municipal,County_Withdrawals_nonenergy)
 
 ###########################################################################################################################################
 #-----------------------------------------------Net Water Balance and Consumtpive Use-----------------------------------------------------#
 
-NWB_CU<- function(VA_Counties,label){
+NWB_CU<- function(VA_Counties_db,label){
 #---Year 2010----#
 
-#--With Transfers---#
-#transfers have sign--negative mean water is leaving, positive means water is coming in 
+VA_Counties_db@data$NetWB_2010<-(ifelse(is.na(VA_Counties_db@data$Discharges_2010),0,VA_Counties_db@data$Discharges_2010))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),0,VA_Counties_db@data$Withdrawals_2010))
+VA_Counties_db@data$NetWB_2010<-ifelse(is.na(VA_Counties_db@data$Discharges_2010)&is.na(VA_Counties_db@data$Withdrawals_2010),NA,VA_Counties_db@data$NetWB_2010)
+VA_Counties_db@data$Consumption_2010<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),0,VA_Counties_db@data$Withdrawals_2010))-(ifelse(is.na(VA_Counties_db@data$Discharges_2010),0,VA_Counties_db@data$Discharges_2010)))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),0,VA_Counties_db@data$Withdrawals_2010))
+VA_Counties_db@data$Consumption_2010<-ifelse(is.nan(VA_Counties_db@data$Consumption_2010)|is.infinite(VA_Counties_db@data$Consumption_2010),NA,VA_Counties_db@data$Consumption_2010)
 
-VA_Counties@data$NetWB_2010_t<-(ifelse(is.na(VA_Counties@data$Discharges_2010),0,VA_Counties@data$Discharges_2010))+(ifelse(is.na(VA_Counties@data$transferred_2010),0,VA_Counties@data$transferred_2010))-(ifelse(is.na(VA_Counties@data$Withdrawals_2010),0,VA_Counties@data$Withdrawals_2010))
-
-VA_Counties@data$NetWB_2010_t<-ifelse(is.na(VA_Counties@data$Discharges_2010)&is.na(VA_Counties@data$Withdrawals_2010)&is.na(VA_Counties@data$transferred_2010),NA,VA_Counties@data$NetWB_2010_t)
-
-VA_Counties@data$Consumption_2010_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2010),0,VA_Counties@data$Withdrawals_2010))+(ifelse(is.na(VA_Counties@data$waterout_2010),0,-VA_Counties@data$waterout_2010)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2010),0,VA_Counties@data$Discharges_2010))+(ifelse(is.na(VA_Counties@data$waterin_2010),0,VA_Counties@data$waterin_2010)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2010),0,VA_Counties@data$Withdrawals_2010))+(ifelse(is.na(VA_Counties@data$waterout_2010),0,-VA_Counties@data$waterout_2010)))
-
-VA_Counties@data$Consumption_2010_t<-ifelse(is.nan(VA_Counties@data$Consumption_2010_t)|is.infinite(VA_Counties@data$Consumption_2010_t),NA,VA_Counties@data$Consumption_2010_t)
-#--Without Transfers---#
-
-VA_Counties@data$NetWB_2010<-(ifelse(is.na(VA_Counties@data$Discharges_2010),0,VA_Counties@data$Discharges_2010))-(ifelse(is.na(VA_Counties@data$Withdrawals_2010),0,VA_Counties@data$Withdrawals_2010))
-
-VA_Counties@data$NetWB_2010<-ifelse(is.na(VA_Counties@data$Discharges_2010)&is.na(VA_Counties@data$Withdrawals_2010),NA,VA_Counties@data$NetWB_2010)
-
-VA_Counties@data$Consumption_2010<-((ifelse(is.na(VA_Counties@data$Withdrawals_2010),0,VA_Counties@data$Withdrawals_2010))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2010),0,VA_Counties@data$Discharges_2010)))/(ifelse(is.na(VA_Counties@data$Withdrawals_2010),0,VA_Counties@data$Withdrawals_2010))
-
-VA_Counties@data$Consumption_2010<-ifelse(is.nan(VA_Counties@data$Consumption_2010)|is.infinite(VA_Counties@data$Consumption_2010),NA,VA_Counties@data$Consumption_2010)
 #---Year 2011----#
+VA_Counties_db@data$NetWB_2011<-(ifelse(is.na(VA_Counties_db@data$Discharges_2011),0,VA_Counties_db@data$Discharges_2011))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),0,VA_Counties_db@data$Withdrawals_2011))
 
-#----With transfers---#
-VA_Counties@data$NetWB_2011_t<-(ifelse(is.na(VA_Counties@data$Discharges_2011),0,VA_Counties@data$Discharges_2011))+(ifelse(is.na(VA_Counties@data$transferred_2011),0,VA_Counties@data$transferred_2011))-(ifelse(is.na(VA_Counties@data$Withdrawals_2011),0,VA_Counties@data$Withdrawals_2011))
+VA_Counties_db@data$NetWB_2011<-ifelse(is.na(VA_Counties_db@data$Discharges_2011)&is.na(VA_Counties_db@data$Withdrawals_2011),NA,VA_Counties_db@data$NetWB_2011)
 
-VA_Counties@data$NetWB_2011_t<-ifelse(is.na(VA_Counties@data$Discharges_2011)&is.na(VA_Counties@data$Withdrawals_2011)&is.na(VA_Counties@data$transferred_2011),NA,VA_Counties@data$NetWB_2011_t)
+VA_Counties_db@data$Consumption_2011<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),0,VA_Counties_db@data$Withdrawals_2011))-
+                               (ifelse(is.na(VA_Counties_db@data$Discharges_2011),0,VA_Counties_db@data$Discharges_2011)))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),0,VA_Counties_db@data$Withdrawals_2011))
 
-VA_Counties@data$Consumption_2011_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2011),0,VA_Counties@data$Withdrawals_2011))+(ifelse(is.na(VA_Counties@data$waterout_2011),0,-VA_Counties@data$waterout_2011)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2011),0,VA_Counties@data$Discharges_2011))+(ifelse(is.na(VA_Counties@data$waterin_2011),0,VA_Counties@data$waterin_2011)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2011),0,VA_Counties@data$Withdrawals_2011))+(ifelse(is.na(VA_Counties@data$waterout_2011),0,-VA_Counties@data$waterout_2011)))
-
-VA_Counties@data$Consumption_2011_t<-ifelse(is.nan(VA_Counties@data$Consumption_2011_t)|is.infinite(VA_Counties@data$Consumption_2011_t),NA,VA_Counties@data$Consumption_2011_t)
-#---Without Transfers----#
-VA_Counties@data$NetWB_2011<-(ifelse(is.na(VA_Counties@data$Discharges_2011),0,VA_Counties@data$Discharges_2011))-(ifelse(is.na(VA_Counties@data$Withdrawals_2011),0,VA_Counties@data$Withdrawals_2011))
-
-VA_Counties@data$NetWB_2011<-ifelse(is.na(VA_Counties@data$Discharges_2011)&is.na(VA_Counties@data$Withdrawals_2011),NA,VA_Counties@data$NetWB_2011)
-
-VA_Counties@data$Consumption_2011<-((ifelse(is.na(VA_Counties@data$Withdrawals_2011),0,VA_Counties@data$Withdrawals_2011))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2011),0,VA_Counties@data$Discharges_2011)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2011),0,VA_Counties@data$Withdrawals_2011))
-
-VA_Counties@data$Consumption_2011<-ifelse(is.nan(VA_Counties@data$Consumption_2011)|is.infinite(VA_Counties@data$Consumption_2011),NA,VA_Counties@data$Consumption_2011)
+VA_Counties_db@data$Consumption_2011<-ifelse(is.nan(VA_Counties_db@data$Consumption_2011)|is.infinite(VA_Counties_db@data$Consumption_2011),NA,VA_Counties_db@data$Consumption_2011)
 #---Year 2012----#
+VA_Counties_db@data$NetWB_2012<-(ifelse(is.na(VA_Counties_db@data$Discharges_2012),0,VA_Counties_db@data$Discharges_2012))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),0,VA_Counties_db@data$Withdrawals_2012))
 
-#---With Transfers---#
-VA_Counties@data$NetWB_2012_t<-(ifelse(is.na(VA_Counties@data$Discharges_2012),0,VA_Counties@data$Discharges_2012))+(ifelse(is.na(VA_Counties@data$transferred_2012),0,VA_Counties@data$transferred_2012))-(ifelse(is.na(VA_Counties@data$Withdrawals_2012),0,VA_Counties@data$Withdrawals_2012))
+VA_Counties_db@data$NetWB_2012<-ifelse(is.na(VA_Counties_db@data$Discharges_2012)&is.na(VA_Counties_db@data$Withdrawals_2012),NA,VA_Counties_db@data$NetWB_2012)
 
-VA_Counties@data$NetWB_2012_t<-ifelse(is.na(VA_Counties@data$Discharges_2012)&is.na(VA_Counties@data$Withdrawals_2012)&is.na(VA_Counties@data$transferred_2012),NA,VA_Counties@data$NetWB_2012_t)
+VA_Counties_db@data$Consumption_2012<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),0,VA_Counties_db@data$Withdrawals_2012))-(ifelse(is.na(VA_Counties_db@data$Discharges_2012),0,VA_Counties_db@data$Discharges_2012)))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),0,VA_Counties_db@data$Withdrawals_2012))
 
-VA_Counties@data$Consumption_2012_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2012),0,VA_Counties@data$Withdrawals_2012))+(ifelse(is.na(VA_Counties@data$waterout_2012),0,-VA_Counties@data$waterout_2012)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2012),0,VA_Counties@data$Discharges_2012))+(ifelse(is.na(VA_Counties@data$waterin_2012),0,VA_Counties@data$waterin_2012)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2012),0,VA_Counties@data$Withdrawals_2012))+(ifelse(is.na(VA_Counties@data$waterout_2012),0,-VA_Counties@data$waterout_2012)))
-
-
-VA_Counties@data$Consumption_2012_t<-ifelse(is.nan(VA_Counties@data$Consumption_2012_t)|is.infinite(VA_Counties@data$Consumption_2012_t),NA,VA_Counties@data$Consumption_2012_t)
-
-#---Without Transfers---#
-VA_Counties@data$NetWB_2012<-(ifelse(is.na(VA_Counties@data$Discharges_2012),0,VA_Counties@data$Discharges_2012))-(ifelse(is.na(VA_Counties@data$Withdrawals_2012),0,VA_Counties@data$Withdrawals_2012))
-
-VA_Counties@data$NetWB_2012<-ifelse(is.na(VA_Counties@data$Discharges_2012)&is.na(VA_Counties@data$Withdrawals_2012),NA,VA_Counties@data$NetWB_2012)
-
-VA_Counties@data$Consumption_2012<-((ifelse(is.na(VA_Counties@data$Withdrawals_2012),0,VA_Counties@data$Withdrawals_2012))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2012),0,VA_Counties@data$Discharges_2012)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2012),0,VA_Counties@data$Withdrawals_2012))
-
-VA_Counties@data$Consumption_2012<-ifelse(is.nan(VA_Counties@data$Consumption_2012)|is.infinite(VA_Counties@data$Consumption_2012),NA,VA_Counties@data$Consumption_2012)
+VA_Counties_db@data$Consumption_2012<-ifelse(is.nan(VA_Counties_db@data$Consumption_2012)|is.infinite(VA_Counties_db@data$Consumption_2012),NA,VA_Counties_db@data$Consumption_2012)
 #---Year 2013----#
+VA_Counties_db@data$NetWB_2013<-(ifelse(is.na(VA_Counties_db@data$Discharges_2013),0,VA_Counties_db@data$Discharges_2013))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),0,VA_Counties_db@data$Withdrawals_2013))
 
-#---With Transfers---#
-VA_Counties@data$NetWB_2013_t<-(ifelse(is.na(VA_Counties@data$Discharges_2013),0,VA_Counties@data$Discharges_2013))+(ifelse(is.na(VA_Counties@data$transferred_2013),0,VA_Counties@data$transferred_2013))-(ifelse(is.na(VA_Counties@data$Withdrawals_2013),0,VA_Counties@data$Withdrawals_2013))
+VA_Counties_db@data$NetWB_2013<-ifelse(is.na(VA_Counties_db@data$Discharges_2013)&is.na(VA_Counties_db@data$Withdrawals_2013),NA,VA_Counties_db@data$NetWB_2013)
 
-VA_Counties@data$NetWB_2013_t<-ifelse(is.na(VA_Counties@data$Discharges_2013)&is.na(VA_Counties@data$Withdrawals_2013)&is.na(VA_Counties@data$transferred_2013),NA,VA_Counties@data$NetWB_2013_t)
+VA_Counties_db@data$Consumption_2013<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),0,VA_Counties_db@data$Withdrawals_2013))-
+                               (ifelse(is.na(VA_Counties_db@data$Discharges_2013),0,VA_Counties_db@data$Discharges_2013)))/
+  (ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),0,VA_Counties_db@data$Withdrawals_2013))
 
-VA_Counties@data$Consumption_2013_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2013),0,VA_Counties@data$Withdrawals_2013))+(ifelse(is.na(VA_Counties@data$waterout_2013),0,-VA_Counties@data$waterout_2013)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2013),0,VA_Counties@data$Discharges_2013))+(ifelse(is.na(VA_Counties@data$waterin_2013),0,VA_Counties@data$waterin_2013)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2013),0,VA_Counties@data$Withdrawals_2013))+(ifelse(is.na(VA_Counties@data$waterout_2013),0,-VA_Counties@data$waterout_2013)))
-
-VA_Counties@data$Consumption_2013_t<-ifelse(is.nan(VA_Counties@data$Consumption_2013_t)|is.infinite(VA_Counties@data$Consumption_2013_t),NA,VA_Counties@data$Consumption_2013_t)
-
-#---Without Transfers---#
-VA_Counties@data$NetWB_2013<-(ifelse(is.na(VA_Counties@data$Discharges_2013),0,VA_Counties@data$Discharges_2013))-(ifelse(is.na(VA_Counties@data$Withdrawals_2013),0,VA_Counties@data$Withdrawals_2013))
-
-VA_Counties@data$NetWB_2013<-ifelse(is.na(VA_Counties@data$Discharges_2013)&is.na(VA_Counties@data$Withdrawals_2013),NA,VA_Counties@data$NetWB_2013)
-
-VA_Counties@data$Consumption_2013<-((ifelse(is.na(VA_Counties@data$Withdrawals_2013),0,VA_Counties@data$Withdrawals_2013))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2013),0,VA_Counties@data$Discharges_2013)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2013),0,VA_Counties@data$Withdrawals_2013))
-
-VA_Counties@data$Consumption_2013<-ifelse(is.nan(VA_Counties@data$Consumption_2013)|is.infinite(VA_Counties@data$Consumption_2013),NA,VA_Counties@data$Consumption_2013)
+VA_Counties_db@data$Consumption_2013<-ifelse(is.nan(VA_Counties_db@data$Consumption_2013)|is.infinite(VA_Counties_db@data$Consumption_2013),NA,VA_Counties_db@data$Consumption_2013)
 
 #---Year 2014----#
+VA_Counties_db@data$NetWB_2014<-(ifelse(is.na(VA_Counties_db@data$Discharges_2014),0,VA_Counties_db@data$Discharges_2014))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),0,VA_Counties_db@data$Withdrawals_2014))
 
-#---With Transfers---#
-VA_Counties@data$NetWB_2014_t<-(ifelse(is.na(VA_Counties@data$Discharges_2014),0,VA_Counties@data$Discharges_2014))+(ifelse(is.na(VA_Counties@data$transferred_2014),0,VA_Counties@data$transferred_2014))-(ifelse(is.na(VA_Counties@data$Withdrawals_2014),0,VA_Counties@data$Withdrawals_2014))
+VA_Counties_db@data$NetWB_2014<-ifelse(is.na(VA_Counties_db@data$Discharges_2014)&is.na(VA_Counties_db@data$Withdrawals_2014),NA,VA_Counties_db@data$NetWB_2014)
 
-VA_Counties@data$NetWB_2014_t<-ifelse(is.na(VA_Counties@data$Discharges_2014)&is.na(VA_Counties@data$Withdrawals_2014)&is.na(VA_Counties@data$transferred_2014),NA,VA_Counties@data$NetWB_2014_t)
+VA_Counties_db@data$Consumption_2014<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),0,VA_Counties_db@data$Withdrawals_2014))-
+                               (ifelse(is.na(VA_Counties_db@data$Discharges_2014),0,VA_Counties_db@data$Discharges_2014)))/
+  (ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),0,VA_Counties_db@data$Withdrawals_2014))
 
-VA_Counties@data$Consumption_2014_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2014),0,VA_Counties@data$Withdrawals_2014))+(ifelse(is.na(VA_Counties@data$waterout_2014),0,-VA_Counties@data$waterout_2014)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2014),0,VA_Counties@data$Discharges_2014))+(ifelse(is.na(VA_Counties@data$waterin_2014),0,VA_Counties@data$waterin_2014)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2014),0,VA_Counties@data$Withdrawals_2014))+(ifelse(is.na(VA_Counties@data$waterout_2014),0,-VA_Counties@data$waterout_2014)))
-
-VA_Counties@data$Consumption_2014_t<-ifelse(is.nan(VA_Counties@data$Consumption_2014_t)|is.infinite(VA_Counties@data$Consumption_2014_t),NA,VA_Counties@data$Consumption_2014_t)
-
-#---Without Transfers---#
-VA_Counties@data$NetWB_2014<-(ifelse(is.na(VA_Counties@data$Discharges_2014),0,VA_Counties@data$Discharges_2014))-(ifelse(is.na(VA_Counties@data$Withdrawals_2014),0,VA_Counties@data$Withdrawals_2014))
-
-VA_Counties@data$NetWB_2014<-ifelse(is.na(VA_Counties@data$Discharges_2014)&is.na(VA_Counties@data$Withdrawals_2014),NA,VA_Counties@data$NetWB_2014)
-
-VA_Counties@data$Consumption_2014<-((ifelse(is.na(VA_Counties@data$Withdrawals_2014),0,VA_Counties@data$Withdrawals_2014))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2014),0,VA_Counties@data$Discharges_2014)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2014),0,VA_Counties@data$Withdrawals_2014))
-
-VA_Counties@data$Consumption_2014<-ifelse(is.nan(VA_Counties@data$Consumption_2014)|is.infinite(VA_Counties@data$Consumption_2014),NA,VA_Counties@data$Consumption_2014)
+VA_Counties_db@data$Consumption_2014<-ifelse(is.nan(VA_Counties_db@data$Consumption_2014)|is.infinite(VA_Counties_db@data$Consumption_2014),NA,VA_Counties_db@data$Consumption_2014)
 #---Year 2015----#
+VA_Counties_db@data$NetWB_2015<-(ifelse(is.na(VA_Counties_db@data$Discharges_2015),0,VA_Counties_db@data$Discharges_2015))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),0,VA_Counties_db@data$Withdrawals_2015))
 
-#---With Transfers---#
-VA_Counties@data$NetWB_2015_t<-(ifelse(is.na(VA_Counties@data$Discharges_2015),0,VA_Counties@data$Discharges_2015))+(ifelse(is.na(VA_Counties@data$transferred_2015),0,VA_Counties@data$transferred_2015))-(ifelse(is.na(VA_Counties@data$Withdrawals_2015),0,VA_Counties@data$Withdrawals_2015))
+VA_Counties_db@data$NetWB_2015<-ifelse(is.na(VA_Counties_db@data$Discharges_2015)&is.na(VA_Counties_db@data$Withdrawals_2015),NA,VA_Counties_db@data$NetWB_2015)
 
-VA_Counties@data$NetWB_2015_t<-ifelse(is.na(VA_Counties@data$Discharges_2015)&is.na(VA_Counties@data$Withdrawals_2015)&is.na(VA_Counties@data$transferred_2015),NA,VA_Counties@data$NetWB_2015_t)
+VA_Counties_db@data$Consumption_2015<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),0,VA_Counties_db@data$Withdrawals_2015))-
+                               (ifelse(is.na(VA_Counties_db@data$Discharges_2015),0,VA_Counties_db@data$Discharges_2015)))/
+  (ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),0,VA_Counties_db@data$Withdrawals_2015))
 
-VA_Counties@data$Consumption_2015_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2015),0,VA_Counties@data$Withdrawals_2015))+(ifelse(is.na(VA_Counties@data$waterout_2015),0,-VA_Counties@data$waterout_2015)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2015),0,VA_Counties@data$Discharges_2015))+(ifelse(is.na(VA_Counties@data$waterin_2015),0,VA_Counties@data$waterin_2015)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2015),0,VA_Counties@data$Withdrawals_2015))+(ifelse(is.na(VA_Counties@data$waterout_2015),0,-VA_Counties@data$waterout_2015)))
-
-VA_Counties@data$Consumption_2015_t<-ifelse(is.nan(VA_Counties@data$Consumption_2015_t)|is.infinite(VA_Counties@data$Consumption_2015_t),NA,VA_Counties@data$Consumption_2015_t)
-
-#---Without Transfers---#
-VA_Counties@data$NetWB_2015<-(ifelse(is.na(VA_Counties@data$Discharges_2015),0,VA_Counties@data$Discharges_2015))-(ifelse(is.na(VA_Counties@data$Withdrawals_2015),0,VA_Counties@data$Withdrawals_2015))
-
-VA_Counties@data$NetWB_2015<-ifelse(is.na(VA_Counties@data$Discharges_2015)&is.na(VA_Counties@data$Withdrawals_2015),NA,VA_Counties@data$NetWB_2015)
-
-VA_Counties@data$Consumption_2015<-((ifelse(is.na(VA_Counties@data$Withdrawals_2015),0,VA_Counties@data$Withdrawals_2015))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2015),0,VA_Counties@data$Discharges_2015)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2015),0,VA_Counties@data$Withdrawals_2015))
-
-VA_Counties@data$Consumption_2015<-ifelse(is.nan(VA_Counties@data$Consumption_2015)|is.infinite(VA_Counties@data$Consumption_2015),NA,VA_Counties@data$Consumption_2015)
+VA_Counties_db@data$Consumption_2015<-ifelse(is.nan(VA_Counties_db@data$Consumption_2015)|is.infinite(VA_Counties_db@data$Consumption_2015),NA,VA_Counties_db@data$Consumption_2015)
 
 #---Year 2016----#
+VA_Counties_db@data$NetWB_2016<-(ifelse(is.na(VA_Counties_db@data$Discharges_2016),0,VA_Counties_db@data$Discharges_2016))-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),0,VA_Counties_db@data$Withdrawals_2016))
 
-#---With Transfers---#
-VA_Counties@data$NetWB_2016_t<-(ifelse(is.na(VA_Counties@data$Discharges_2016),0,VA_Counties@data$Discharges_2016))+(ifelse(is.na(VA_Counties@data$transferred_2016),0,VA_Counties@data$transferred_2016))-(ifelse(is.na(VA_Counties@data$Withdrawals_2016),0,VA_Counties@data$Withdrawals_2016))
+VA_Counties_db@data$NetWB_2016<-ifelse(is.na(VA_Counties_db@data$Discharges_2016)&is.na(VA_Counties_db@data$Withdrawals_2016),NA,VA_Counties_db@data$NetWB_2016)
 
-VA_Counties@data$NetWB_2016_t<-ifelse(is.na(VA_Counties@data$Discharges_2016)&is.na(VA_Counties@data$Withdrawals_2016)&is.na(VA_Counties@data$transferred_2016),NA,VA_Counties@data$NetWB_2016_t)
+VA_Counties_db@data$Consumption_2016<-((ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),0,VA_Counties_db@data$Withdrawals_2016))-
+                               (ifelse(is.na(VA_Counties_db@data$Discharges_2016),0,VA_Counties_db@data$Discharges_2016)))/
+  (ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),0,VA_Counties_db@data$Withdrawals_2016))
 
-VA_Counties@data$Consumption_2016_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2016),0,VA_Counties@data$Withdrawals_2016))+(ifelse(is.na(VA_Counties@data$waterout_2016),0,-VA_Counties@data$waterout_2016)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2016),0,VA_Counties@data$Discharges_2016))+(ifelse(is.na(VA_Counties@data$waterin_2016),0,VA_Counties@data$waterin_2016)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2016),0,VA_Counties@data$Withdrawals_2016))+(ifelse(is.na(VA_Counties@data$waterout_2016),0,-VA_Counties@data$waterout_2016)))
-
-VA_Counties@data$Consumption_2016_t<-ifelse(is.nan(VA_Counties@data$Consumption_2016_t)|is.infinite(VA_Counties@data$Consumption_2016_t),NA,VA_Counties@data$Consumption_2016_t)
-
-#---Without Transfers---#
-VA_Counties@data$NetWB_2016<-(ifelse(is.na(VA_Counties@data$Discharges_2016),0,VA_Counties@data$Discharges_2016))-(ifelse(is.na(VA_Counties@data$Withdrawals_2016),0,VA_Counties@data$Withdrawals_2016))
-
-VA_Counties@data$NetWB_2016<-ifelse(is.na(VA_Counties@data$Discharges_2016)&is.na(VA_Counties@data$Withdrawals_2016),NA,VA_Counties@data$NetWB_2016)
-
-VA_Counties@data$Consumption_2016<-((ifelse(is.na(VA_Counties@data$Withdrawals_2016),0,VA_Counties@data$Withdrawals_2016))-
-                               (ifelse(is.na(VA_Counties@data$Discharges_2016),0,VA_Counties@data$Discharges_2016)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2016),0,VA_Counties@data$Withdrawals_2016))
-
-VA_Counties@data$Consumption_2016<-ifelse(is.nan(VA_Counties@data$Consumption_2016)|is.infinite(VA_Counties@data$Consumption_2016),NA,VA_Counties@data$Consumption_2016)
-
-#---Year 2017----#
-
-#---With Transfers---#
-VA_Counties@data$NetWB_2017_t<-(ifelse(is.na(VA_Counties@data$Discharges_2017),0,VA_Counties@data$Discharges_2017))+(ifelse(is.na(VA_Counties@data$transferred_2017),0,VA_Counties@data$transferred_2017))-(ifelse(is.na(VA_Counties@data$Withdrawals_2017),0,VA_Counties@data$Withdrawals_2017))
-
-VA_Counties@data$NetWB_2017_t<-ifelse(is.na(VA_Counties@data$Discharges_2017)&is.na(VA_Counties@data$Withdrawals_2017)&is.na(VA_Counties@data$transferred_2017),NA,VA_Counties@data$NetWB_2017_t)
-
-VA_Counties@data$Consumption_2017_t<-(((ifelse(is.na(VA_Counties@data$Withdrawals_2017),0,VA_Counties@data$Withdrawals_2017))+(ifelse(is.na(VA_Counties@data$waterout_2017),0,-VA_Counties@data$waterout_2017)))-
-                                 (((ifelse(is.na(VA_Counties@data$Discharges_2017),0,VA_Counties@data$Discharges_2017))+(ifelse(is.na(VA_Counties@data$waterin_2017),0,VA_Counties@data$waterin_2017)))))/
-  ((ifelse(is.na(VA_Counties@data$Withdrawals_2017),0,VA_Counties@data$Withdrawals_2017))+(ifelse(is.na(VA_Counties@data$waterout_2017),0,-VA_Counties@data$waterout_2017)))
-
-VA_Counties@data$Consumption_2017_t<-ifelse(is.nan(VA_Counties@data$Consumption_2017_t)|is.infinite(VA_Counties@data$Consumption_2017_t),NA,VA_Counties@data$Consumption_2017_t)
-
-#---Without Transfers---#
-VA_Counties@data$NetWB_2017<-(ifelse(is.na(VA_Counties@data$Discharges_2017),0,VA_Counties@data$Discharges_2017))-(ifelse(is.na(VA_Counties@data$Withdrawals_2017),0,VA_Counties@data$Withdrawals_2017))
-
-VA_Counties@data$NetWB_2017<-ifelse(is.na(VA_Counties@data$Discharges_2017)&is.na(VA_Counties@data$Withdrawals_2017),NA,VA_Counties@data$NetWB_2017)
-
-VA_Counties@data$Consumption_2017<-((ifelse(is.na(VA_Counties@data$Withdrawals_2017),0,VA_Counties@data$Withdrawals_2017))-(ifelse(is.na(VA_Counties@data$Discharges_2017),0,VA_Counties@data$Discharges_2017)))/
-  (ifelse(is.na(VA_Counties@data$Withdrawals_2017),0,VA_Counties@data$Withdrawals_2017))
-
-VA_Counties@data$Consumption_2017<-ifelse(is.nan(VA_Counties@data$Consumption_2017)|is.infinite(VA_Counties@data$Consumption_2017),NA,VA_Counties@data$Consumption_2017)
+VA_Counties_db@data$Consumption_2016<-ifelse(is.nan(VA_Counties_db@data$Consumption_2016)|is.infinite(VA_Counties_db@data$Consumption_2016),NA,VA_Counties_db@data$Consumption_2016)
 
 
-VA_Counties_glimpse<<-VA_Counties@data
+VA_Counties_glimpse<-VA_Counties_db@data
 
-assign(paste0("VA_Counties",label),VA_Counties,envir = .GlobalEnv)
+assign("VA_Counties_glimpse",VA_Counties_glimpse,envir = .GlobalEnv)
+assign(paste0("VA_Counties",label),VA_Counties_db,envir = .GlobalEnv)
 
 }
 
 #---All Sectors---#
 
 #-All Facilities-#
-NWB_CU(VA_Counties,"")
+NWB_CU(VA_Counties_all,"_all")
 #-Fully Matched Facilities-#
 NWB_CU(VA_Counties_matched,"_matched")
 
@@ -930,17 +1354,92 @@ NWB_CU(VA_Counties_matched,"_matched")
 
 #-All Facilities-#
 NWB_CU(VA_Counties_energy,"_energy")
-NWB_CU(VA_Counties_ag,"_ag")
+NWB_CU(VA_Counties_aq,"_aq")
+
 NWB_CU(VA_Counties_commercial,"_commercial")
 NWB_CU(VA_Counties_industrial,"_industrial")
 NWB_CU(VA_Counties_municipal,"_municipal")
 
+NWB_CU.ag<- function(VA_Counties_db,label){
+  #---Year 2010----#
+  
+  VA_Counties_db@data$NetWB_2010<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),0,VA_Counties_db@data$Withdrawals_2010))
+  VA_Counties_db@data$NetWB_2010<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),NA,VA_Counties_db@data$NetWB_2010)
+  
+  VA_Counties_db@data$Consumption_2010<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),0,VA_Counties_db@data$Withdrawals_2010))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2010),0,VA_Counties_db@data$Withdrawals_2010))
+  VA_Counties_db@data$Consumption_2010<-ifelse(is.nan(VA_Counties_db@data$Consumption_2010)|is.infinite(VA_Counties_db@data$Consumption_2010),NA,VA_Counties_db@data$Consumption_2010)
+  #---Year 2011----#
+  
+  VA_Counties_db@data$NetWB_2011<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),0,VA_Counties_db@data$Withdrawals_2011))
+  
+  VA_Counties_db@data$NetWB_2011<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),NA,VA_Counties_db@data$NetWB_2011)
+  
+  VA_Counties_db@data$Consumption_2011<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),0,VA_Counties_db@data$Withdrawals_2011))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2011),0,VA_Counties_db@data$Withdrawals_2011))
+  
+  VA_Counties_db@data$Consumption_2011<-ifelse(is.nan(VA_Counties_db@data$Consumption_2011)|is.infinite(VA_Counties_db@data$Consumption_2011),NA,VA_Counties_db@data$Consumption_2011)
+ 
+  #---Year 2012----#
+
+  VA_Counties_db@data$NetWB_2012<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),0,VA_Counties_db@data$Withdrawals_2012))
+  
+  VA_Counties_db@data$NetWB_2012<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),NA,VA_Counties_db@data$NetWB_2012)
+  
+  VA_Counties_db@data$Consumption_2012<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),0,VA_Counties_db@data$Withdrawals_2012))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2012),0,VA_Counties_db@data$Withdrawals_2012))
+  
+  VA_Counties_db@data$Consumption_2012<-ifelse(is.nan(VA_Counties_db@data$Consumption_2012)|is.infinite(VA_Counties_db@data$Consumption_2012),NA,VA_Counties_db@data$Consumption_2012)
+  #---Year 2013----#
+  VA_Counties_db@data$NetWB_2013<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),0,VA_Counties_db@data$Withdrawals_2013))
+  
+  VA_Counties_db@data$NetWB_2013<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),NA,VA_Counties_db@data$NetWB_2013)
+  
+  VA_Counties_db@data$Consumption_2013<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),0,VA_Counties_db@data$Withdrawals_2013))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2013),0,VA_Counties_db@data$Withdrawals_2013))
+  VA_Counties_db@data$Consumption_2013<-ifelse(is.nan(VA_Counties_db@data$Consumption_2013)|is.infinite(VA_Counties_db@data$Consumption_2013),NA,VA_Counties_db@data$Consumption_2013)
+  
+  #---Year 2014----#
+
+  #---Without Transfers---#
+  VA_Counties_db@data$NetWB_2014<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),0,VA_Counties_db@data$Withdrawals_2014))
+  
+  VA_Counties_db@data$NetWB_2014<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),NA,VA_Counties_db@data$NetWB_2014)
+  
+  VA_Counties_db@data$Consumption_2014<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),0,VA_Counties_db@data$Withdrawals_2014))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2014),0,VA_Counties_db@data$Withdrawals_2014))
+  
+  VA_Counties_db@data$Consumption_2014<-ifelse(is.nan(VA_Counties_db@data$Consumption_2014)|is.infinite(VA_Counties_db@data$Consumption_2014),NA,VA_Counties_db@data$Consumption_2014)
+  #---Year 2015----#
+
+  #---Without Transfers---#
+  VA_Counties_db@data$NetWB_2015<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),0,VA_Counties_db@data$Withdrawals_2015))
+  
+  VA_Counties_db@data$NetWB_2015<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),NA,VA_Counties_db@data$NetWB_2015)
+  
+  VA_Counties_db@data$Consumption_2015<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),0,VA_Counties_db@data$Withdrawals_2015))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2015),0,VA_Counties_db@data$Withdrawals_2015))
+  
+  VA_Counties_db@data$Consumption_2015<-ifelse(is.nan(VA_Counties_db@data$Consumption_2015)|is.infinite(VA_Counties_db@data$Consumption_2015),NA,VA_Counties_db@data$Consumption_2015)
+  
+  #---Year 2016----#
+  
+  #---Without Transfers---#
+  VA_Counties_db@data$NetWB_2016<- -(ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),0,VA_Counties_db@data$Withdrawals_2016))
+  
+  VA_Counties_db@data$NetWB_2016<-ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),NA,VA_Counties_db@data$NetWB_2016)
+  
+  VA_Counties_db@data$Consumption_2016<-(ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),0,VA_Counties_db@data$Withdrawals_2016))/(ifelse(is.na(VA_Counties_db@data$Withdrawals_2016),0,VA_Counties_db@data$Withdrawals_2016))
+  
+  VA_Counties_db@data$Consumption_2016<-ifelse(is.nan(VA_Counties_db@data$Consumption_2016)|is.infinite(VA_Counties_db@data$Consumption_2016),NA,VA_Counties_db@data$Consumption_2016)
+  
+  VA_Counties_glimpse<-VA_Counties_db@data
+  
+  assign("VA_Counties_glimpse",VA_Counties_glimpse,envir = .GlobalEnv)
+  assign(paste0("VA_Counties",label),VA_Counties_db,envir = .GlobalEnv)
+  
+}
+NWB_CU.ag(VA_Counties_ag,"_ag")
+
 #-Fully Matched Facilities-#
 NWB_CU(VA_Counties_match_energy,"_match_energy")
-NWB_CU(VA_Counties_match_ag,"_match_ag")
+NWB_CU(VA_Counties_match_aq,"_match_aq")
 NWB_CU(VA_Counties_match_commercial,"_match_commercial")
 NWB_CU(VA_Counties_match_industrial,"_match_industrial")
-NWB_CU(VA_Counties_match_municipal,"_match_municipal")
 
 #---Non-Energy Sectors---#
 
@@ -950,114 +1449,42 @@ NWB_CU(VA_Counties_nonenergy,"_nonenergy")
 #-Fully Matched Facilities-#
 NWB_CU(VA_Counties_match_nonenergy,"_match_nonenergy")
 
-
 ###########################################################################################################################################
 #--------------------------------Long Term Average (2010-2017) Net Water Balance and Consumtpive Use--------------------------------------#
 
-Ave_NWB_CU<- function(VA_Counties,label){
+Ave_NWB_CU<- function(VA_Counties_db,label){
   
   #----Discharges-----#
-  
-  #Be careful for NA values#
-  for (i in 1:length(VA_Counties@data$COUNTYNS)){
-    VA_Counties@data$Discharge_sum[i]<-(ifelse(is.na(VA_Counties@data$Discharges_2010[i]),0,VA_Counties@data$Discharges_2010[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2011[i]),0,VA_Counties@data$Discharges_2011[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2012[i]),0,VA_Counties@data$Discharges_2012[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2013[i]),0,VA_Counties@data$Discharges_2013[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2014[i]),0,VA_Counties@data$Discharges_2014[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2015[i]),0,VA_Counties@data$Discharges_2015[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2016[i]),0,VA_Counties@data$Discharges_2016[i])+
-                                          ifelse(is.na(VA_Counties@data$Discharges_2017[i]),0,VA_Counties@data$Discharges_2017[i]))
-  }
-  VA_Counties@data$Discharge_ave<-VA_Counties@data$Discharge_sum/8
-  VA_Counties@data$Discharge_ave<-ifelse(VA_Counties@data$Discharge_ave==0,NA,VA_Counties@data$Discharge_ave)
-  
-  #----Withdrawals----#
-  for (i in 1:length(VA_Counties@data$COUNTYNS)){
-    VA_Counties@data$Withdrawal_sum[i]<-(ifelse(is.na(VA_Counties@data$Withdrawals_2010[i]),0,VA_Counties@data$Withdrawals_2010[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2011[i]),0,VA_Counties@data$Withdrawals_2011[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2012[i]),0,VA_Counties@data$Withdrawals_2012[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2013[i]),0,VA_Counties@data$Withdrawals_2013[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2014[i]),0,VA_Counties@data$Withdrawals_2014[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2015[i]),0,VA_Counties@data$Withdrawals_2015[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2016[i]),0,VA_Counties@data$Withdrawals_2016[i])+
-                                           ifelse(is.na(VA_Counties@data$Withdrawals_2017[i]),0,VA_Counties@data$Withdrawals_2017[i]))
-  }
-  VA_Counties@data$Withdrawal_ave<-VA_Counties@data$Withdrawal_sum/8
-  VA_Counties@data$Withdrawal_ave<-ifelse(VA_Counties@data$Withdrawal_ave==0,NA,VA_Counties@data$Withdrawal_ave)
-  
-  
-  #----Net Water Balance-----#
-  for (i in 1:length(VA_Counties@data$COUNTYNS)){
-    VA_Counties@data$NetWB_sum[i]<-(ifelse(is.na(VA_Counties@data$NetWB_2010[i]),0,VA_Counties@data$NetWB_2010[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2011[i]),0,VA_Counties@data$NetWB_2011[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2012[i]),0,VA_Counties@data$NetWB_2012[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2013[i]),0,VA_Counties@data$NetWB_2013[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2014[i]),0,VA_Counties@data$NetWB_2014[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2015[i]),0,VA_Counties@data$NetWB_2015[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2016[i]),0,VA_Counties@data$NetWB_2016[i])+
-                                      ifelse(is.na(VA_Counties@data$NetWB_2017[i]),0,VA_Counties@data$NetWB_2017[i]))
-  }
-  VA_Counties@data$NetWB_ave<-VA_Counties@data$NetWB_sum/8
-  VA_Counties@data$NetWB_ave<-ifelse(VA_Counties@data$NetWB_ave==0,NA,VA_Counties@data$NetWB_ave)
-  
-  #----Consumption----#
-  
-  for (i in 1:length(VA_Counties@data$COUNTYNS)){
-    VA_Counties@data$Consumption_sum[i]<-(ifelse(is.na(VA_Counties@data$Consumption_2010[i]),0,VA_Counties@data$Consumption_2010[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2011[i]),0,VA_Counties@data$Consumption_2011[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2012[i]),0,VA_Counties@data$Consumption_2012[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2013[i]),0,VA_Counties@data$Consumption_2013[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2014[i]),0,VA_Counties@data$Consumption_2014[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2015[i]),0,VA_Counties@data$Consumption_2015[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2016[i]),0,VA_Counties@data$Consumption_2016[i])+
-                                            ifelse(is.na(VA_Counties@data$Consumption_2017[i]),0,VA_Counties@data$Consumption_2017[i]))
-  }
-  
-  VA_Counties@data$Consumption_ave<-VA_Counties@data$Consumption_sum/8
-  VA_Counties@data$Consumption_ave<-ifelse(VA_Counties@data$Consumption_ave==0,NA,VA_Counties@data$Consumption_ave)
-  
-  #-----------------With Transfers-------------------------#
-  for (i in 1:length(VA_Counties@data$COUNTYNS)){
-    VA_Counties@data$NetWB_t_sum[i]<-(ifelse(is.na(VA_Counties@data$NetWB_2010_t[i]),0,VA_Counties@data$NetWB_2010_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2011_t[i]),0,VA_Counties@data$NetWB_2011_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2012_t[i]),0,VA_Counties@data$NetWB_2012_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2013_t[i]),0,VA_Counties@data$NetWB_2013_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2014_t[i]),0,VA_Counties@data$NetWB_2014_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2015_t[i]),0,VA_Counties@data$NetWB_2015_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2016_t[i]),0,VA_Counties@data$NetWB_2016_t[i])+
-                                        ifelse(is.na(VA_Counties@data$NetWB_2017_t[i]),0,VA_Counties@data$NetWB_2017_t[i]))
-  }
-  VA_Counties@data$NetWB_t_ave<-VA_Counties@data$NetWB_t_sum/8
-  VA_Counties@data$NetWB_t_ave<-ifelse(VA_Counties@data$NetWB_t_ave==0,NA,VA_Counties@data$NetWB_t_ave)
-  
-  for (i in 1:length(VA_Counties@data$COUNTYNS)){
-    VA_Counties@data$Consumption_t_sum[i]<-(ifelse(is.na(VA_Counties@data$Consumption_2010_t[i]),0,VA_Counties@data$Consumption_2010_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2011_t[i]),0,VA_Counties@data$Consumption_2011_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2012_t[i]),0,VA_Counties@data$Consumption_2012_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2013_t[i]),0,VA_Counties@data$Consumption_2013_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2014_t[i]),0,VA_Counties@data$Consumption_2014_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2015_t[i]),0,VA_Counties@data$Consumption_2015_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2016_t[i]),0,VA_Counties@data$Consumption_2016_t[i])+
-                                              ifelse(is.na(VA_Counties@data$Consumption_2017_t[i]),0,VA_Counties@data$Consumption_2017_t[i]))
-  }
-  
-  VA_Counties@data$Consumption_t_ave<-VA_Counties@data$Consumption_t_sum/8
-  VA_Counties@data$Consumption_t_ave<-ifelse(VA_Counties@data$Consumption_t_ave==0,NA,VA_Counties@data$Consumption_t_ave)
-  
-  VA_Counties_glimpse<-VA_Counties@data
-  VA_Counties_glimpse[10:93]<-sapply(VA_Counties_glimpse[10:93],as.numeric)
-  VA_Counties_glimpse[10:93]<<-round(VA_Counties_glimpse[10:93], digits=2)
-  
-  assign(paste0("VA_Counties",label),VA_Counties,envir = .GlobalEnv)
-  
-}
+  VA_Counties_db@data$Discharge_ave<-apply(VA_Counties_db@data[,c("Discharges_2010","Discharges_2011","Discharges_2012",
+                                                            "Discharges_2013","Discharges_2014","Discharges_2015",
+                                                            "Discharges_2016")],1,median,na.rm=T)
 
+  #----Withdrawals----#
+  VA_Counties_db@data$Withdrawal_ave<-apply(VA_Counties_db@data[,c("Withdrawals_2010","Withdrawals_2011","Withdrawals_2012",
+                                                             "Withdrawals_2013","Withdrawals_2014","Withdrawals_2015",
+                                                             "Withdrawals_2016")],1,median,na.rm=T)
+
+  #----Net Water Balance-----#
+  VA_Counties_db@data$NetWB_ave<-apply(VA_Counties_db@data[,c("NetWB_2010","NetWB_2011","NetWB_2012",
+                                                             "NetWB_2013","NetWB_2014","NetWB_2015",
+                                                             "NetWB_2016")],1,median,na.rm=T)
+
+  #----Consumption----#
+   VA_Counties_db@data$Consumption_ave<-apply(VA_Counties_db@data[,c("Consumption_2010","Consumption_2011","Consumption_2012",
+                                                               "Consumption_2013","Consumption_2014","Consumption_2015",
+                                                              "Consumption_2016")],1,median,na.rm=T)
+  
+  VA_Counties_db@data$Consumption_ave<-ifelse(is.infinite(VA_Counties_db@data$Consumption_ave),NA,VA_Counties_db@data$Consumption_ave)
+
+  VA_Counties_glimpse<-VA_Counties_db@data
+  assign(paste0("VA_Counties",label),VA_Counties_db,envir = .GlobalEnv)
+  assign("VA_Counties_glimpse",VA_Counties_glimpse,envir = .GlobalEnv)
+}
 
 #---All Sectors---#
 
 #-All Facilities-#
-Ave_NWB_CU(VA_Counties,"")
+Ave_NWB_CU(VA_Counties_all,"")
 #-Fully Matched Facilities-#
 Ave_NWB_CU(VA_Counties_matched,"_matched")
 
@@ -1065,17 +1492,39 @@ Ave_NWB_CU(VA_Counties_matched,"_matched")
 
 #-All Facilities-#
 Ave_NWB_CU(VA_Counties_energy,"_energy")
-Ave_NWB_CU(VA_Counties_ag,"_ag")
+
+
+Ave_NWB_CU.ag<- function(VA_Counties_db,label){
+  
+  #----Withdrawals----#
+  VA_Counties_db@data$Withdrawal_ave<-apply(VA_Counties_db@data[,c("Withdrawals_2010","Withdrawals_2011","Withdrawals_2012",
+                                                             "Withdrawals_2013","Withdrawals_2014","Withdrawals_2015",
+                                                             "Withdrawals_2016")],1,median,na.rm=T)
+  
+  #----Consumption----#
+  VA_Counties_db@data$Consumption_ave<-apply(VA_Counties_db@data[,c("Consumption_2010","Consumption_2011","Consumption_2012",
+                                                              "Consumption_2013","Consumption_2014","Consumption_2015",
+                                                              "Consumption_2016")],1,median,na.rm=T)
+  
+  VA_Counties_db@data$Consumption_ave<-ifelse(is.infinite(VA_Counties_db@data$Consumption_ave),NA,VA_Counties_db@data$Consumption_ave)
+  
+  
+  VA_Counties_glimpse<-VA_Counties_db@data
+  assign(paste0("VA_Counties",label),VA_Counties_db,envir = .GlobalEnv)
+  assign("VA_Counties_glimpse",VA_Counties_glimpse,envir = .GlobalEnv)
+}
+Ave_NWB_CU.ag(VA_Counties_ag,"_ag")
+
+Ave_NWB_CU(VA_Counties_aq,"_aq")
 Ave_NWB_CU(VA_Counties_commercial,"_commercial")
 Ave_NWB_CU(VA_Counties_industrial,"_industrial")
 Ave_NWB_CU(VA_Counties_municipal,"_municipal")
 
 #-Fully Matched Facilities-#
 Ave_NWB_CU(VA_Counties_match_energy,"_match_energy")
-Ave_NWB_CU(VA_Counties_match_ag,"_match_ag")
+Ave_NWB_CU(VA_Counties_match_aq,"_match_aq")
 Ave_NWB_CU(VA_Counties_match_commercial,"_match_commercial")
 Ave_NWB_CU(VA_Counties_match_industrial,"_match_industrial")
-Ave_NWB_CU(VA_Counties_match_municipal,"_match_municipal")
 
 #---Non-Energy Sectors---#
 
@@ -1163,7 +1612,6 @@ scale_bar <- function(lon, lat, distance_lon, distance_lat, distance_legend, dis
   return(res)
 }
 
-
 #-----County Labels-----#
 county_labels<- function(VA_Counties){
 VA_Counties_Centroids<-as.data.frame(coordinates(VA_Counties))
@@ -1184,24 +1632,23 @@ ggplot()+
 }
 county_labels(VA_Counties)
 
-
 ###########################################################################################################################################
 #-------------------------------------------Distribution of Discharging Facilities in County----------------------------------------------#
 
-county_discharge<- function(VA_Counties,ECHO_points, label){
+county_discharge<- function(VA_Counties_db,ECHO_points, label,fileext){
 
-  VA_Counties.df<-broom::tidy(VA_Counties)
-  VA_Counties$polyID<-sapply(slot(VA_Counties,"polygons"), function(x) slot(x, "ID"))
-  VA_Counties.df<-merge(VA_Counties.df, VA_Counties, by.x="id", by.y="polyID")
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
   
   Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=VA_Counties.df,
       aes(x=long, y= lat, group=group,
           fill= cut(VA_Counties.df$Discharge_ave,breaks=c(0,1,5,10,25,50,max(VA_Counties.df$Discharge_ave,na.rm=T)),include.lowest=T), colour=""))+
-    scale_fill_manual(name="Summed Discharge (MGD)", values=(Dis_Discrete), 
+    scale_fill_manual(name="Discharge by County (MGD)", values=(Dis_Discrete), 
                       labels=c(paste("<",1),
                                paste(1,"-",5),
                                paste(5,"-",10),
@@ -1209,23 +1656,35 @@ county_discharge<- function(VA_Counties,ECHO_points, label){
                                paste(25,"-",50),
                                paste(50,"<")),
                       na.value="transparent",drop=FALSE)+
-    geom_polygon(
-      data=VA_Counties.df,
-      aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
-    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="Outfall"),
-               size=1.25,colour="#252525")+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),colour="#252525",size=3.0)+
     scale_shape_manual(name="", values=17)+
     scale_colour_manual(values=NA)+
     guides(fill=guide_legend(order=1),
            shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-    labs(title = paste0("Average Annual Total Discharge (MGD) 2010-2017: ",label))+
+    #labs(title = paste0("Average Annual Total Discharge (MGD) 2010-2017: ",label))+
     theme(line=element_blank(),
           axis.text=element_blank(),
           axis.title=element_blank(),
-          panel.background = element_blank())+coord_equal()+
-    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+          panel.background = element_blank())+coord_equal()
+    # scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              # arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+
+  # saves plot in pdf format to folder of your choosing. Dont want to do this? Comment it out
+    
+  assign(paste0("county_dis_",fileext),plot1,envir = .GlobalEnv) 
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Discharges/"
+  
+  #ggsave(filename=paste0(path,"county_discharge_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  
+  
+  
+  return(list(plot1))
   
 
 }
@@ -1233,51 +1692,214 @@ county_discharge<- function(VA_Counties,ECHO_points, label){
 #---All Sectors---#
 
 #-All Facilities-#
-county_discharge(VA_Counties,ECHO.test,"All Reporting Facilities in All Sectors")
+county_discharge(VA_Counties_all,ECHO.test,"All Reporting Facilities in All Sectors","all_fac_all_sec")
 #-Fully Matched Facilities-#
-county_discharge(VA_Counties_matched,ECHO.test_matched,"Matched Facilities in All Sectors")
+county_discharge(VA_Counties_matched,ECHO.test_matched,"Matched Facilities in All Sectors","match_all_sector")
 
 #---Subsetted by Sector---#
 
-#-All Facilities-#
-county_discharge(VA_Counties_energy,ECHO.test_energy,"Energy Facilities")
-county_discharge(VA_Counties_ag,ECHO.test_ag,"Agriculture/Irrigation Facilities")
-county_discharge(VA_Counties_commercial,ECHO.test_commercial,"Commercial Facilities")
-county_discharge(VA_Counties_industrial,ECHO.test_industrial,"Industrial Facilities")
-county_discharge(VA_Counties_municipal,ECHO.test_municipal,"Municipal Facilities")
+#----Sizes of points change with median discharge----#
+county_discharge.energy<- function(VA_Counties_db,ECHO_points, label,fileext){
+  
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+
+  ECHO_points<-mutate_if(ECHO_points,is.factor,as.character)
+  ECHO_points$Fuel_Type<-trimws(ECHO_points$Fuel_Type, which=c("right"))
+  
+  # ECHO_points$Fuel_Type<-ifelse(ECHO_points$Fuel_Type=="Natural Gas","Combination Fossil",ECHO_points$Fuel_Type)
+  
+  Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill= cut(VA_Counties.df$Discharge_ave,breaks=c(0,1,5,10,25,50,max(VA_Counties.df$Discharge_ave,na.rm=T)),include.lowest=T), colour=""))+
+    scale_fill_manual(name="Discharge by County (MGD)", values=(Dis_Discrete), 
+                      labels=c(paste("<",1),
+                               paste(1,"-",5),
+                               paste(5,"-",10),
+                               paste(10,"-",25),
+                               paste(25,"-",50),
+                               paste(50,"<")),
+                      na.value="transparent",drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape=ECHO_points$Fuel_Type, size=ECHO_points$Discharges_MGD),colour="#252525")+
+    scale_size(name="Facility Discharge (MGD)", 
+               breaks=c(0,1,5,50,500),
+               trans="sqrt",
+               labels=c(paste("<",1),
+                        paste(1,"-",5),
+                        paste(5,"-",50),
+                        paste(50,"-",500),
+                        paste(500,"<")),
+               range=c(1,8))+
+    scale_shape_manual(name="Fuel Type",
+                       values=c("Coal"=15,"Nuclear"=16,"Combination Fossil"=17,
+                                "Biomass"=18,"Hybrid"=8))+
+    scale_colour_manual(values=NA)+
+    guides(fill=guide_legend(order=1),
+           shape=guide_legend(override.aes = list(size=3), order=3),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2),
+           size=guide_legend(order=4))+
+    #labs(title = paste0("Average Annual Total Discharge (MGD) 2010-2017: ",label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  # saves plot in pdf format to folder of your choosing. Dont want to do this? Comment it out
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Discharges/"
+  
+  ggsave(filename=paste0(path,"county_discharge_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  
+  assign(paste0("county_dis_",fileext),plot1,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+  
+}
+county_discharge.energy(VA_Counties_energy,ECHO.test_energy,"Energy Facilities","all_energy_size")
+
+county_discharge.nonenergy<- function(VA_Counties_db,ECHO_points, label,fileext){
+  
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill= cut(VA_Counties.df$Discharge_ave,breaks=c(0,1,5,10,25,50,max(VA_Counties.df$Discharge_ave,na.rm=T)),include.lowest=T), colour=""))+
+    scale_fill_manual(name="Discharge by County (MGD)", values=(Dis_Discrete), 
+                      labels=c(paste("<",1),
+                               paste(1,"-",5),
+                               paste(5,"-",10),
+                               paste(10,"-",25),
+                               paste(25,"-",50),
+                               paste(50,"<")),
+                      na.value="transparent",drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility",size=ECHO_points$Discharges_MGD),colour="#252525")+
+    scale_size(name="Facility Discharge (MGD)", 
+               breaks=c(0,0.1,0.5,1,5),
+               trans="sqrt",
+               labels=c(paste("<",0.1),
+                        paste(0.1,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"-",5),
+                        paste(5,"<")),
+               range=c(1,8))+
+    scale_shape_manual(name="", values=17)+
+    scale_colour_manual(values=NA)+
+    guides(fill=guide_legend(order=1),
+           shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=3),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2),
+           size=guide_legend(override.aes=list(shape=17)))+
+    #labs(title = paste0("Average Annual Total Discharge (MGD) 2010-2017: ",label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  # saves plot in pdf format to folder of your choosing. Dont want to do this? Comment it out
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Discharges/"
+  
+  ggsave(filename=paste0(path,"county_discharge_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  
+  assign(paste0("county_dis_",fileext),plot1,envir = .GlobalEnv)
+  return(list(plot1))
+  
+  
+}
+county_discharge.nonenergy(VA_Counties_nonenergy,ECHO.test_nonenergy,"Non-Energy Facilities","all_nonenergy_size")
+
+
+#----Just aggregated discharge on map, sizes of points are universal----#
+county_discharge(VA_Counties_energy,ECHO.test_energy,"Energy Facilities","all_energy")
+county_discharge(VA_Counties_aq,ECHO.test_aq,"Aquaculture Facilities","all_aq")
+county_discharge(VA_Counties_commercial,ECHO.test_commercial,"Commercial Facilities","all_commercial")
+county_discharge(VA_Counties_industrial,ECHO.test_industrial,"Industrial Facilities","all_industrial")
+county_discharge(VA_Counties_municipal,ECHO.test_municipal,"Municipal Facilities","all_municipal")
+county_discharge(VA_Counties_nonenergy,ECHO.test_nonenergy,"Non-Energy Facilities","all_nonenergy")
+
+discharge_subplot_all<- function(){
+  
+  subplot<-ggpubr::ggarrange(county_dis_all_energy,county_dis_all_nonenergy,county_dis_all_industrial,county_dis_all_commercial,
+                             county_dis_all_aq,county_dis_all_municipal,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture","(f) Municipal"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("Visualizing Median County Discharge 2010-2016: All Reporting VPDES Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"County_Dis_All_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+discharge_subplot_all()
 
 #-Fully Matched Facilities-#
-county_discharge(VA_Counties_match_energy,ECHO.test_match_energy,"Matched Energy Facilities")
-county_discharge(VA_Counties_match_ag,ECHO.test_match_ag,"Matched Agriculture/Irrigation Facilities")
-county_discharge(VA_Counties_match_commercial,ECHO.test_match_commercial,"Matched Commercial Facilities")
-county_discharge(VA_Counties_match_industrial,ECHO.test_match_industrial,"Matched Industrial Facilities")
-county_discharge(VA_Counties_match_municipal,ECHO.test_match_municipal,"Matched Municipal Facilities")
+county_discharge(VA_Counties_match_energy,ECHO.test_match_energy,"Matched Energy Facilities","match_energy")
+county_discharge(VA_Counties_match_aq,ECHO.test_match_aq,"Aquaculture Facilities","match_aq")
+county_discharge(VA_Counties_match_commercial,ECHO.test_match_commercial,"Matched Commercial Facilities","match_commercial")
+county_discharge(VA_Counties_match_industrial,ECHO.test_match_industrial,"Matched Industrial Facilities","match_industrial")
+county_discharge(VA_Counties_match_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
-#---Non-Energy Sectors---#
-
-#-All Facilities-#
-county_discharge(VA_Counties_nonenergy,ECHO.test_nonenergy,"Non-Energy Facilities")
-
-#-Fully Matched Facilities-#
-county_discharge(VA_Counties_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Facilities")
+discharge_subplot_match<- function(){
+  
+  subplot<-ggpubr::ggarrange(county_dis_match_energy,county_dis_match_nonenergy,county_dis_match_industrial,county_dis_match_commercial,
+                             county_dis_match_aq,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("Visualizing Median County Discharge 2010-2016: Matched VPDES Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"County_Dis_Matched_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+discharge_subplot_match()
 
 ###########################################################################################################################################
 #-----------------------------------------Distribution of Withdrawing Facilities in County------------------------------------------------#
 
-county_withdrawal<- function(VA_Counties,VWUDS_points,label){
+county_withdrawal<- function(VA_Counties_db,VWUDS_points,label,fileext){
   
-  VA_Counties.df<-broom::tidy(VA_Counties)
-  VA_Counties$polyID<-sapply(slot(VA_Counties,"polygons"), function(x) slot(x, "ID"))
-  VA_Counties.df<-merge(VA_Counties.df, VA_Counties, by.x="id", by.y="polyID")
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
   
   With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=VA_Counties.df,
       aes(x=long, y= lat, group=group,
           fill= cut(VA_Counties.df$Withdrawal_ave,breaks=c(0,1,5,10,25,50,max(VA_Counties.df$Withdrawal_ave,na.rm=TRUE)),include.lowest=T), colour=""))+
-    scale_fill_manual(name="Summed Withdrawal (MGD)", values=(With_Discrete),
+    scale_fill_manual(name="Withdrawal by County (MGD)", values=(With_Discrete),
                       labels=c(paste("<",1),
                                paste(1,"-",5),
                                paste(5,"-",10),
@@ -1288,91 +1910,635 @@ county_withdrawal<- function(VA_Counties,VWUDS_points,label){
     geom_polygon(
       data=VA_Counties.df,
       aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
-    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, shape="Point Source"),
-               size=1.54,colour="#252525")+
+    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, shape="VWUDS Facility"),
+               size=3.0,colour="#252525")+
     scale_shape_manual(name="", values=20)+
     scale_colour_manual(values=NA)+
     guides(fill=guide_legend(order=1),
            shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-    labs(title = paste0("Average Annual Summed Withdrawal (MGD) 2010-2017: ",label))+
+    # labs(title = paste0("Average Annual Summed Withdrawal (MGD) 2010-2017: ",label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    # scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              # arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+    
+  assign(paste0("county_with_",fileext),plot1,envir = .GlobalEnv) 
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Withdrawals/"
+  
+  #ggsave(filename=paste0(path,"county_withdrawal_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  # return(list(plot1))
+}
+
+#-All Facilities-#
+county_withdrawal.energy<- function(VA_Counties_db,VWUDS_points,label,fileext){
+  
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  Fuel_Type<-read.csv("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Energy_Fuel_Types.csv",header=T)
+  VWUDS_points$Fuel_Type<-(Fuel_Type$Fuel.Type[match(VWUDS_points$VWUDS.Facility.ID,Fuel_Type$VWUDS)])
+  
+  VWUDS_points<-mutate_if(VWUDS_points,is.factor,as.character)
+  VWUDS_points$Fuel_Type<-trimws(VWUDS_points$Fuel_Type, which=c("right"))
+  
+  
+  With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill= cut(VA_Counties.df$Withdrawal_ave,breaks=c(0,1,5,10,25,50,max(VA_Counties.df$Withdrawal_ave,na.rm=TRUE)),include.lowest=T), colour=""))+
+    scale_fill_manual(name="Withdrawal by County (MGD)", values=(With_Discrete),
+                      labels=c(paste("<",1),
+                               paste(1,"-",5),
+                               paste(5,"-",10),
+                               paste(10,"-",25),
+                               paste(25,"-",50),
+                               paste(50,"<")),
+                      na.value="transparent",drop=FALSE)+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, shape=VWUDS_points$Fuel_Type,size=VWUDS_points$Withdrawals_MGD),colour="#252525")+
+    scale_size(name="Facility Withdrawal (MGD)", 
+               breaks=c(0,1,5,50,500),
+               trans="sqrt",
+               labels=c(paste("<",1),
+                        paste(1,"-",5),
+                        paste(5,"-",50),
+                        paste(50,"-",500),
+                        paste(500,"<")),
+               range=c(1,8))+
+    scale_shape_manual(name="Fuel Type",
+                       values=c("Coal"=15,"Nuclear"=16,"Combination Fossil"=17,
+                                "Biomass"=18,"Hybrid"=8))+
+    scale_colour_manual(values=NA)+
+    guides(fill=guide_legend(order=1),
+           shape=guide_legend(override.aes = list(size=3), order=3),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2),
+           size=guide_legend(override.aes=list(shape=20)))+
+    # labs(title = paste0("Average Annual Summed Withdrawal (MGD) 2010-2017: ",label))+
     theme(line=element_blank(),
           axis.text=element_blank(),
           axis.title=element_blank(),
           panel.background = element_blank())+coord_equal()+
     scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
               arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Withdrawals/"
+  
+  ggsave(filename=paste0(path,"county_withdrawal_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
 }
+county_withdrawal.energy(VA_Counties_energy,VWUDS.test_energy,"Energy Facilities","all_energy")
 
-#---All Sectors---#
+county_withdrawal.nonenergy<- function(VA_Counties_db,VWUDS_points,label,fileext){
+  
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill= cut(VA_Counties.df$Withdrawal_ave,breaks=c(0,1,5,10,25,50,max(VA_Counties.df$Withdrawal_ave,na.rm=TRUE)),include.lowest=T), colour=""))+
+    scale_fill_manual(name="Withdrawal by County (MGD)", values=(With_Discrete),
+                      labels=c(paste("<",1),
+                               paste(1,"-",5),
+                               paste(5,"-",10),
+                               paste(10,"-",25),
+                               paste(25,"-",50),
+                               paste(50,"<")),
+                      na.value="transparent",drop=FALSE)+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
+    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, shape="VWUDS Facility",size=VWUDS_points$Withdrawals_MGD),colour="#252525")+
+    scale_size(name="Facility Withdrawal (MGD)", 
+               breaks=c(0,0.1,0.5,1,5),
+               trans="sqrt",
+               labels=c(paste("<",0.1),
+                        paste(0.1,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"-",5),
+                        paste(5,"<")),
+               range=c(1,8))+
+    scale_shape_manual(name="", values=20)+
+    scale_colour_manual(values=NA)+
+    guides(fill=guide_legend(order=1),
+           shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=3),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2),
+           size=guide_legend(override.aes=list(shape=20)))+
+    # labs(title = paste0("Average Annual Summed Withdrawal (MGD) 2010-2017: ",label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Withdrawals/"
+  
+  ggsave(filename=paste0(path,"county_withdrawal_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+}
+county_withdrawal.nonenergy(VA_Counties_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities","all_nonenergy")
 
-#-All Facilities-#
-county_withdrawal(VA_Counties,VWUDS.test,"All Reporting Facilities in All Sectors")
+#--All Sectors--#
+county_withdrawal(VA_Counties_all,VWUDS.test,"All Reporting Facilities in All Sectors","all_fac_all_sec")
+
 #-Fully Matched Facilities-#
-county_withdrawal(VA_Counties_matched,VWUDS.test_matched,"Matched Facilities in All Sectors")
+county_withdrawal(VA_Counties_matched,VWUDS.test_matched,"Matched Facilities in All Sectors","match_all_sector")
 
 #---Subsetted by Sector---#
 
 #-All Facilities-#
-county_withdrawal(VA_Counties_energy,VWUDS.test_energy,"Energy Facilities")
-county_withdrawal(VA_Counties_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities")
-county_withdrawal(VA_Counties_commercial,VWUDS.test_commercial,"Commercial Facilities")
-county_withdrawal(VA_Counties_industrial,VWUDS.test_industrial,"Industrial Facilities")
-county_withdrawal(VA_Counties_municipal,VWUDS.test_municipal,"Municipal Facilities")
+county_withdrawal(VA_Counties_energy,VWUDS.test_energy,"Energy Facilities","all_energy")
+county_withdrawal(VA_Counties_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities","all_ag")
+county_withdrawal(VA_Counties_aq,VWUDS.test_aq,"Aquaculture Facilities","all_aq")
+county_withdrawal(VA_Counties_commercial,VWUDS.test_commercial,"Commercial Facilities","all_commercial")
+county_withdrawal(VA_Counties_industrial,VWUDS.test_industrial,"Industrial Facilities","all_industrial")
+county_withdrawal(VA_Counties_municipal,VWUDS.test_municipal,"Municipal Facilities","all_municipal")
+county_withdrawal(VA_Counties_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities","all_nonenergy")
 
-#-Fully Matched Facilities-#
-county_withdrawal(VA_Counties_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities")
-county_withdrawal(VA_Counties_match_ag,VWUDS.test_match_ag,"Matched Agriculture/Irrigation Facilities")
-county_withdrawal(VA_Counties_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities")
-county_withdrawal(VA_Counties_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities")
-county_withdrawal(VA_Counties_match_municipal,VWUDS.test_match_municipal,"Matched Municipal Facilities")
-
-#---Non-Energy Sectors---#
-
-#-All Facilities-#
-county_withdrawal(VA_Counties_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities")
-
-#-Fully Matched Facilities-#
-county_withdrawal(VA_Counties_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities")
+withdrawal_subplot_all<- function(){
   
+  subplot<-ggpubr::ggarrange(county_with_all_energy,county_with_all_nonenergy,county_with_all_industrial,county_with_all_commercial,
+                             county_with_all_aq,county_with_all_ag,county_with_all_municipal,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture","(f) Agriculture/Irrigation","(g) Municipal"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=4)%>%annotate_figure(
+                               top = text_grob("Visualizing Median County Withdrawal 2010-2016: All Reporting VWUDS Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"County_With_All_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+withdrawal_subplot_all()
+
+#-Fully Matched Facilities-#
+county_withdrawal(VA_Counties_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities","match_energy")
+county_withdrawal(VA_Counties_match_aq,VWUDS.test_match_aq,"Matched Aquaculture Facilities","match_aq")
+county_withdrawal(VA_Counties_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities","match_commercial")
+county_withdrawal(VA_Counties_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities","match_industrial")
+county_withdrawal(VA_Counties_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
+
+withdrawal_subplot_match<- function(){
+  
+  subplot<-ggpubr::ggarrange(county_with_match_energy,county_with_match_nonenergy,county_with_match_industrial,
+                             county_with_match_commercial,
+                             county_with_match_aq,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("Visualizing Median County Withdrawal 2010-2016: Matched VWUDS Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"County_With_Matched_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+withdrawal_subplot_match()
+
 
 ###########################################################################################################################################
 #---------------------------------------------------Consumption over Counties-------------------------------------------------------------#
 
-county_consumption<- function(VA_Counties, ECHO_points ,VWUDS_points, label){
-  VA_Counties.df<-broom::tidy(VA_Counties)
-  VA_Counties$polyID<-sapply(slot(VA_Counties,"polygons"), function(x) slot(x, "ID"))
-  VA_Counties.df<-merge(VA_Counties.df, VA_Counties, by.x="id", by.y="polyID")
+county_consumption<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=VA_Counties.df,
       aes(x=long, y= lat, group=group,
-          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),
+                   include.lowest=T),colour=""))+
     scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
-                      labels=c(paste(round(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),digits=2),"-",0),
+                      labels=c(paste("<",0),
                                paste(0,"-",0.25),
                                paste(0.25,"-",0.5),
                                paste(0.5,"-",0.75),
                                paste(0.75,"-",1)),
                       na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+    # scale_shape_manual(name="", values=17)+
+    # geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+          #plot=plot1, 
+          #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+
+#---------------------------All Reporting Facilities--------------------------#
+county_consumption(VA_Counties,ECHO.test,VWUDS.test,"All Reporting Facilities in All Sectors","all_fac_all_sec")
+
+county_consumption(VA_Counties_commercial,ECHO.test_commercial,VWUDS.test_commercial,"Commercial Facilities","all_commercial")
+county_consumption(VA_Counties_industrial,ECHO.test_industrial,VWUDS.test_industrial,"Industrial Facilities","all_industrial")
+county_consumption(VA_Counties_municipal,ECHO.test_municipal,VWUDS.test_municipal,"Municipal Facilities","all_municipal")
+county_consumption(VA_Counties_nonenergy,ECHO.test_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities","county_all_nonenergy")
+
+county_consumption.energy<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  ECHO_points<-mutate_if(ECHO_points,is.factor,as.character)
+  ECHO_points$Fuel_Type<-trimws(ECHO_points$Fuel_Type, which=c("right"))
+  
+  Fuel_Type<-read.csv("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Energy_Fuel_Types.csv",header=T)
+  VWUDS_points$Fuel_Type<-(Fuel_Type$Fuel.Type[match(VWUDS_points$VWUDS.Facility.ID,Fuel_Type$VWUDS)])
+  
+  VWUDS_points<-mutate_if(VWUDS_points,is.factor,as.character)
+  VWUDS_points$Fuel_Type<-trimws(VWUDS_points$Fuel_Type, which=c("right"))
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
     geom_polygon(
       data=VA_Counties.df,
-      aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),
+                   include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
     scale_colour_manual(values=NA)+
-    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="Outfall"),
-               size=1.75,colour="#252525")+
+    # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+    # scale_shape_manual(name="", values=17)+
+    # geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+county_consumption.energy(VA_Counties_energy,ECHO.test_energy,VWUDS.test_energy,"Energy Facilities","all_energy")
+
+county_consumption_ag<- function(VA_Counties_db,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(0,1)),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient",
+                      values=CU_Discrete, 
+                      labels=c(1),
+                      na.value="transparent")+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
     scale_shape_manual(name="", values=17)+
-    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="Withdrawing Source"),
-               colour="#252525")+
-    scale_size_manual(name="", values=1.75)+
+    #geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    #scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          # legend.position = "none",
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+   #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+   #ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+          #plot=plot1, 
+          #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+county_consumption_ag(VA_Counties_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities","all_ag")
+
+county_consumption.aq<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(0,0.25,0.5,0.75,1),
+                   include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+    # scale_shape_manual(name="", values=17)+
+    # geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+county_consumption.aq(VA_Counties_aq,ECHO.test_aq,VWUDS.test_aq,"Aquaculture Facilities","all_aq")
+
+all_subplot<- function(){
+  subplot<-ggpubr::ggarrange(all_energy,all_nonenergy,all_industrial,
+                             all_aq,all_commercial,all_ag,all_municipal,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Aquaculture",
+                                      "(e) Commercial","(f) Agriculture","(g) Municipal"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=4)%>%annotate_figure(top = text_grob("Visualizing County Consumption: All Reporting Facilities", color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"County_CU_All_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+all_subplot()
+
+#-----------------Matched --------------------------#
+county_consumption<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+     # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+     # scale_shape_manual(name="", values=17)+
+     # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, size="VWUDS Facility"), colour="#252525")+
+     # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+     #labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+   #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+   #ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+
+county_consumption(VA_Counties_match_energy,ECHO.test_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities","match_energy")
+county_consumption(VA_Counties_match_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities","county_match_nonenergy")
+county_consumption(VA_Counties_match_commercial,ECHO.test_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities","match_commercial")
+county_consumption(VA_Counties_match_industrial,ECHO.test_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities","match_industrial")
+
+county_consumption_aq<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+     geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+     scale_shape_manual(name="", values=17)+
+     geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, size="VWUDS Facility"),colour="#252525")+
+     scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+     #labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+   #ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+   #plot=plot1, 
+   #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+county_consumption_aq(VA_Counties_match_aq,ECHO.test_match_aq,VWUDS.test_match_aq,"Matched Aquaculture Facilities","match_aq")
+
+#-----Compile into Subplots on one page-------#
+
+matched_subplot<- function(){
+  
+  subplot<-ggpubr::ggarrange(match_energy,match_nonenergy,match_industrial,
+                             match_aq,match_commercial,labels=c("(a) Energy","(b) Non-Energy","(c) Industrial",
+                                                                "(d) Aquaculture","(e) Commercial"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("2010-2016 Median Annual County Consumption Considering Matched Facility Data", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"County_CU_Matched_Subplot_points.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+matched_subplot()
+
+nonenergy_subplot<- function(){
+  load("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/McCarthy Thesis/HUC6_match_nonenergy.RData")
+  load("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/McCarthy Thesis/HUC6_all_nonenergy.RData")
+  
+  subplot<-ggpubr::ggarrange(HUC6_all_nonenergy,HUC6_match_nonenergy,county_all_nonenergy,
+                             county_match_nonenergy,labels=c("(a) HUC 6 Watershed: All-Available Data","(b) HUC 6 Watershed: Matched Data",
+                                                             "(c) County: All-Available Data","(d) County: Matched Data"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=2)%>%annotate_figure(
+                               top = text_grob("2010-2016 Median Annual Non-Energy Consumption Using Total Volume", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/"
+  
+  ggexport(filename=paste0(path,"Nonenergy_spatial_subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+nonenergy_subplot()
+#------------------------------------------------------------------------------------#
+#-----------------------------Matched Facilities-------------------------------------#
+
+# These functions are a little different because I paired the locations of tyhe matched facilities
+# So i went ahead and added size of points to represent the quantity of water being consumed along with the coefficient
+
+#---Non-Energy Sectors---#
+county_consumption_non_energy<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.001,0.05,0.5,1),
+               labels=c(paste("<",0),
+                        paste(0,"-",0.001),
+                        paste(0.001,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
     guides(fill=guide_legend(order=1),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
-           shape=guide_legend(order=3),
            size=guide_legend(order=4))+
-    labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
     scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
               arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
     theme(line=element_blank(),
@@ -1380,49 +2546,300 @@ county_consumption<- function(VA_Counties, ECHO_points ,VWUDS_points, label){
           axis.title=element_blank(),
           panel.background = element_blank())+coord_equal()
   
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
   
 }
+county_consumption_non_energy(VA_Counties_match_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
-#-All Facilities-#
-county_consumption(VA_Counties,ECHO.test,VWUDS.test,"All Reporting Facilities in All Sectors")
-#-Fully Matched Facilities-#
-county_consumption(VA_Counties_matched,ECHO.test_matched,VWUDS.test_matched,"Matched Facilities in All Sectors")
+#--Aquaculture--#
+county_consumption_aquaculture<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(-1,0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("\u2264",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(0,0.05,0.5,1),
+               labels=c(paste(0,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+county_consumption_aquaculture(VA_Counties_match_aq,ECHO.test_match_aq,VWUDS.test_match_aq,"Matched Aquaculture Facilities","match_aq")
 
-#---Subsetted by Sector---#
+#--Commercial--#
+county_consumption_commercial<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.05,0.5,1),
+               labels=c(paste("<",0),
+                        paste(0,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+county_consumption_commercial(VA_Counties_match_commercial,ECHO.test_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities","match_commercial")
 
-#-All Facilities-#
-county_consumption(VA_Counties_energy,ECHO.test_energy,VWUDS.test_energy,"Energy Facilities")
-county_consumption(VA_Counties_ag,ECHO.test_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities")
-county_consumption(VA_Counties_commercial,ECHO.test_commercial,VWUDS.test_commercial,"Commercial Facilities")
-county_consumption(VA_Counties_industrial,ECHO.test_industrial,VWUDS.test_industrial,"Industrial Facilities")
-county_consumption(VA_Counties_municipal,ECHO.test_municipal,VWUDS.test_municipal,"Municipal Facilities")
+#--Industrial--#
+county_consumption_industrial<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.001,0.05,0.5,1),
+               labels=c(paste("<",0),
+                        paste(0,"-",0.001),
+                        paste(0.001,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+county_consumption_industrial(VA_Counties_match_industrial,ECHO.test_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities","match_industrial")
 
-#-Fully Matched Facilities-#
-county_consumption(VA_Counties_match_energy,ECHO.test_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities")
-county_consumption(VA_Counties_match_ag,ECHO.test_match_ag,VWUDS.test_match_ag,"Matched Agriculture/Irrigation Facilities")
-county_consumption(VA_Counties_match_commercial,ECHO.test_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities")
-county_consumption(VA_Counties_match_industrial,ECHO.test_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities")
-county_consumption(VA_Counties_match_municipal,ECHO.test_match_municipal,VWUDS.test_match_municipal,"Matched Municipal Facilities")
+#--Energy--#
+county_consumption_energy<- function(VA_Counties_db, ECHO_points ,VWUDS_points, label,fileext){
+  VA_Counties.df<-broom::tidy(VA_Counties_db)
+  VA_Counties_db$polyID<-sapply(slot(VA_Counties_db,"polygons"), function(x) slot(x, "ID"))
+  VA_Counties.df<-merge(VA_Counties.df, VA_Counties_db, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T),Fuel_Type=first(Fuel_Type))
+  
+  ECHO_points<-mutate_if(ECHO_points,is.factor,as.character)
+  
+  ECHO_points$Fuel_Type<-ifelse(ECHO_points$Fuel_Type=="Natural Gas","Combination Fossil",ECHO_points$Fuel_Type)
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=VA_Counties.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(VA_Counties.df$Consumption_ave,breaks=c(quantile(VA_Counties.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+              size=ECHO_points$Ave_CU,shape=ECHO_points$Fuel_Type),colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.5,1,5,10),
+               trans="sqrt",
+                 labels=c(paste("<",0),
+                          paste(0,"-",0.5),
+                          paste(0.5,"-",1.0),
+                          paste(1.0,"-",5.0),
+                          paste(5.0,"-",10.0),
+                          paste(10,"<")),
+               range=c(2,12))+
+    scale_shape_manual(name="Fuel Type",
+                       values=c("Coal"=15,"Nuclear"=16,"Combination Fossil"=17,
+                                "Biomass"=18))+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4),
+           shape=guide_legend(override.aes = list(size=3), order=3))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"county_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+county_consumption_energy(VA_Counties_match_energy,ECHO.test_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities","match_energy")
 
-#---Non-Energy Sectors---#
-
-#-All Facilities-#
-county_consumption(VA_Counties_nonenergy,ECHO.test_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities")
-
-#-Fully Matched Facilities-#
-county_consumption(VA_Counties_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities")
 
 ###########################################################################################################################################
 #-----------------------------------------Consumption over Counties (without points)------------------------------------------------------#
+# Don't want locations of outfalls and withdrawing sources? No problem, here's a function for that. 
 
-county_consumption_nopnt<- function(VA_Counties, label){
+county_consumption_nopnt<- function(VA_Counties,label,fileext){
   VA_Counties.df<-broom::tidy(VA_Counties)
   VA_Counties$polyID<-sapply(slot(VA_Counties,"polygons"), function(x) slot(x, "ID"))
   VA_Counties.df<-merge(VA_Counties.df, VA_Counties, by.x="id", by.y="polyID")
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=VA_Counties.df,
       aes(x=long, y= lat, group=group,
@@ -1434,15 +2851,13 @@ county_consumption_nopnt<- function(VA_Counties, label){
                                paste(0.5,"-",0.75),
                                paste(0.75,"-",1)),
                       na.value="transparent", drop=FALSE)+
-    geom_polygon(
-      data=VA_Counties.df,
-      aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    geom_polygon(data=VA_Counties.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
     scale_colour_manual(values=NA)+
     guides(fill=guide_legend(order=1),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
            shape=guide_legend(order=3),
            size=guide_legend(order=4))+
-    labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
     scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
               arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
     theme(line=element_blank(),
@@ -1450,79 +2865,44 @@ county_consumption_nopnt<- function(VA_Counties, label){
           axis.title=element_blank(),
           panel.background = element_blank())+coord_equal()
   
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/County Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"county_CU_nopnt_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
   
 }
 
 #-All Facilities-#
-county_consumption_nopnt(VA_Counties,"All Reporting Facilities in All Sectors")
+county_consumption_nopnt(VA_Counties,"All Reporting Facilities in All Sectors","all_fac_all_sec")
 #-Fully Matched Facilities-#
-county_consumption_nopnt(VA_Counties_matched,"Matched Facilities in All Sectors")
+county_consumption_nopnt(VA_Counties_matched,"Matched Facilities in All Sectors","match_all_sector")
 
 #---Subsetted by Sector---#
 
 #-All Facilities-#
-county_consumption_nopnt(VA_Counties_energy,"Energy Facilities")
-county_consumption_nopnt(VA_Counties_ag,"Agriculture/Irrigation Facilities")
-county_consumption_nopnt(VA_Counties_commercial,"Commercial Facilities")
-county_consumption_nopnt(VA_Counties_industrial,"Industrial Facilities")
-county_consumption_nopnt(VA_Counties_municipal,"Municipal Facilities")
+county_consumption_nopnt(VA_Counties_energy,"Energy Facilities","all_energy")
+county_consumption_nopnt(VA_Counties_ag,"Agriculture/Irrigation Facilities","all_ag")
+county_consumption_nopnt(VA_Counties_commercial,"Commercial Facilities","all_commercial")
+county_consumption_nopnt(VA_Counties_industrial,"Industrial Facilities","all_industrial")
+county_consumption_nopnt(VA_Counties_municipal,"Municipal Facilities","all_municipal")
 
 #-Fully Matched Facilities-#
-county_consumption_nopnt(VA_Counties_match_energy,"Matched Energy Facilities")
-county_consumption_nopnt(VA_Counties_match_ag,"Matched Agriculture/Irrigation Facilities")
-county_consumption_nopnt(VA_Counties_match_commercial,"Matched Commercial Facilities")
-county_consumption_nopnt(VA_Counties_match_industrial,"Matched Industrial Facilities")
-county_consumption_nopnt(VA_Counties_match_municipal,"Matched Municipal Facilities")
+county_consumption_nopnt(VA_Counties_match_energy,"Matched Energy Facilities","match_energy")
+county_consumption_nopnt(VA_Counties_match_ag,"Matched Agriculture/Irrigation Facilities","match_ag")
+county_consumption_nopnt(VA_Counties_match_commercial,"Matched Commercial Facilities","match_commercial")
+county_consumption_nopnt(VA_Counties_match_industrial,"Matched Industrial Facilities","match_industrial")
+county_consumption_nopnt(VA_Counties_match_municipal,"Matched Municipal Facilities","match_municipal")
 
 #---Non-Energy Sectors---#
 
 #-All Facilities-#
-county_consumption_nopnt(VA_Counties_nonenergy,"Non-Energy Facilities")
+county_consumption_nopnt(VA_Counties_nonenergy,"Non-Energy Facilities","all_nonenergy")
 
 #-Fully Matched Facilities-#
-county_consumption_nopnt(VA_Counties_nonenergy,"Matched Non-Energy Facilities")
-
-
-###########################################################################################################################################
-#---------------------------------------------Net Water Balance over Counties-------------------------------------------------------------#
-
-
-county_NWB<- function(VA_Counties,label){
-  
-  VA_Counties.df<-broom::tidy(VA_Counties)
-  VA_Counties$polyID<-sapply(slot(VA_Counties,"polygons"), function(x) slot(x, "ID"))
-  VA_Counties.df<-merge(VA_Counties.df, VA_Counties, by.x="id", by.y="polyID")
-  
-  NWB_Discrete<-c("#a50f15","#de2d26","#fb6a4a","#fcbba1","#2b8cbe")
-  
-  ggplot()+
-    geom_polygon(
-      data=VA_Counties.df,
-      aes(x=long, y= lat, group=group,
-          fill= cut(VA_Counties.df$NetWB_ave,breaks=c(quantile(VA_Counties.df$NetWB_ave,c(0),na.rm=T),-250,-150,-10,0,quantile(VA_Counties.df$NetWB_ave,c(1),na.rm=T)),include.lowest=T),colour=""))+
-    scale_fill_manual(name="Net Water Balance (MGD)", values=NWB_Discrete,
-                      labels=c(paste(-1250,"-",-250),
-                               paste(-250,"-",-150),
-                               paste(-150,"-",-10),
-                               paste(-10,"-",0),
-                               paste(0,"<")),
-                      na.value="transparent",drop=FALSE)+
-    geom_polygon(
-      data=VA_Counties.df,
-      aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
-    scale_colour_manual(values=NA)+
-    guides(fill=guide_legend(order=1),colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
-    labs(title = paste0("Average Net Water Balance (MGD) 2010-2017: ",label))+
-    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
-    theme(line=element_blank(),
-          axis.text=element_blank(),
-          axis.title=element_blank(),
-          panel.background = element_blank())+coord_equal()
-  
-  
-  
-}
+county_consumption_nopnt(VA_Counties_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
 
 ###########################################################################################################################################
@@ -1531,7 +2911,7 @@ county_NWB<- function(VA_Counties,label){
 full_match_2010_2017_summary<-full_match_2010_2017%>%dplyr::group_by(VPDES.Facility.ID)%>%
   dplyr::summarise(VWUDS.Facility.ID=first(VWUDS.Facility.ID),OutfallID=first(OutfallID),VWUDS.Name=first(VWUDS.Name),VPDES.Name=first(VPDES.Name),
                    Use.Type=first(Use.Type), VPDES.Fac.Lat=first(Fac.Lat),VPDES.Fac.Long=first(Fac.Long),VWUDS.Fac.Lat=first(VWUDS.Lat),VWUDS.Fac.Long=first(VWUDS.Long),
-                   Ave_Withdrawal_mgd=mean(Withdrawals_MGD,na.rm=T),Ave_Discharge_mgd=mean(Discharges_MGD,na.rm=T),County=first(County),Waterbody=first(Waterbody))
+                   Ave_Withdrawal_mgd=median(Withdrawals_MGD,na.rm=T),Ave_Discharge_mgd=median(Discharges_MGD,na.rm=T),County=first(County),Waterbody=first(Waterbody))
 
 VA_River<-readOGR("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/VA_Rivers_Clip.shp")
 VA_River<-sp::spTransform(VA_River, CRS("+init=epsg:4269"))#Reproject shapefiles to NAD83=EPSG Code of 4269
@@ -1572,7 +2952,8 @@ case.study.location<- function(VPDES.ID,VWUDS.ID){
 for (i in 1:length(full_match_2010_2017_summary$VPDES.Facility.ID)){
   print(paste("Matched Facility ",i," of ", length(full_match_2010_2017_summary$VPDES.Facility.ID)))
   full_match_2010_2017_summary<-full_match_2010_2017_summary%>%arrange(desc(Ave_Withdrawal_mgd))
-  case.study.location(full_match_2010_2017_summary$VPDES.Facility.ID[i],full_match_2010_2017_summary$VWUDS.Facility.ID[i])
+  case.study.location(full_match_2010_2017_summary$VPDES.Facility.ID[i],
+                      full_match_2010_2017_summary$VWUDS.Facility.ID[i])
   }
 
 
@@ -1612,7 +2993,7 @@ colnames(TS_CU_County)<-gsub("X","",colnames(TS_CU_County))
 
 assign(label,TS_CU_County,envir = .GlobalEnv)
 
-save(TS_CU_County,file=paste0("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/",label,".RData"))
+save(TS_CU_County,file=paste0("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/county_",label,".RData"))
 
 }
 
@@ -1627,6 +3008,7 @@ MK_County_Compile(ECHO.test_matched,VWUDS.test_matched,"TS_CU_Matched")
 #-All Facilities-#
 MK_County_Compile(ECHO.test_energy,VWUDS.test_energy,"TS_CU_All_Energy")
 MK_County_Compile(ECHO.test_ag,VWUDS.test_ag,"TS_CU_All_Ag")
+MK_County_Compile(ECHO.test_aq,VWUDS.test_aq,"TS_CU_All_Aq")
 MK_County_Compile(ECHO.test_commercial,VWUDS.test_commercial,"TS_CU_All_Commercial")
 MK_County_Compile(ECHO.test_industrial,VWUDS.test_industrial,"TS_CU_All_Industrial")
 MK_County_Compile(ECHO.test_municipal,VWUDS.test_municipal,"TS_CU_All_Municipal")
@@ -1634,6 +3016,7 @@ MK_County_Compile(ECHO.test_municipal,VWUDS.test_municipal,"TS_CU_All_Municipal"
 #-Fully Matched Facilities-#
 MK_County_Compile(ECHO.test_match_energy,VWUDS.test_match_energy,"TS_CU_Match_Energy")
 MK_County_Compile(ECHO.test_match_ag,VWUDS.test_match_ag,"TS_CU_Match_Ag")
+MK_County_Compile(ECHO.test_match_aq,VWUDS.test_match_aq,"TS_CU_Match_Aq")
 MK_County_Compile(ECHO.test_match_commercial,VWUDS.test_match_commercial,"TS_CU_Match_Commercial")
 MK_County_Compile(ECHO.test_match_industrial,VWUDS.test_match_industrial,"TS_CU_Match_Industrial")
 MK_County_Compile(ECHO.test_match_municipal,VWUDS.test_match_municipal,"TS_CU_Match_Municipal")

@@ -315,7 +315,6 @@ attributes<- function(){
 }
 attributes()
 
-
 n_distinct(ECHO_2010_2017$Facility.ID)
 n_distinct(ECHO_2010_2017$OutfallID)
 ##################################################################################################################################
@@ -1022,6 +1021,7 @@ cumulative_outfalls("VA0004103",list("202","203","204","205"),"002")
 # This function narrows down the outfalls that are analyzed. Typically outfall 001 represents a facility,
 # however that is not always the case. This function swaps out the 001 outfall for one that represents the actual discharge
 # leaving the facility and going into open waters. 
+
 outfall.switch<- function(ECHO_2010_2017){
   #--Facilties that are represented with a different outfall rather than 001--#
   
@@ -1130,7 +1130,7 @@ missing<-subset(outfalls,!outfalls$Hydrocode %in% outfalls_post$Hydrocode)
 
 write.table(ECHO_2010_2017,paste0(path,"/ECHO_2010_2017_QAQC.txt"), sep="\t", row.names=F)
 
-#-------Summarize Data frame------------#
+#-------Summarize Data frame into Tables------------#
 
 Outfall_Discharges<-ECHO_2010_2017%>%
   dplyr::group_by(OutfallID,Year=substr(MP_Begin_Date,1,4))%>%

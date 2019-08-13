@@ -1,5 +1,10 @@
 ###########################################################################################################################################
-###############################################Virginia Water Use Database System (VWUDS)##################################################
+#--------------------------------------------------Virginia Water Use Database System (VWUDS) QA/QC---------------------------------------#
+
+# Primary Author: Morgan McCarthy, M.S. Biological Systems Engineering, Virginia Tech
+
+###########################################################################################################################################
+#---------------------------------------------------------------Purpose-------------------------------------------------------------------#
 
 # This code serves to import and analyze withdrawal data from the Virginia Water Use Database System (VWUDS).
 # VWUDS is maintained by Virginia's Department of Environmental Qualtiy (VDEQ) and is self reported by water users.
@@ -15,12 +20,13 @@
       #c. were missing and were found using google maps/earth
       #(Manual Corrections were performed during Fall of 2017)
 
-# The second part of the script introduces monthly withdrawal data from 1982-2017 that was collected August of 2018.
+# The second part of the script introduces monthly withdrawal data from 1982-2016 that was collected August of 2018.
 # It investigates potential interal corrections by VDEQ staff and refromats for future consumptive use calculations in the future.
 
 # http://deq1.bse.vt.edu/d.bet/admin/structure/views/view/vwuds_monthly_wateruse/edit
 
-##################################################Library Initilization########################################################################
+###########################################################################################################################################
+#------------------------------------------------------Load Library and Options-----------------------------------------------------------#
 setwd('G:/My Drive/GRA/VWUDS Data/VAHydro VWUDS Anlaysis')
 path<-('G:/My Drive/GRA/VWUDS Data/')
 
@@ -54,7 +60,7 @@ options(digits=9) #Digits to 9 decimal points
 VWUDS_monthly<- function(){
   # Name of View: VWUDS Monthly Water Use (DH Feature) 
   # Link to this View: http://deq1.bse.vt.edu/d.dh/vwuds-monthly-water-use?hydrocode=&hydroid=&name_op=%3D&name=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=2010-01-01&tstime%5Bmax%5D=2017-12-31&bundle%5B%5D=well&bundle%5B%5D=intake&fstatus_1_op=not+in&fstatus_1%5B%5D=duplicate&name_1_op=%3D&name_1=&propcode_op=%3D&propcode=&ftype_op=%3D&ftype=
-  VWUDS_2010_2017<-read.csv("G:/My Drive/VWUDS Data/vwuds_monthly_wateruse_2.csv", sep=",", header=T)
+  VWUDS_2010_2017<-read.csv("G:/My Drive/VWUDS Data/vwuds_monthly_wateruse_2010_2016.csv", sep=",", header=T)
   VWUDS_2010_2017<-as.data.table(VWUDS_2010_2017) # setting type to data table makes manipulation easier
   names(VWUDS_2010_2017)[2]<-c("Facility.ID")
   names(VWUDS_2010_2017)[3]<-c("Hydrocode")
@@ -97,7 +103,7 @@ VWUDS_monthly<- function(){
 }
 VWUDS_monthly()
 
-load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
+# load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
 VWUDS_2010_2017<-VWUDS_2010_2017[VWUDS_2010_2017$Date %within% interval("2010-01-01","2016-12-31"),]
 
 ######################################################################################
@@ -145,33 +151,11 @@ VWUDS_flag<- function(){
   
   # Note: All of these coordinates were manually corrected with the use of google maps
   #Download list of source coordinates that contain manual corrections for 1524 sources
-  Corrected_Coordinates<-read.table(paste0(path,"VWUDS Monthly Withdrawals 1982_2015.txt"), header=T, sep=",")
-  Corrected_Coordinates<-as.data.table(Corrected_Coordinates)
+  Corrected_Coordinates<-read.csv(paste0(path,"Corrected_coordinates.csv"), header=T, sep=",")
   
-  #Group by source for future merge
-  Corrected_Coordinates_summary<-Corrected_Coordinates%>%
-    subset(select=c(1,8,9))%>%arrange(DEQ_ID)
-  colnames(Corrected_Coordinates_summary)<-(c("DEQ.ID.of.Source","Corrected Latitude","Corrected Longitude"))
-  
-  Corrected_Coordinates_summary<-Corrected_Coordinates_summary%>%
-    group_by(DEQ.ID.of.Source)%>%
-    summarise(Corrected_Latitude=mean(`Corrected Latitude`),Corrected_Longitude=mean(`Corrected Longitude`))%>%arrange(DEQ.ID.of.Source)
-  
-  
-  corr_PSC<-read.csv(paste0(path,"Post_Suspicious_Coordinates_2.csv"), header=T)
-  corr_PSC<-subset(corr_PSC, select=c(1,5,6))
-  corr_PSC_2<-read.csv(paste0(path,"PSC_3.csv"), header=T)
-  corr_PSC_2<-subset(corr_PSC_2, select=c(2,6,7))
-  corr_PSC_3<-read.csv(paste0(path,"PSC4.csv"), header=T)
-  corr_PSC_3<-subset(corr_PSC_3, select=c(2,6,7))
-  corr_coordinates<-rbind(Corrected_Coordinates_summary,corr_PSC)
-  corr_coordinates<-rbind(corr_coordinates,corr_PSC_2)
-  corr_coordinates<-rbind(corr_coordinates,corr_PSC_3)
-  corr_coordinates<-corr_coordinates[!duplicated(corr_coordinates),]
-  corr_coordinates<-as.data.table(corr_coordinates)
   
   #If all.x, extra rows are added--make sure to get rid of NA rows after this step
-  VWUDS_2010_2017<-merge(VWUDS_2010_2017,corr_coordinates,by="DEQ.ID.of.Source",all.x=T)
+  VWUDS_2010_2017<-merge(VWUDS_2010_2017,Corrected_Coordinates,by="DEQ.ID.of.Source",all.x=T)
   
   #Need to assign coordinates for the sources not included in 1982-2015 corrected lat and longs. If NA, use provided coordinates. If not, leave it alone. 
   VWUDS_2010_2017$Corrected_Latitude<-ifelse(is.na(VWUDS_2010_2017$Corrected_Latitude),VWUDS_2010_2017$Latitude,VWUDS_2010_2017$Corrected_Latitude)

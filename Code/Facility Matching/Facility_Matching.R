@@ -34,60 +34,60 @@ path<-"G:/My Drive/GRA/RCode for VWUDS and VPDES Analysis"
 Existing_Matches<-read.csv("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Matched Facilities/Runninglist_Matches.csv",header=T)
 
 #-------------Discharging Facilities in VPDES Database----------------#
+ VA_Facility_Pull<- function(state){
+  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+  URL_Download<-getURL(Req_URL) #Download URL from above
+  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
+  QID<-QID$QueryID
+  GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&qid=",QID)
+  ECHO_Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
+  ECHO_Facilities$CWPName<-toupper(ECHO_Facilities$CWPName)
+  
+  ECHO_Facilities<-subset(ECHO_Facilities, subset=ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit")
+  assign("ECHO_Facilities",ECHO_Facilities,envir = .GlobalEnv)
+  
+}
+# VA_Facility_Pull("VA")
+# VPDES<-ECHO_Facilities
+VPDES<-VPDES%>%dplyr::group_by(SourceID)%>%dplyr::summarise(Facility_Name=first(CWPName), 
+                                                            Longitude=first(FacLong),
+                                                            Latitude=first(FacLat))
+colnames(VPDES)[1]<-c("Facility.ID")
+VPDES<-subset(VPDES,VPDES$Facility.ID %in% missing$Hydrocode)
+
 VPDES<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC.txt", sep="\t", header=T)
-VPDES<-subset(VPDES,VPDES$Reclass_Use_Type=="Energy")
-# VPDES<-subset(VPDES,!VPDES$Facility.ID%in%gsub("echo_","",Existing_Matches$VPDES.Hydrocode))
 
-
-
-# VPDES<-subset(VPDES,subset=VPDES$Facility.ID%in%Major_dis$Facility.ID)
-# VPDES<-subset(VPDES,subset=VPDES$Facility.ID%in%gsub("echo_","",Match_dis$Facility.ID))
-# load(paste0(path,"/Major_dis.RData"))
-# load(paste0(path,"/Match_dis.RData"))
 load(paste0(path,"/cum_dis.RData"))
-
+colnames(Discharge)[1]<-c("Facility.ID")
 VPDES<-VPDES%>%dplyr::group_by(Facility.ID)%>%dplyr::summarise(Facility_Name=first(FacilityName), Longitude=mean(Facility_Longitude, na.rm=T),
                                                                Latitude=mean(Facility_Latitude, na.rm=T), Use_type=first(Reclass_Use_Type),Design_Flow=first(DesignFlow_mgd), 
                                                                City=first(City), County=first(County))
 
-# VPDES<-merge(VPDES,Major_dis,by=c("Facility.ID","Facility_Name"),all.x=T)
-# VPDES<-merge(VPDES,Match_dis,by=c("Facility.ID","Facility_Name"),all.x=T)
+
+
 VPDES<-merge(VPDES,Discharge,by=c("Facility.ID","Facility_Name"),all.x=T)
-
-
 
 #--------------Withdrawing Facilities in VWUDS Database
 load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
 VWUDS<-VWUDS_2010_2017
-
-VWUDS<-subset(VWUDS,VWUDS$Reclass_Use_Type=="Energy")
-# VWUDS<-subset(VWUDS,!VWUDS$Facility.ID%in%Existing_Matches$VWUDS.HydroID)
-# VWUDS<-subset(VWUDS,subset=VWUDS$Facility.ID%in%Major_With$Facility.ID)
-# VWUDS<-subset(VWUDS,subset=VWUDS$Facility.ID%in%Match_With$Facility.ID)
-# load(paste0(path,"/Major_With.RData"))
-# load(paste0(path,"/Match_With.RData"))
-load(paste0(path,"/cum_with.RData"))
-# colnames(Major_With)[2]<-"Owner_Facility"
 VWUDS<-mutate_if(VWUDS,is.factor,as.character)
 VWUDS$Owner_Facility<-do.call(paste, c(VWUDS[c("Owner","Facility")],sep=":"))
+
+load(paste0(path,"/cum_with.RData"))
+colnames(Withdrawal)[1]<-c("Facility.ID")
+
 
 VWUDS<-VWUDS%>%dplyr::group_by(Facility.ID)%>%dplyr::summarise(Facility_Name=first(Owner_Facility),Longitude=mean(Corrected_Longitude, na.rm=T),
                                                                Latitude=mean(Corrected_Latitude, na.rm=T), Use_type=first(Reclass_Use_Type), 
                                                                Source=first(Source.Type), County=first(Locality))
 
 VWUDS<-merge(VWUDS,Withdrawal,by=c("Facility.ID"),all.x=T)
-# VWUDS<-subset(VWUDS,VWUDS$perc_total>0.0001)
-
 
 colnames(VWUDS)[2]<-"Facility_Name"
 VWUDS$Facility_Name<-toupper(VWUDS$Facility_Name)
 VPDES$Facility_Name<-toupper(VPDES$Facility_Name)
 
-# VWUDS<-subset(VWUDS,select=c(1:7,9:16,18,20))
-# write.table(VWUDS,paste0(path,"/VWUDS_Energy.txt"),sep="|",row.names=F)
-# 
-# VPDES<-subset(VPDES,select=c(1:16,18,20))
-# write.table(VPDES,paste0(path,"/VPDES_Energy.txt"),sep="|",row.names = F)
 
 ########################################################################################################
 ####Narrowing Facilities Based on Distance####
@@ -135,7 +135,8 @@ for(i in 1:nrow(VPDES_Loc)){
   #distm function calculates distance between each single point in VPDES to all points from VWUDS
   #places output in rows to show that each point from VPDES list is compared to each points in VWUDS list.
   #distance calculated here is in kilometers and uses distHaversine function
-  #distHaverine calculates the shortest distance between two spatial points assuming a spherical shaped earth. Assumes radius of earth is 6378137 m
+  #distHaverine calculates the shortest distance between two spatial points assuming a spherical shaped earth. 
+  # Assumes radius of earth is 6378137 m
   # It used the same units as r, so we are dealing with meters. However, I will divide by 1000 to work in km
   distance[i,]<-(distm(single_VPDES_facility,VWUDS_Loc, fun=distHaversine)/1000)
 }
@@ -196,7 +197,8 @@ VWUDS.facilities.within.radius<-unname(VWUDS.facilities.within.radius) #need to 
 ########################################################################################################
 ####Now that we have are narrowed matrix of potential VPDES facilities for each VWUDS facility, we can partially match by name####
 
-##But now that we have a larger matrix, we need to alter this code in such a way to go through each row comparing the the row name (VWUDS facility) to the narrowed down VPDES facilities##
+##But now that we have a larger matrix, we need to alter this code in such a way to go through each row comparing the 
+# the row name (VWUDS facility) to the narrowed down VPDES facilities##
 ##In the end we will have a list of all VPDES facilites and potential VWUDS facilities that match them##
 
 ##This method of Fuzzy String Matching is adapted from bigdata-doctor.com##

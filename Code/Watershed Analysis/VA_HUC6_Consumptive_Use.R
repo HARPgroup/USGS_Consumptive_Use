@@ -39,6 +39,8 @@ library(ggrepel)
 library(GISTools)
 library(maps)
 library(grid)
+library(ggpubr)
+
 
 options(scipen=999) #Disable scientific notation
 options(digits = 9)
@@ -351,12 +353,11 @@ transfers(relf,delf,relt,delt)
 #---Load in Discharge Data previously cleaned---#
 
 ECHO_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/ECHO_2010_2017_QAQC_statewide.txt", sep="\t", header=T)
-ECHO_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VPDES.Facility.ID),Outfalls=n_distinct(OutfallID),Summed_D=sum(Measured_Effluent,na.rm=T),Summed_D_QAQC=sum(Discharges_MGD,na.rm=T))
 
 #---Load in fully matched Discharge Data previously cleaned---#
 
 full_match_2010_2017<-read.table("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/full_match_2010_2017.txt", sep="\t", header=T)
-full_match_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VPDES.Facility.ID),Outfalls=n_distinct(OutfallID))
+
 
 #-------------Sector Analysis---------------#
 
@@ -380,9 +381,6 @@ all_discharge<- function(discharge_db,label){
   #--Sum Discharges in the HUC 6 Watersheds--#
   discharge_db.test<-as.data.frame(discharge_db@data)
   
-  ECHO_Resol_Mean_Med<-discharge_db.test%>%dplyr::group_by(OutfallID,Year)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
-  discharge_db.test<-merge(discharge_db.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-  
   Outfall_Discharges<-discharge_db@data%>%
     dplyr::group_by(OutfallID,Year)%>%
     dplyr::summarise(Facility.ID=first(VPDES.Facility.ID),
@@ -399,10 +397,101 @@ all_discharge<- function(discharge_db,label){
     dplyr::summarise(HUC6=first(HUC6),
                      Discharge_MGD=sum(Discharges_MGD,na.rm=T))
   
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     VPDES.Facility.ID=first(VPDES.Facility.ID),
+                     Outfalls=n_distinct(OutfallID),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Outfalls=sum(Outfalls),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))
+  
   assign(paste0("HUC6_Discharges",label),HUC6_Discharges,envir = .GlobalEnv)
   assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
 }
 all_discharge(ECHO_2010_2017,"") # All Facilities
+
+all_discharge<- function(discharge_db,label){
+  
+  discharge_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=discharge_db$Fac.Long,Facility_Latitude=discharge_db$Fac.Lat),discharge_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  discharge_db@data$VPDES.Name<-as.character(discharge_db@data$VPDES.Name)
+  discharge_db@data$Discharges_MGD<-as.numeric(discharge_db@data$Discharges_MGD)#after QA/QC
+  
+  #--Overlay with HUC6 Shapefile--#
+  HUC6_Facilities<-over(discharge_db,HUC6_Overlay)
+  discharge_db@data$HUC6<-HUC6_Facilities$HUC6
+  discharge_db@data$HUC6Name<-HUC6_Facilities$HUC6Name
+  
+  
+  #--Sum Discharges in the HUC 6 Watersheds--#
+  discharge_db.test<-as.data.frame(discharge_db@data)
+  
+  Facility_Discharges<-discharge_db@data%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     HUC6Name=first(HUC6Name),
+                     HUC6=first(HUC6))%>%arrange(desc(Discharges_MGD))
+  
+  
+  HUC6_Discharges<-Facility_Discharges%>%
+    dplyr::group_by(HUC6Name,Year)%>%
+    dplyr::summarise(HUC6=first(HUC6),
+                     Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  assign(paste0("HUC6_Discharges",label),HUC6_Discharges,envir = .GlobalEnv)
+  assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
+}
 all_discharge(full_match_2010_2017,"_matched") # Fully Matched Facilities
 
 #---Option to separate by Water Use Sector---#
@@ -424,9 +513,6 @@ sector_discharge<- function(discharge_db,sector,label){
   #--Sum Discharges in the HUC 6 Watersheds--#
   discharge_db.test<-as.data.frame(discharge_db@data)
   
-  ECHO_Resol_Mean_Med<-discharge_db.test%>%dplyr::group_by(OutfallID,Year)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
-  discharge_db.test<-merge(discharge_db.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-  
   Outfall_Discharges<-discharge_db@data%>%
     dplyr::group_by(OutfallID,Year)%>%
     dplyr::summarise(Facility.ID=first(VPDES.Facility.ID),
@@ -443,20 +529,108 @@ sector_discharge<- function(discharge_db,sector,label){
     dplyr::summarise(HUC6=first(HUC6),
                      Discharge_MGD=sum(Discharges_MGD,na.rm=T))
   
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     VPDES.Facility.ID=first(VPDES.Facility.ID),
+                     Outfalls=n_distinct(OutfallID),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Outfalls=sum(Outfalls),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))
+  
   assign(paste0("HUC6_Discharges",label),HUC6_Discharges,envir = .GlobalEnv)
   assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
 }
 sector_discharge(ECHO_2010_2017,"Energy","_energy")
-sector_discharge(ECHO_2010_2017,"Agriculture/Irrigation","_ag")
+sector_discharge(ECHO_2010_2017,"Aquaculture","_aq")
 sector_discharge(ECHO_2010_2017,"Commercial","_commercial")
 sector_discharge(ECHO_2010_2017,"Industrial","_industrial")
 sector_discharge(ECHO_2010_2017,"Municipal","_municipal")
 
+sector_discharge<- function(discharge_db,sector,label){
+  
+  discharge_db<-subset(discharge_db,subset=discharge_db$Use.Type==sector)
+  
+  discharge_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=discharge_db$Fac.Long,Facility_Latitude=discharge_db$Fac.Lat),discharge_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  discharge_db@data$VPDES.Name<-as.character(discharge_db@data$VPDES.Name)
+  discharge_db@data$Discharges_MGD<-as.numeric(discharge_db@data$Discharges_MGD)#after QA/QC
+  
+  #--Overlay with HUC6 Shapefile--#
+  HUC6_Facilities<-over(discharge_db,HUC6_Overlay)
+  discharge_db@data$HUC6<-HUC6_Facilities$HUC6
+  discharge_db@data$HUC6Name<-HUC6_Facilities$HUC6Name
+  
+  #--Sum Discharges in the HUC 6 Watersheds--#
+  discharge_db.test<-as.data.frame(discharge_db@data)
+  
+  Facility_Discharges<-discharge_db@data%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     HUC6Name=first(HUC6Name),
+                     HUC6=first(HUC6))%>%arrange(desc(Discharges_MGD))
+  
+  
+  HUC6_Discharges<-Facility_Discharges%>%
+    dplyr::group_by(HUC6Name,Year)%>%
+    dplyr::summarise(HUC6=first(HUC6),
+                     Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  assign(paste0("HUC6_Discharges",label),HUC6_Discharges,envir = .GlobalEnv)
+  assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
+}
 sector_discharge(full_match_2010_2017,"Energy","_match_energy")
-sector_discharge(full_match_2010_2017,"Agriculture/Irrigation","_match_ag")
+sector_discharge(full_match_2010_2017,"Aquaculture","_match_aq")
 sector_discharge(full_match_2010_2017,"Commercial","_match_commercial")
 sector_discharge(full_match_2010_2017,"Industrial","_match_industrial")
-sector_discharge(full_match_2010_2017,"Municipal","_match_municipal")
 
 #--Option to look at Non-Energy Sectors--#
 nonenergy_discharge<- function(discharge_db,label){
@@ -476,9 +650,6 @@ nonenergy_discharge<- function(discharge_db,label){
   #--Sum Discharges in the HUC 6 Watersheds--#
   discharge_db.test<-as.data.frame(discharge_db@data)
   
-  ECHO_Resol_Mean_Med<-discharge_db.test%>%dplyr::group_by(OutfallID,Year)%>%dplyr::summarise(Resolved_Mean_Med=mean(Discharges_MGD,na.rm=T))
-  discharge_db.test<-merge(discharge_db.test,ECHO_Resol_Mean_Med,by="OutfallID",all.x=T)
-  
   Outfall_Discharges<-discharge_db@data%>%
     dplyr::group_by(OutfallID,Year)%>%
     dplyr::summarise(Facility.ID=first(VPDES.Facility.ID),
@@ -495,18 +666,106 @@ nonenergy_discharge<- function(discharge_db,label){
     dplyr::summarise(HUC6=first(HUC6),
                      Discharge_MGD=sum(Discharges_MGD,na.rm=T))
   
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(OutfallID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     VPDES.Facility.ID=first(VPDES.Facility.ID),
+                     Outfalls=n_distinct(OutfallID),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD,na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Outfalls=sum(Outfalls),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))
+  
   assign(paste0("HUC6_Discharges",label),HUC6_Discharges,envir = .GlobalEnv)
   assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
 }
 nonenergy_discharge(ECHO_2010_2017,"_nonenergy")
-nonenergy_discharge(full_match_2010_2017,"_match_nonenergy")
 
+nonenergy_discharge<- function(discharge_db,label){
+  
+  discharge_db<-subset(discharge_db,subset=!discharge_db$Use.Type=="Energy")
+  discharge_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=discharge_db$Fac.Long,Facility_Latitude=discharge_db$Fac.Lat),discharge_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  discharge_db@data$VPDES.Name<-as.character(discharge_db@data$VPDES.Name)
+  discharge_db@data$Discharges_MGD<-as.numeric(discharge_db@data$Discharges_MGD)#after QA/QC
+  
+  #--Overlay with HUC6 Shapefile--#
+  HUC6_Facilities<-over(discharge_db,HUC6_Overlay)
+  discharge_db@data$HUC6<-HUC6_Facilities$HUC6
+  discharge_db@data$HUC6Name<-HUC6_Facilities$HUC6Name
+  
+  #--Sum Discharges in the HUC 6 Watersheds--#
+  discharge_db.test<-as.data.frame(discharge_db@data)
+  
+  Facility_Discharges<-discharge_db@data%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     HUC6Name=first(HUC6Name),
+                     HUC6=first(HUC6))%>%arrange(desc(Discharges_MGD))
+  
+  
+  HUC6_Discharges<-Facility_Discharges%>%
+    dplyr::group_by(HUC6Name,Year)%>%
+    dplyr::summarise(HUC6=first(HUC6),
+                     Discharge_MGD=sum(Discharges_MGD,na.rm=T))
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VPDES.Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=sum(Discharges_MGD, na.rm=T)/first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  
+  discharge_db.test<-discharge_db.test%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     Fac.Lat=first(Fac.Lat),
+                     Fac.Long=first(Fac.Long),
+                     Discharges_MGD=median(Discharges_MGD,na.rm=T),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Fuel_Type=first(Fuel_Type),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Discharges_MGD))
+  
+  assign(paste0("HUC6_Discharges",label),HUC6_Discharges,envir = .GlobalEnv)
+  assign(paste0("ECHO.test",label),discharge_db.test,envir = .GlobalEnv)
+}
+nonenergy_discharge(full_match_2010_2017,"_match_nonenergy")
 
 ###########################################################################################################################################
 #----------------------------------------------------Calculating Withdrawals--------------------------------------------------------------#
 
 #---Load in Withdrawal Data previously cleaned in VWUDS_QAQC.R---#
-load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017.RData")
+load("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/VWUDS_2010_2017_statewide.RData")
 VWUDS_2010_2017%>%dplyr::summarise(Facilities=n_distinct(VWUDS.Facility.ID),Sources=n_distinct(DEQ.ID.of.Source),Summed_W=sum(Withdrawals_MGD,na.rm=T))
 colnames(VWUDS_2010_2017)[18:19]<-c("VWUDS.Lat","VWUDS.Long")
 colnames(VWUDS_2010_2017)[6]<-c("VWUDS.Name")
@@ -548,10 +807,94 @@ all_withdrawal<- function(withdrawal_db,label){
     dplyr::summarise(HUC6=first(HUC6),
                      Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
   
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Facility.ID=first(VWUDS.Facility.ID),
+                     Sources=n_distinct(DEQ.ID.of.Source),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Sources=sum(Sources),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
   assign(paste0("HUC6_Withdrawals",label),HUC6_Withdrawals,envir = .GlobalEnv)
   assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
 }
 all_withdrawal(VWUDS_2010_2017,"") # All Facilities
+
+all_withdrawal<- function(withdrawal_db,label){
+  
+  withdrawal_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=withdrawal_db$Fac.Long,
+                                                       Facility_Latitude=withdrawal_db$Fac.Lat),
+                                            withdrawal_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  withdrawal_db@data$VWUDS.Name<-as.character(withdrawal_db@data$VWUDS.Name)
+  withdrawal_db@data$Withdrawals_MGD<-as.numeric(withdrawal_db@data$Withdrawals_MGD)#after QA/QC
+  
+  #--Overlay with HUC6 Shapefile--#
+  HUC6_Facilities<-over(withdrawal_db,HUC6_Overlay)
+  withdrawal_db@data$HUC6<-HUC6_Facilities$HUC6
+  withdrawal_db@data$HUC6Name<-HUC6_Facilities$HUC6Name
+  
+  #--Sum Discharges in the HUC 6 Watersheds--#
+  withdrawal_db.test<-as.data.frame(withdrawal_db@data)
+  
+  Facility_Withdrawals<-withdrawal_db@data%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     HUC6Name=first(HUC6Name),
+                     HUC6=first(HUC6))
+  
+  
+  HUC6_Withdrawals<-Facility_Withdrawals%>%
+    dplyr::group_by(HUC6Name,Year)%>%
+    dplyr::summarise(HUC6=first(HUC6),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  assign(paste0("HUC6_Withdrawals",label),HUC6_Withdrawals,envir = .GlobalEnv)
+  assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
+} #Want to use one facility location for matched facilities
 all_withdrawal(full_match_2010_2017,"_matched") # Fully Matched Facilities
 
 #---Option to separate by Water Use Sector---#
@@ -589,20 +932,105 @@ sector_withdrawal<- function(withdrawal_db,sector,label){
     dplyr::summarise(HUC6=first(HUC6),
                      Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
   
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Facility.ID=first(VWUDS.Facility.ID),
+                     Sources=n_distinct(DEQ.ID.of.Source),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Sources=sum(Sources),
+                     Ave_Mon_Reported=median(Ave_Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
   assign(paste0("HUC6_Withdrawals",label),HUC6_Withdrawals,envir = .GlobalEnv)
   assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
 }
 sector_withdrawal(VWUDS_2010_2017,"Energy","_energy")
 sector_withdrawal(VWUDS_2010_2017,"Agriculture/Irrigation","_ag")
+sector_withdrawal(VWUDS_2010_2017,"Aquaculture","_aq")
 sector_withdrawal(VWUDS_2010_2017,"Commercial","_commercial")
 sector_withdrawal(VWUDS_2010_2017,"Industrial","_industrial")
 sector_withdrawal(VWUDS_2010_2017,"Municipal","_municipal")
 
+# Separate function that uses coordinates of VPDES counterpart
+sector_withdrawal<- function(withdrawal_db,sector,label){
+  
+  withdrawal_db<-subset(withdrawal_db,subset=withdrawal_db$Use.Type==sector)
+  withdrawal_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=withdrawal_db$Fac.Long,
+                                                       Facility_Latitude=withdrawal_db$Fac.Lat),
+                                            withdrawal_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  withdrawal_db@data$VWUDS.Name<-as.character(withdrawal_db@data$VWUDS.Name)
+  withdrawal_db@data$Withdrawals_MGD<-as.numeric(withdrawal_db@data$Withdrawals_MGD)#after QA/QC
+  
+  #--Overlay with HUC6 Shapefile--#
+  HUC6_Facilities<-over(withdrawal_db,HUC6_Overlay)
+  withdrawal_db@data$HUC6<-HUC6_Facilities$HUC6
+  withdrawal_db@data$HUC6Name<-HUC6_Facilities$HUC6Name
+  
+  #--Sum Discharges in the HUC 6 Watersheds--#
+  withdrawal_db.test<-as.data.frame(withdrawal_db@data)
+  
+  Facility_Withdrawals<-withdrawal_db@data%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     HUC6Name=first(HUC6Name),
+                     HUC6=first(HUC6))
+  
+  
+  HUC6_Withdrawals<-Facility_Withdrawals%>%
+    dplyr::group_by(HUC6Name,Year)%>%
+    dplyr::summarise(HUC6=first(HUC6),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  assign(paste0("HUC6_Withdrawals",label),HUC6_Withdrawals,envir = .GlobalEnv)
+  assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
+}
 sector_withdrawal(full_match_2010_2017,"Energy","_match_energy")
-sector_withdrawal(full_match_2010_2017,"Agriculture/Irrigation","_match_ag")
+sector_withdrawal(full_match_2010_2017,"Aquaculture","_match_aq")
 sector_withdrawal(full_match_2010_2017,"Commercial","_match_commercial")
 sector_withdrawal(full_match_2010_2017,"Industrial","_match_industrial")
-sector_withdrawal(full_match_2010_2017,"Municipal","_match_municipal")
 
 #--Option to look at Non-Energy Sectors--#
 nonenergy_withdrawal<- function(withdrawal_db,label){
@@ -639,294 +1067,258 @@ nonenergy_withdrawal<- function(withdrawal_db,label){
     dplyr::summarise(HUC6=first(HUC6),
                      Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
   
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(DEQ.ID.of.Source,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Facility.ID=first(VWUDS.Facility.ID),
+                     Sources=n_distinct(DEQ.ID.of.Source),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Sources=sum(Sources),
+                     Ave_Mon_Reported=mean(Ave_Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
   assign(paste0("HUC6_Withdrawals",label),HUC6_Withdrawals,envir = .GlobalEnv)
   assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
 }
 nonenergy_withdrawal(VWUDS_2010_2017,"_nonenergy")
+
+nonenergy_withdrawal<- function(withdrawal_db,label){
+  
+  withdrawal_db<-subset(withdrawal_db,subset=!withdrawal_db$Use.Type=="Energy")
+  withdrawal_db<-sp::SpatialPointsDataFrame(data.frame(Facility_Longitude=withdrawal_db$Fac.Long,
+                                                       Facility_Latitude=withdrawal_db$Fac.Lat),
+                                            withdrawal_db,proj4string = CRS("+init=epsg:4269"))#projecting to NAD83
+  
+  #----Set Data Type----#
+  withdrawal_db@data$VWUDS.Name<-as.character(withdrawal_db@data$VWUDS.Name)
+  withdrawal_db@data$Withdrawals_MGD<-as.numeric(withdrawal_db@data$Withdrawals_MGD)#after QA/QC
+  
+  #--Overlay with HUC6 Shapefile--#
+  HUC6_Facilities<-over(withdrawal_db,HUC6_Overlay)
+  withdrawal_db@data$HUC6<-HUC6_Facilities$HUC6
+  withdrawal_db@data$HUC6Name<-HUC6_Facilities$HUC6Name
+  
+  #--Sum Discharges in the HUC 6 Watersheds--#
+  withdrawal_db.test<-as.data.frame(withdrawal_db@data)
+  
+  Facility_Withdrawals<-withdrawal_db@data%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     Mon_Reported=first(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD, na.rm=T)/first(Mon_Reported),
+                     Sector=first(Use.Type),
+                     HUC6Name=first(HUC6Name),
+                     HUC6=first(HUC6))
+  
+  
+  HUC6_Withdrawals<-Facility_Withdrawals%>%
+    dplyr::group_by(HUC6Name,Year)%>%
+    dplyr::summarise(HUC6=first(HUC6),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T))
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID,Year)%>%
+    dplyr::summarise(Facility_Name=first(VWUDS.Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Ave_Mon_Reported=mean(Mon_Reported),
+                     Withdrawals_MGD=sum(Withdrawals_MGD,na.rm=T)/first(Mon_Reported),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  
+  withdrawal_db.test<-withdrawal_db.test%>%
+    dplyr::group_by(VWUDS.Facility.ID)%>%
+    dplyr::summarise(Facility_Name=first(Facility_Name),
+                     VWUDS.Lat=first(VWUDS.Lat),
+                     VWUDS.Long=first(VWUDS.Long),
+                     Withdrawals_MGD=median(Withdrawals_MGD,na.rm=T),
+                     Use.Type=first(Use.Type))%>%arrange(desc(Withdrawals_MGD))
+  
+  assign(paste0("HUC6_Withdrawals",label),HUC6_Withdrawals,envir = .GlobalEnv)
+  assign(paste0("VWUDS.test",label),withdrawal_db.test,envir=.GlobalEnv)
+}
 nonenergy_withdrawal(full_match_2010_2017,"_match_nonenergy")
 
 ###########################################################################################################################################
 #------------------------------------------Apply Withdrawals and Discharges into HUC6 Spatial Dataframe-----------------------------------#
 
-HUC6_discharge_withdrawal<- function(HUC6_Discharges,HUC6_Withdrawals,label){
+HUC6_discharge_withdrawal<- function(HUC6_Discharges_db,HUC6_Withdrawals_db,label){
   #---Year 2010----#
-  HUC6@data$Discharges_2010<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2010"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2010"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2010"])],NA)
-  HUC6@data$Withdrawals_2010<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2010"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2010"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2010"])],NA)
+  HUC6@data$Discharges_2010<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2010"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2010"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2010"])],NA)
+  HUC6@data$Withdrawals_2010<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2010"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2010"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2010"])],NA)
   
   #---Year 2011----#
-  HUC6@data$Discharges_2011<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2011"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2011"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2011"])],NA)
-  HUC6@data$Withdrawals_2011<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2011"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2011"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2011"])],NA)
+  HUC6@data$Discharges_2011<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2011"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2011"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2011"])],NA)
+  HUC6@data$Withdrawals_2011<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2011"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2011"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2011"])],NA)
   
   #---Year 2012----#
-  HUC6@data$Discharges_2012<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2012"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2012"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2012"])],NA)
-  HUC6@data$Withdrawals_2012<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2012"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2012"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2012"])],NA)
+  HUC6@data$Discharges_2012<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2012"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2012"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2012"])],NA)
+  HUC6@data$Withdrawals_2012<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2012"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2012"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2012"])],NA)
   
   #---Year 2013----#
-  HUC6@data$Discharges_2013<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2013"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2013"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2013"])],NA)
-  HUC6@data$Withdrawals_2013<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2013"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2013"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2013"])],NA)
+  HUC6@data$Discharges_2013<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2013"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2013"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2013"])],NA)
+  HUC6@data$Withdrawals_2013<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2013"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2013"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2013"])],NA)
   
   #---Year 2014----#
-  HUC6@data$Discharges_2014<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2014"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2014"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2014"])],NA)
-  HUC6@data$Withdrawals_2014<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2014"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2014"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2014"])],NA)
+  HUC6@data$Discharges_2014<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2014"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2014"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2014"])],NA)
+  HUC6@data$Withdrawals_2014<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2014"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2014"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2014"])],NA)
   
   #---Year 2015----#
-  HUC6@data$Discharges_2015<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2015"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2015"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2015"])],NA)
-  HUC6@data$Withdrawals_2015<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2015"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2015"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2015"])],NA)
+  HUC6@data$Discharges_2015<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2015"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2015"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2015"])],NA)
+  HUC6@data$Withdrawals_2015<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2015"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2015"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2015"])],NA)
   
   #---Year 2016----#
-  HUC6@data$Discharges_2016<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2016"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2016"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2016"])],NA)
-  HUC6@data$Withdrawals_2016<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2016"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2016"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2016"])],NA)
-  
-  #---Year 2017----#
-  HUC6@data$Discharges_2017<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2017"],HUC6_Discharges$Discharge_MGD[HUC6_Discharges$Year=="2017"][match(HUC6@data$HUC6,HUC6_Discharges$HUC6[HUC6_Discharges$Year=="2017"])],NA)
-  HUC6@data$Withdrawals_2017<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2017"],HUC6_Withdrawals$Withdrawals_MGD[HUC6_Withdrawals$Year=="2017"][match(HUC6@data$HUC6,HUC6_Withdrawals$HUC6[HUC6_Withdrawals$Year=="2017"])],NA)
+  HUC6@data$Discharges_2016<-ifelse(HUC6@data$HUC6%in%HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2016"],HUC6_Discharges_db$Discharge_MGD[HUC6_Discharges_db$Year=="2016"][match(HUC6@data$HUC6,HUC6_Discharges_db$HUC6[HUC6_Discharges_db$Year=="2016"])],NA)
+  HUC6@data$Withdrawals_2016<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2016"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2016"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2016"])],NA)
   
   assign(paste0("HUC6",label),HUC6,envir = .GlobalEnv)
 }
 
-#---All Sectors---#
+#----------------------------------------------------------#
+#-------------------All Available Data---------------------#
 
-#-All Facilities-#
-HUC6_discharge_withdrawal(HUC6_Discharges,HUC6_Withdrawals,"")
+#--All Sectors--#
+HUC6_discharge_withdrawal(HUC6_Discharges,HUC6_Withdrawals,"_all")
 
-#-Fully Matched Facilities-#
-HUC6_discharge_withdrawal(HUC6_Discharges_matched,HUC6_Withdrawals_matched,"_matched")
-
-#---Subsetted by Sector---#
-
-#-All Facilities-#
+#--Non-Energy--#
+HUC6_discharge_withdrawal(HUC6_Discharges_nonenergy,HUC6_Withdrawals_nonenergy,"_nonenergy")
 HUC6_discharge_withdrawal(HUC6_Discharges_energy,HUC6_Withdrawals_energy,"_energy")
-HUC6_discharge_withdrawal(HUC6_Discharges_ag,HUC6_Withdrawals_ag,"_ag")
+HUC6_discharge_withdrawal(HUC6_Discharges_aq,HUC6_Withdrawals_aq,"_aq")
 HUC6_discharge_withdrawal(HUC6_Discharges_commercial,HUC6_Withdrawals_commercial,"_commercial")
 HUC6_discharge_withdrawal(HUC6_Discharges_industrial,HUC6_Withdrawals_industrial,"_industrial")
 HUC6_discharge_withdrawal(HUC6_Discharges_municipal,HUC6_Withdrawals_municipal,"_municipal")
 
-#-Fully Matched Facilities-#
+#--Agriculture--#
+ag.HUC6_discharge_withdrawal<- function(HUC6_Withdrawals_db,label){
+  #---Year 2010----#
+  HUC6@data$Withdrawals_2010<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2010"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2010"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2010"])],NA)
+  
+  #---Year 2011----#
+  HUC6@data$Withdrawals_2011<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2011"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2011"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2011"])],NA)
+  
+  #---Year 2012----#
+  HUC6@data$Withdrawals_2012<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2012"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2012"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2012"])],NA)
+  
+  #---Year 2013----#
+  HUC6@data$Withdrawals_2013<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2013"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2013"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2013"])],NA)
+  
+  #---Year 2014----#
+  HUC6@data$Withdrawals_2014<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2014"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2014"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2014"])],NA)
+  
+  #---Year 2015----#
+  HUC6@data$Withdrawals_2015<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2015"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2015"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2015"])],NA)
+  
+  #---Year 2016----#
+  HUC6@data$Withdrawals_2016<-ifelse(HUC6@data$HUC6%in%HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2016"],HUC6_Withdrawals_db$Withdrawals_MGD[HUC6_Withdrawals_db$Year=="2016"][match(HUC6@data$HUC6,HUC6_Withdrawals_db$HUC6[HUC6_Withdrawals_db$Year=="2016"])],NA)
+  
+  assign(paste0("HUC6",label),HUC6,envir = .GlobalEnv)
+  
+}
+ag.HUC6_discharge_withdrawal(HUC6_Withdrawals_ag,"_ag")
+
+#----------------------------------------------------------#
+#-------------------Matched Facility Data------------------#
+
+#--All Sectors--#
+HUC6_discharge_withdrawal(HUC6_Discharges_matched,HUC6_Withdrawals_matched,"_matched")
+
+#--Non-Energy--#
+HUC6_discharge_withdrawal(HUC6_Discharges_match_nonenergy,HUC6_Withdrawals_match_nonenergy,"_match_nonenergy")
 HUC6_discharge_withdrawal(HUC6_Discharges_match_energy,HUC6_Withdrawals_match_energy,"_match_energy")
-HUC6_discharge_withdrawal(HUC6_Discharges_match_ag,HUC6_Withdrawals_match_ag,"_match_ag")
+HUC6_discharge_withdrawal(HUC6_Discharges_match_aq,HUC6_Withdrawals_match_aq,"_match_aq")
 HUC6_discharge_withdrawal(HUC6_Discharges_match_commercial,HUC6_Withdrawals_match_commercial,"_match_commercial")
 HUC6_discharge_withdrawal(HUC6_Discharges_match_industrial,HUC6_Withdrawals_match_industrial,"_match_industrial")
-HUC6_discharge_withdrawal(HUC6_Discharges_match_municipal,HUC6_Withdrawals_match_municipal,"_match_municipal")
 
-#---Non-Energy Sectors---#
-
-#-All Facilities-#
-HUC6_discharge_withdrawal(HUC6_Discharges_nonenergy,HUC6_Withdrawals_nonenergy,"_nonenergy")
-
-#-Fully Matched Facilities-#
-HUC6_discharge_withdrawal(HUC6_Discharges_match_nonenergy,HUC6_Withdrawals_match_nonenergy,"_match_nonenergy")
-
-
-rm(HUC6_Discharges,HUC6_Discharges_ag,HUC6_Discharges_commercial,HUC6_Discharges_energy,HUC6_Discharges_industrial,HUC6_Discharges_match_ag,
+rm(HUC6_Discharges,HUC6_Discharges_commercial,HUC6_Discharges_energy,HUC6_Discharges_industrial,HUC6_Discharges_match_ag,
    HUC6_Discharges_match_commercial,HUC6_Discharges_match_energy,HUC6_Discharges_match_industrial,HUC6_Discharges_match_municipal,HUC6_Discharges_match_nonenergy,
    HUC6_Discharges_matched,HUC6_Withdrawals,HUC6_Withdrawals_ag,HUC6_Withdrawals_commercial,HUC6_Withdrawals_energy,HUC6_Withdrawals_industrial,
    HUC6_Withdrawals_match_ag,HUC6_Withdrawals_match_commercial,HUC6_Withdrawals_match_energy,HUC6_Withdrawals_match_industrial,HUC6_Withdrawals_match_municipal,
    HUC6_Withdrawals_match_nonenergy,HUC6_Discharges_municipal,HUC6_Discharges_nonenergy,HUC6_Withdrawals_matched,HUC6_Withdrawals_municipal,HUC6_Withdrawals_nonenergy)
 
 ###########################################################################################################################################
-#-----------------------------------------------Net Water Balance and Consumtpive Use-----------------------------------------------------#
+#-----------------------------------------------Net Water Balance and Consumptive Use-----------------------------------------------------#
 
-NWB_CU<- function(HUC6,label){
+NWB_CU<- function(HUC6_db,label){
   #---Year 2010----#
+  HUC6_db@data$NetWB_2010<-(ifelse(is.na(HUC6_db@data$Discharges_2010),0,HUC6_db@data$Discharges_2010))-(ifelse(is.na(HUC6_db@data$Withdrawals_2010),0,HUC6_db@data$Withdrawals_2010))
+  HUC6_db@data$NetWB_2010<-ifelse(is.na(HUC6_db@data$Discharges_2010)&is.na(HUC6_db@data$Withdrawals_2010),NA,HUC6_db@data$NetWB_2010)
   
-  #--With Transfers---#
-  #transfers have sign--negative mean water is leaving, positive means water is coming in 
+  HUC6_db@data$Consumption_2010<-((ifelse(is.na(HUC6_db@data$Withdrawals_2010),0,HUC6_db@data$Withdrawals_2010))-(ifelse(is.na(HUC6_db@data$Discharges_2010),0,HUC6_db@data$Discharges_2010)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2010),0,HUC6_db@data$Withdrawals_2010))
+  HUC6_db@data$Consumption_2010<-ifelse(is.nan(HUC6_db@data$Consumption_2010)|is.infinite(HUC6_db@data$Consumption_2010),NA,HUC6_db@data$Consumption_2010)
   
-  HUC6@data$NetWB_2010_t<-(ifelse(is.na(HUC6@data$Discharges_2010),0,HUC6@data$Discharges_2010))+(ifelse(is.na(HUC6@data$transferred_2010),0,HUC6@data$transferred_2010))-(ifelse(is.na(HUC6@data$Withdrawals_2010),0,HUC6@data$Withdrawals_2010))
-  
-  HUC6@data$NetWB_2010_t<-ifelse(is.na(HUC6@data$Discharges_2010)&is.na(HUC6@data$Withdrawals_2010)&is.na(HUC6@data$transferred_2010),NA,HUC6@data$NetWB_2010_t)
-  
-  HUC6@data$Consumption_2010_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2010),0,HUC6@data$Withdrawals_2010))+(ifelse(is.na(HUC6@data$waterout_2010),0,-HUC6@data$waterout_2010)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2010),0,HUC6@data$Discharges_2010))+(ifelse(is.na(HUC6@data$waterin_2010),0,HUC6@data$waterin_2010)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2010),0,HUC6@data$Withdrawals_2010))+(ifelse(is.na(HUC6@data$waterout_2010),0,-HUC6@data$waterout_2010)))
-  
-  HUC6@data$Consumption_2010_t<-ifelse(is.nan(HUC6@data$Consumption_2010_t)|is.infinite(HUC6@data$Consumption_2010_t),NA,HUC6@data$Consumption_2010_t)
-  #--Without Transfers---#
-  
-  HUC6@data$NetWB_2010<-(ifelse(is.na(HUC6@data$Discharges_2010),0,HUC6@data$Discharges_2010))-(ifelse(is.na(HUC6@data$Withdrawals_2010),0,HUC6@data$Withdrawals_2010))
-  
-  HUC6@data$NetWB_2010<-ifelse(is.na(HUC6@data$Discharges_2010)&is.na(HUC6@data$Withdrawals_2010),NA,HUC6@data$NetWB_2010)
-  
-  HUC6@data$Consumption_2010<-((ifelse(is.na(HUC6@data$Withdrawals_2010),0,HUC6@data$Withdrawals_2010))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2010),0,HUC6@data$Discharges_2010)))/(ifelse(is.na(HUC6@data$Withdrawals_2010),0,HUC6@data$Withdrawals_2010))
-  
-  HUC6@data$Consumption_2010<-ifelse(is.nan(HUC6@data$Consumption_2010)|is.infinite(HUC6@data$Consumption_2010),NA,HUC6@data$Consumption_2010)
   #---Year 2011----#
+
+  HUC6_db@data$NetWB_2011<-(ifelse(is.na(HUC6_db@data$Discharges_2011),0,HUC6_db@data$Discharges_2011))-(ifelse(is.na(HUC6_db@data$Withdrawals_2011),0,HUC6_db@data$Withdrawals_2011))
+  HUC6_db@data$NetWB_2011<-ifelse(is.na(HUC6_db@data$Discharges_2011)&is.na(HUC6_db@data$Withdrawals_2011),NA,HUC6_db@data$NetWB_2011)
   
-  #----With transfers---#
-  HUC6@data$NetWB_2011_t<-(ifelse(is.na(HUC6@data$Discharges_2011),0,HUC6@data$Discharges_2011))+(ifelse(is.na(HUC6@data$transferred_2011),0,HUC6@data$transferred_2011))-(ifelse(is.na(HUC6@data$Withdrawals_2011),0,HUC6@data$Withdrawals_2011))
+  HUC6_db@data$Consumption_2011<-((ifelse(is.na(HUC6_db@data$Withdrawals_2011),0,HUC6_db@data$Withdrawals_2011))-(ifelse(is.na(HUC6_db@data$Discharges_2011),0,HUC6_db@data$Discharges_2011)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2011),0,HUC6_db@data$Withdrawals_2011))
+  HUC6_db@data$Consumption_2011<-ifelse(is.nan(HUC6_db@data$Consumption_2011)|is.infinite(HUC6_db@data$Consumption_2011),NA,HUC6_db@data$Consumption_2011)
   
-  HUC6@data$NetWB_2011_t<-ifelse(is.na(HUC6@data$Discharges_2011)&is.na(HUC6@data$Withdrawals_2011)&is.na(HUC6@data$transferred_2011),NA,HUC6@data$NetWB_2011_t)
-  
-  HUC6@data$Consumption_2011_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2011),0,HUC6@data$Withdrawals_2011))+(ifelse(is.na(HUC6@data$waterout_2011),0,-HUC6@data$waterout_2011)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2011),0,HUC6@data$Discharges_2011))+(ifelse(is.na(HUC6@data$waterin_2011),0,HUC6@data$waterin_2011)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2011),0,HUC6@data$Withdrawals_2011))+(ifelse(is.na(HUC6@data$waterout_2011),0,-HUC6@data$waterout_2011)))
-  
-  HUC6@data$Consumption_2011_t<-ifelse(is.nan(HUC6@data$Consumption_2011_t)|is.infinite(HUC6@data$Consumption_2011_t),NA,HUC6@data$Consumption_2011_t)
-  #---Without Transfers----#
-  HUC6@data$NetWB_2011<-(ifelse(is.na(HUC6@data$Discharges_2011),0,HUC6@data$Discharges_2011))-(ifelse(is.na(HUC6@data$Withdrawals_2011),0,HUC6@data$Withdrawals_2011))
-  
-  HUC6@data$NetWB_2011<-ifelse(is.na(HUC6@data$Discharges_2011)&is.na(HUC6@data$Withdrawals_2011),NA,HUC6@data$NetWB_2011)
-  
-  HUC6@data$Consumption_2011<-((ifelse(is.na(HUC6@data$Withdrawals_2011),0,HUC6@data$Withdrawals_2011))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2011),0,HUC6@data$Discharges_2011)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2011),0,HUC6@data$Withdrawals_2011))
-  
-  HUC6@data$Consumption_2011<-ifelse(is.nan(HUC6@data$Consumption_2011)|is.infinite(HUC6@data$Consumption_2011),NA,HUC6@data$Consumption_2011)
   #---Year 2012----#
+  HUC6_db@data$NetWB_2012<-(ifelse(is.na(HUC6_db@data$Discharges_2012),0,HUC6_db@data$Discharges_2012))-(ifelse(is.na(HUC6_db@data$Withdrawals_2012),0,HUC6_db@data$Withdrawals_2012))
+  HUC6_db@data$NetWB_2012<-ifelse(is.na(HUC6_db@data$Discharges_2012)&is.na(HUC6_db@data$Withdrawals_2012),NA,HUC6_db@data$NetWB_2012)
   
-  #---With Transfers---#
-  HUC6@data$NetWB_2012_t<-(ifelse(is.na(HUC6@data$Discharges_2012),0,HUC6@data$Discharges_2012))+(ifelse(is.na(HUC6@data$transferred_2012),0,HUC6@data$transferred_2012))-(ifelse(is.na(HUC6@data$Withdrawals_2012),0,HUC6@data$Withdrawals_2012))
+  HUC6_db@data$Consumption_2012<-((ifelse(is.na(HUC6_db@data$Withdrawals_2012),0,HUC6_db@data$Withdrawals_2012))-(ifelse(is.na(HUC6_db@data$Discharges_2012),0,HUC6_db@data$Discharges_2012)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2012),0,HUC6_db@data$Withdrawals_2012))
+  HUC6_db@data$Consumption_2012<-ifelse(is.nan(HUC6_db@data$Consumption_2012)|is.infinite(HUC6_db@data$Consumption_2012),NA,HUC6_db@data$Consumption_2012)
   
-  HUC6@data$NetWB_2012_t<-ifelse(is.na(HUC6@data$Discharges_2012)&is.na(HUC6@data$Withdrawals_2012)&is.na(HUC6@data$transferred_2012),NA,HUC6@data$NetWB_2012_t)
-  
-  HUC6@data$Consumption_2012_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2012),0,HUC6@data$Withdrawals_2012))+(ifelse(is.na(HUC6@data$waterout_2012),0,-HUC6@data$waterout_2012)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2012),0,HUC6@data$Discharges_2012))+(ifelse(is.na(HUC6@data$waterin_2012),0,HUC6@data$waterin_2012)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2012),0,HUC6@data$Withdrawals_2012))+(ifelse(is.na(HUC6@data$waterout_2012),0,-HUC6@data$waterout_2012)))
-  
-  
-  HUC6@data$Consumption_2012_t<-ifelse(is.nan(HUC6@data$Consumption_2012_t)|is.infinite(HUC6@data$Consumption_2012_t),NA,HUC6@data$Consumption_2012_t)
-  
-  #---Without Transfers---#
-  HUC6@data$NetWB_2012<-(ifelse(is.na(HUC6@data$Discharges_2012),0,HUC6@data$Discharges_2012))-(ifelse(is.na(HUC6@data$Withdrawals_2012),0,HUC6@data$Withdrawals_2012))
-  
-  HUC6@data$NetWB_2012<-ifelse(is.na(HUC6@data$Discharges_2012)&is.na(HUC6@data$Withdrawals_2012),NA,HUC6@data$NetWB_2012)
-  
-  HUC6@data$Consumption_2012<-((ifelse(is.na(HUC6@data$Withdrawals_2012),0,HUC6@data$Withdrawals_2012))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2012),0,HUC6@data$Discharges_2012)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2012),0,HUC6@data$Withdrawals_2012))
-  
-  HUC6@data$Consumption_2012<-ifelse(is.nan(HUC6@data$Consumption_2012)|is.infinite(HUC6@data$Consumption_2012),NA,HUC6@data$Consumption_2012)
   #---Year 2013----#
+  HUC6_db@data$NetWB_2013<-(ifelse(is.na(HUC6_db@data$Discharges_2013),0,HUC6_db@data$Discharges_2013))-(ifelse(is.na(HUC6_db@data$Withdrawals_2013),0,HUC6_db@data$Withdrawals_2013))
+  HUC6_db@data$NetWB_2013<-ifelse(is.na(HUC6_db@data$Discharges_2013)&is.na(HUC6_db@data$Withdrawals_2013),NA,HUC6_db@data$NetWB_2013)
   
-  #---With Transfers---#
-  HUC6@data$NetWB_2013_t<-(ifelse(is.na(HUC6@data$Discharges_2013),0,HUC6@data$Discharges_2013))+(ifelse(is.na(HUC6@data$transferred_2013),0,HUC6@data$transferred_2013))-(ifelse(is.na(HUC6@data$Withdrawals_2013),0,HUC6@data$Withdrawals_2013))
-  
-  HUC6@data$NetWB_2013_t<-ifelse(is.na(HUC6@data$Discharges_2013)&is.na(HUC6@data$Withdrawals_2013)&is.na(HUC6@data$transferred_2013),NA,HUC6@data$NetWB_2013_t)
-  
-  HUC6@data$Consumption_2013_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2013),0,HUC6@data$Withdrawals_2013))+(ifelse(is.na(HUC6@data$waterout_2013),0,-HUC6@data$waterout_2013)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2013),0,HUC6@data$Discharges_2013))+(ifelse(is.na(HUC6@data$waterin_2013),0,HUC6@data$waterin_2013)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2013),0,HUC6@data$Withdrawals_2013))+(ifelse(is.na(HUC6@data$waterout_2013),0,-HUC6@data$waterout_2013)))
-  
-  HUC6@data$Consumption_2013_t<-ifelse(is.nan(HUC6@data$Consumption_2013_t)|is.infinite(HUC6@data$Consumption_2013_t),NA,HUC6@data$Consumption_2013_t)
-  
-  #---Without Transfers---#
-  HUC6@data$NetWB_2013<-(ifelse(is.na(HUC6@data$Discharges_2013),0,HUC6@data$Discharges_2013))-(ifelse(is.na(HUC6@data$Withdrawals_2013),0,HUC6@data$Withdrawals_2013))
-  
-  HUC6@data$NetWB_2013<-ifelse(is.na(HUC6@data$Discharges_2013)&is.na(HUC6@data$Withdrawals_2013),NA,HUC6@data$NetWB_2013)
-  
-  HUC6@data$Consumption_2013<-((ifelse(is.na(HUC6@data$Withdrawals_2013),0,HUC6@data$Withdrawals_2013))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2013),0,HUC6@data$Discharges_2013)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2013),0,HUC6@data$Withdrawals_2013))
-  
-  HUC6@data$Consumption_2013<-ifelse(is.nan(HUC6@data$Consumption_2013)|is.infinite(HUC6@data$Consumption_2013),NA,HUC6@data$Consumption_2013)
+  HUC6_db@data$Consumption_2013<-((ifelse(is.na(HUC6_db@data$Withdrawals_2013),0,HUC6_db@data$Withdrawals_2013))-(ifelse(is.na(HUC6_db@data$Discharges_2013),0,HUC6_db@data$Discharges_2013)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2013),0,HUC6_db@data$Withdrawals_2013))
+  HUC6_db@data$Consumption_2013<-ifelse(is.nan(HUC6_db@data$Consumption_2013)|is.infinite(HUC6_db@data$Consumption_2013),NA,HUC6_db@data$Consumption_2013)
   
   #---Year 2014----#
+  HUC6_db@data$NetWB_2014<-(ifelse(is.na(HUC6_db@data$Discharges_2014),0,HUC6_db@data$Discharges_2014))-(ifelse(is.na(HUC6_db@data$Withdrawals_2014),0,HUC6_db@data$Withdrawals_2014))
+  HUC6_db@data$NetWB_2014<-ifelse(is.na(HUC6_db@data$Discharges_2014)&is.na(HUC6_db@data$Withdrawals_2014),NA,HUC6_db@data$NetWB_2014)
   
-  #---With Transfers---#
-  HUC6@data$NetWB_2014_t<-(ifelse(is.na(HUC6@data$Discharges_2014),0,HUC6@data$Discharges_2014))+(ifelse(is.na(HUC6@data$transferred_2014),0,HUC6@data$transferred_2014))-(ifelse(is.na(HUC6@data$Withdrawals_2014),0,HUC6@data$Withdrawals_2014))
+  HUC6_db@data$Consumption_2014<-((ifelse(is.na(HUC6_db@data$Withdrawals_2014),0,HUC6_db@data$Withdrawals_2014))-(ifelse(is.na(HUC6_db@data$Discharges_2014),0,HUC6_db@data$Discharges_2014)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2014),0,HUC6_db@data$Withdrawals_2014))
+  HUC6_db@data$Consumption_2014<-ifelse(is.nan(HUC6_db@data$Consumption_2014)|is.infinite(HUC6_db@data$Consumption_2014),NA,HUC6_db@data$Consumption_2014)
   
-  HUC6@data$NetWB_2014_t<-ifelse(is.na(HUC6@data$Discharges_2014)&is.na(HUC6@data$Withdrawals_2014)&is.na(HUC6@data$transferred_2014),NA,HUC6@data$NetWB_2014_t)
-  
-  HUC6@data$Consumption_2014_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2014),0,HUC6@data$Withdrawals_2014))+(ifelse(is.na(HUC6@data$waterout_2014),0,-HUC6@data$waterout_2014)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2014),0,HUC6@data$Discharges_2014))+(ifelse(is.na(HUC6@data$waterin_2014),0,HUC6@data$waterin_2014)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2014),0,HUC6@data$Withdrawals_2014))+(ifelse(is.na(HUC6@data$waterout_2014),0,-HUC6@data$waterout_2014)))
-  
-  HUC6@data$Consumption_2014_t<-ifelse(is.nan(HUC6@data$Consumption_2014_t)|is.infinite(HUC6@data$Consumption_2014_t),NA,HUC6@data$Consumption_2014_t)
-  
-  #---Without Transfers---#
-  HUC6@data$NetWB_2014<-(ifelse(is.na(HUC6@data$Discharges_2014),0,HUC6@data$Discharges_2014))-(ifelse(is.na(HUC6@data$Withdrawals_2014),0,HUC6@data$Withdrawals_2014))
-  
-  HUC6@data$NetWB_2014<-ifelse(is.na(HUC6@data$Discharges_2014)&is.na(HUC6@data$Withdrawals_2014),NA,HUC6@data$NetWB_2014)
-  
-  HUC6@data$Consumption_2014<-((ifelse(is.na(HUC6@data$Withdrawals_2014),0,HUC6@data$Withdrawals_2014))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2014),0,HUC6@data$Discharges_2014)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2014),0,HUC6@data$Withdrawals_2014))
-  
-  HUC6@data$Consumption_2014<-ifelse(is.nan(HUC6@data$Consumption_2014)|is.infinite(HUC6@data$Consumption_2014),NA,HUC6@data$Consumption_2014)
   #---Year 2015----#
+  HUC6_db@data$NetWB_2015<-(ifelse(is.na(HUC6_db@data$Discharges_2015),0,HUC6_db@data$Discharges_2015))-(ifelse(is.na(HUC6_db@data$Withdrawals_2015),0,HUC6_db@data$Withdrawals_2015))
+  HUC6_db@data$NetWB_2015<-ifelse(is.na(HUC6_db@data$Discharges_2015)&is.na(HUC6_db@data$Withdrawals_2015),NA,HUC6_db@data$NetWB_2015)
   
-  #---With Transfers---#
-  HUC6@data$NetWB_2015_t<-(ifelse(is.na(HUC6@data$Discharges_2015),0,HUC6@data$Discharges_2015))+(ifelse(is.na(HUC6@data$transferred_2015),0,HUC6@data$transferred_2015))-(ifelse(is.na(HUC6@data$Withdrawals_2015),0,HUC6@data$Withdrawals_2015))
-  
-  HUC6@data$NetWB_2015_t<-ifelse(is.na(HUC6@data$Discharges_2015)&is.na(HUC6@data$Withdrawals_2015)&is.na(HUC6@data$transferred_2015),NA,HUC6@data$NetWB_2015_t)
-  
-  HUC6@data$Consumption_2015_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2015),0,HUC6@data$Withdrawals_2015))+(ifelse(is.na(HUC6@data$waterout_2015),0,-HUC6@data$waterout_2015)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2015),0,HUC6@data$Discharges_2015))+(ifelse(is.na(HUC6@data$waterin_2015),0,HUC6@data$waterin_2015)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2015),0,HUC6@data$Withdrawals_2015))+(ifelse(is.na(HUC6@data$waterout_2015),0,-HUC6@data$waterout_2015)))
-  
-  HUC6@data$Consumption_2015_t<-ifelse(is.nan(HUC6@data$Consumption_2015_t)|is.infinite(HUC6@data$Consumption_2015_t),NA,HUC6@data$Consumption_2015_t)
-  
-  #---Without Transfers---#
-  HUC6@data$NetWB_2015<-(ifelse(is.na(HUC6@data$Discharges_2015),0,HUC6@data$Discharges_2015))-(ifelse(is.na(HUC6@data$Withdrawals_2015),0,HUC6@data$Withdrawals_2015))
-  
-  HUC6@data$NetWB_2015<-ifelse(is.na(HUC6@data$Discharges_2015)&is.na(HUC6@data$Withdrawals_2015),NA,HUC6@data$NetWB_2015)
-  
-  HUC6@data$Consumption_2015<-((ifelse(is.na(HUC6@data$Withdrawals_2015),0,HUC6@data$Withdrawals_2015))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2015),0,HUC6@data$Discharges_2015)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2015),0,HUC6@data$Withdrawals_2015))
-  
-  HUC6@data$Consumption_2015<-ifelse(is.nan(HUC6@data$Consumption_2015)|is.infinite(HUC6@data$Consumption_2015),NA,HUC6@data$Consumption_2015)
+  HUC6_db@data$Consumption_2015<-((ifelse(is.na(HUC6_db@data$Withdrawals_2015),0,HUC6_db@data$Withdrawals_2015))-(ifelse(is.na(HUC6_db@data$Discharges_2015),0,HUC6_db@data$Discharges_2015)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2015),0,HUC6_db@data$Withdrawals_2015))
+  HUC6_db@data$Consumption_2015<-ifelse(is.nan(HUC6_db@data$Consumption_2015)|is.infinite(HUC6_db@data$Consumption_2015),NA,HUC6_db@data$Consumption_2015)
   
   #---Year 2016----#
+  HUC6_db@data$NetWB_2016<-(ifelse(is.na(HUC6_db@data$Discharges_2016),0,HUC6_db@data$Discharges_2016))-(ifelse(is.na(HUC6_db@data$Withdrawals_2016),0,HUC6_db@data$Withdrawals_2016))
+  HUC6_db@data$NetWB_2016<-ifelse(is.na(HUC6_db@data$Discharges_2016)&is.na(HUC6_db@data$Withdrawals_2016),NA,HUC6_db@data$NetWB_2016)
   
-  #---With Transfers---#
-  HUC6@data$NetWB_2016_t<-(ifelse(is.na(HUC6@data$Discharges_2016),0,HUC6@data$Discharges_2016))+(ifelse(is.na(HUC6@data$transferred_2016),0,HUC6@data$transferred_2016))-(ifelse(is.na(HUC6@data$Withdrawals_2016),0,HUC6@data$Withdrawals_2016))
-  
-  HUC6@data$NetWB_2016_t<-ifelse(is.na(HUC6@data$Discharges_2016)&is.na(HUC6@data$Withdrawals_2016)&is.na(HUC6@data$transferred_2016),NA,HUC6@data$NetWB_2016_t)
-  
-  HUC6@data$Consumption_2016_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2016),0,HUC6@data$Withdrawals_2016))+(ifelse(is.na(HUC6@data$waterout_2016),0,-HUC6@data$waterout_2016)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2016),0,HUC6@data$Discharges_2016))+(ifelse(is.na(HUC6@data$waterin_2016),0,HUC6@data$waterin_2016)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2016),0,HUC6@data$Withdrawals_2016))+(ifelse(is.na(HUC6@data$waterout_2016),0,-HUC6@data$waterout_2016)))
-  
-  HUC6@data$Consumption_2016_t<-ifelse(is.nan(HUC6@data$Consumption_2016_t)|is.infinite(HUC6@data$Consumption_2016_t),NA,HUC6@data$Consumption_2016_t)
-  
-  #---Without Transfers---#
-  HUC6@data$NetWB_2016<-(ifelse(is.na(HUC6@data$Discharges_2016),0,HUC6@data$Discharges_2016))-(ifelse(is.na(HUC6@data$Withdrawals_2016),0,HUC6@data$Withdrawals_2016))
-  
-  HUC6@data$NetWB_2016<-ifelse(is.na(HUC6@data$Discharges_2016)&is.na(HUC6@data$Withdrawals_2016),NA,HUC6@data$NetWB_2016)
-  
-  HUC6@data$Consumption_2016<-((ifelse(is.na(HUC6@data$Withdrawals_2016),0,HUC6@data$Withdrawals_2016))-
-                                        (ifelse(is.na(HUC6@data$Discharges_2016),0,HUC6@data$Discharges_2016)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2016),0,HUC6@data$Withdrawals_2016))
-  
-  HUC6@data$Consumption_2016<-ifelse(is.nan(HUC6@data$Consumption_2016)|is.infinite(HUC6@data$Consumption_2016),NA,HUC6@data$Consumption_2016)
-  
-  #---Year 2017----#
-  
-  #---With Transfers---#
-  HUC6@data$NetWB_2017_t<-(ifelse(is.na(HUC6@data$Discharges_2017),0,HUC6@data$Discharges_2017))+(ifelse(is.na(HUC6@data$transferred_2017),0,HUC6@data$transferred_2017))-(ifelse(is.na(HUC6@data$Withdrawals_2017),0,HUC6@data$Withdrawals_2017))
-  
-  HUC6@data$NetWB_2017_t<-ifelse(is.na(HUC6@data$Discharges_2017)&is.na(HUC6@data$Withdrawals_2017)&is.na(HUC6@data$transferred_2017),NA,HUC6@data$NetWB_2017_t)
-  
-  HUC6@data$Consumption_2017_t<-(((ifelse(is.na(HUC6@data$Withdrawals_2017),0,HUC6@data$Withdrawals_2017))+(ifelse(is.na(HUC6@data$waterout_2017),0,-HUC6@data$waterout_2017)))-
-                                          (((ifelse(is.na(HUC6@data$Discharges_2017),0,HUC6@data$Discharges_2017))+(ifelse(is.na(HUC6@data$waterin_2017),0,HUC6@data$waterin_2017)))))/
-    ((ifelse(is.na(HUC6@data$Withdrawals_2017),0,HUC6@data$Withdrawals_2017))+(ifelse(is.na(HUC6@data$waterout_2017),0,-HUC6@data$waterout_2017)))
-  
-  HUC6@data$Consumption_2017_t<-ifelse(is.nan(HUC6@data$Consumption_2017_t)|is.infinite(HUC6@data$Consumption_2017_t),NA,HUC6@data$Consumption_2017_t)
-  
-  #---Without Transfers---#
-  HUC6@data$NetWB_2017<-(ifelse(is.na(HUC6@data$Discharges_2017),0,HUC6@data$Discharges_2017))-(ifelse(is.na(HUC6@data$Withdrawals_2017),0,HUC6@data$Withdrawals_2017))
-  
-  HUC6@data$NetWB_2017<-ifelse(is.na(HUC6@data$Discharges_2017)&is.na(HUC6@data$Withdrawals_2017),NA,HUC6@data$NetWB_2017)
-  
-  HUC6@data$Consumption_2017<-((ifelse(is.na(HUC6@data$Withdrawals_2017),0,HUC6@data$Withdrawals_2017))-(ifelse(is.na(HUC6@data$Discharges_2017),0,HUC6@data$Discharges_2017)))/
-    (ifelse(is.na(HUC6@data$Withdrawals_2017),0,HUC6@data$Withdrawals_2017))
-  
-  HUC6@data$Consumption_2017<-ifelse(is.nan(HUC6@data$Consumption_2017)|is.infinite(HUC6@data$Consumption_2017),NA,HUC6@data$Consumption_2017)
+  HUC6_db@data$Consumption_2016<-((ifelse(is.na(HUC6_db@data$Withdrawals_2016),0,HUC6_db@data$Withdrawals_2016))-(ifelse(is.na(HUC6_db@data$Discharges_2016),0,HUC6_db@data$Discharges_2016)))/(ifelse(is.na(HUC6_db@data$Withdrawals_2016),0,HUC6_db@data$Withdrawals_2016))
+  HUC6_db@data$Consumption_2016<-ifelse(is.nan(HUC6_db@data$Consumption_2016)|is.infinite(HUC6_db@data$Consumption_2016),NA,HUC6_db@data$Consumption_2016)
   
   
-  HUC6_glimpse<-HUC6@data
+  HUC6_glimpse<-HUC6_db@data
   assign("HUC6_glimpse",HUC6_glimpse,envir = .GlobalEnv)
-  
-  assign(paste0("HUC6",label),HUC6,envir = .GlobalEnv)
+  assign(paste0("HUC6",label),HUC6_db,envir = .GlobalEnv)
   
 }
 
 #---All Sectors---#
 
 #-All Facilities-#
-NWB_CU(HUC6,"")
+NWB_CU(HUC6_all,"_all")
 #-Fully Matched Facilities-#
 NWB_CU(HUC6_matched,"_matched")
 
@@ -934,20 +1326,92 @@ NWB_CU(HUC6_matched,"_matched")
 
 #-All Facilities-#
 NWB_CU(HUC6_energy,"_energy")
-NWB_CU(HUC6_ag,"_ag")
+NWB_CU(HUC6_aq,"_aq")
 NWB_CU(HUC6_commercial,"_commercial")
 NWB_CU(HUC6_industrial,"_industrial")
 NWB_CU(HUC6_municipal,"_municipal")
 
+NWB_CU.ag<- function(HUC6_db,label){
+  #---Year 2010----#
+  
+  HUC6_db@data$NetWB_2010<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2010),0,HUC6_db@data$Withdrawals_2010))
+  HUC6_db@data$NetWB_2010<-ifelse(is.na(HUC6_db@data$Withdrawals_2010),NA,HUC6_db@data$NetWB_2010)
+  
+  HUC6_db@data$Consumption_2010<-(ifelse(is.na(HUC6_db@data$Withdrawals_2010),0,HUC6_db@data$Withdrawals_2010))/(ifelse(is.na(HUC6_db@data$Withdrawals_2010),0,HUC6_db@data$Withdrawals_2010))
+  HUC6_db@data$Consumption_2010<-ifelse(is.nan(HUC6_db@data$Consumption_2010)|is.infinite(HUC6_db@data$Consumption_2010),NA,HUC6_db@data$Consumption_2010)
+  #---Year 2011----#
+  
+  HUC6_db@data$NetWB_2011<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2011),0,HUC6_db@data$Withdrawals_2011))
+  
+  HUC6_db@data$NetWB_2011<-ifelse(is.na(HUC6_db@data$Withdrawals_2011),NA,HUC6_db@data$NetWB_2011)
+  
+  HUC6_db@data$Consumption_2011<-(ifelse(is.na(HUC6_db@data$Withdrawals_2011),0,HUC6_db@data$Withdrawals_2011))/(ifelse(is.na(HUC6_db@data$Withdrawals_2011),0,HUC6_db@data$Withdrawals_2011))
+  
+  HUC6_db@data$Consumption_2011<-ifelse(is.nan(HUC6_db@data$Consumption_2011)|is.infinite(HUC6_db@data$Consumption_2011),NA,HUC6_db@data$Consumption_2011)
+  
+  #---Year 2012----#
+  
+  HUC6_db@data$NetWB_2012<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2012),0,HUC6_db@data$Withdrawals_2012))
+  
+  HUC6_db@data$NetWB_2012<-ifelse(is.na(HUC6_db@data$Withdrawals_2012),NA,HUC6_db@data$NetWB_2012)
+  
+  HUC6_db@data$Consumption_2012<-(ifelse(is.na(HUC6_db@data$Withdrawals_2012),0,HUC6_db@data$Withdrawals_2012))/(ifelse(is.na(HUC6_db@data$Withdrawals_2012),0,HUC6_db@data$Withdrawals_2012))
+  
+  HUC6_db@data$Consumption_2012<-ifelse(is.nan(HUC6_db@data$Consumption_2012)|is.infinite(HUC6_db@data$Consumption_2012),NA,HUC6_db@data$Consumption_2012)
+  #---Year 2013----#
+  HUC6_db@data$NetWB_2013<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2013),0,HUC6_db@data$Withdrawals_2013))
+  
+  HUC6_db@data$NetWB_2013<-ifelse(is.na(HUC6_db@data$Withdrawals_2013),NA,HUC6_db@data$NetWB_2013)
+  
+  HUC6_db@data$Consumption_2013<-(ifelse(is.na(HUC6_db@data$Withdrawals_2013),0,HUC6_db@data$Withdrawals_2013))/(ifelse(is.na(HUC6_db@data$Withdrawals_2013),0,HUC6_db@data$Withdrawals_2013))
+  HUC6_db@data$Consumption_2013<-ifelse(is.nan(HUC6_db@data$Consumption_2013)|is.infinite(HUC6_db@data$Consumption_2013),NA,HUC6_db@data$Consumption_2013)
+  
+  #---Year 2014----#
+  
+  #---Without Transfers---#
+  HUC6_db@data$NetWB_2014<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2014),0,HUC6_db@data$Withdrawals_2014))
+  
+  HUC6_db@data$NetWB_2014<-ifelse(is.na(HUC6_db@data$Withdrawals_2014),NA,HUC6_db@data$NetWB_2014)
+  
+  HUC6_db@data$Consumption_2014<-(ifelse(is.na(HUC6_db@data$Withdrawals_2014),0,HUC6_db@data$Withdrawals_2014))/(ifelse(is.na(HUC6_db@data$Withdrawals_2014),0,HUC6_db@data$Withdrawals_2014))
+  
+  HUC6_db@data$Consumption_2014<-ifelse(is.nan(HUC6_db@data$Consumption_2014)|is.infinite(HUC6_db@data$Consumption_2014),NA,HUC6_db@data$Consumption_2014)
+  #---Year 2015----#
+  
+  #---Without Transfers---#
+  HUC6_db@data$NetWB_2015<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2015),0,HUC6_db@data$Withdrawals_2015))
+  
+  HUC6_db@data$NetWB_2015<-ifelse(is.na(HUC6_db@data$Withdrawals_2015),NA,HUC6_db@data$NetWB_2015)
+  
+  HUC6_db@data$Consumption_2015<-(ifelse(is.na(HUC6_db@data$Withdrawals_2015),0,HUC6_db@data$Withdrawals_2015))/(ifelse(is.na(HUC6_db@data$Withdrawals_2015),0,HUC6_db@data$Withdrawals_2015))
+  
+  HUC6_db@data$Consumption_2015<-ifelse(is.nan(HUC6_db@data$Consumption_2015)|is.infinite(HUC6_db@data$Consumption_2015),NA,HUC6_db@data$Consumption_2015)
+  
+  #---Year 2016----#
+  
+  #---Without Transfers---#
+  HUC6_db@data$NetWB_2016<- -(ifelse(is.na(HUC6_db@data$Withdrawals_2016),0,HUC6_db@data$Withdrawals_2016))
+  
+  HUC6_db@data$NetWB_2016<-ifelse(is.na(HUC6_db@data$Withdrawals_2016),NA,HUC6_db@data$NetWB_2016)
+  
+  HUC6_db@data$Consumption_2016<-(ifelse(is.na(HUC6_db@data$Withdrawals_2016),0,HUC6_db@data$Withdrawals_2016))/(ifelse(is.na(HUC6_db@data$Withdrawals_2016),0,HUC6_db@data$Withdrawals_2016))
+  
+  HUC6_db@data$Consumption_2016<-ifelse(is.nan(HUC6_db@data$Consumption_2016)|is.infinite(HUC6_db@data$Consumption_2016),NA,HUC6_db@data$Consumption_2016)
+  
+  HUC6_glimpse<-HUC6_db@data
+  assign("HUC6_glimpse",HUC6_glimpse,envir = .GlobalEnv)
+  assign(paste0("HUC6",label),HUC6_db,envir = .GlobalEnv)
+  
+}
+NWB_CU.ag(HUC6_ag,"_ag")
+
 #-Fully Matched Facilities-#
 NWB_CU(HUC6_match_energy,"_match_energy")
-NWB_CU(HUC6_match_ag,"_match_ag")
+NWB_CU(HUC6_match_aq,"_match_aq")
 NWB_CU(HUC6_match_commercial,"_match_commercial")
 NWB_CU(HUC6_match_industrial,"_match_industrial")
-NWB_CU(HUC6_match_municipal,"_match_municipal")
 
 #---Non-Energy Sectors---#
-
 #-All Facilities-#
 NWB_CU(HUC6_nonenergy,"_nonenergy")
 
@@ -955,113 +1419,41 @@ NWB_CU(HUC6_nonenergy,"_nonenergy")
 NWB_CU(HUC6_match_nonenergy,"_match_nonenergy")
 
 ###########################################################################################################################################
-#--------------------------------Long Term Average (2010-2017) Net Water Balance and Consumtpive Use--------------------------------------#
-
+#--------------------------------Long Term Average (2010-2017) Net Water Balance and Consumptive Use--------------------------------------#
+# median is used for all averages
 Ave_NWB_CU<- function(HUC6,label){
   
   #----Discharges-----#
-  
-  #Be careful for NA values#
-  for (i in 1:length(HUC6@data$TNMID)){
-    HUC6@data$Discharge_sum[i]<-(ifelse(is.na(HUC6@data$Discharges_2010[i]),0,HUC6@data$Discharges_2010[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2011[i]),0,HUC6@data$Discharges_2011[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2012[i]),0,HUC6@data$Discharges_2012[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2013[i]),0,HUC6@data$Discharges_2013[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2014[i]),0,HUC6@data$Discharges_2014[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2015[i]),0,HUC6@data$Discharges_2015[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2016[i]),0,HUC6@data$Discharges_2016[i])+
-                                          ifelse(is.na(HUC6@data$Discharges_2017[i]),0,HUC6@data$Discharges_2017[i]))
-  }
-  HUC6@data$Discharge_ave<-HUC6@data$Discharge_sum/8
-  HUC6@data$Discharge_ave<-ifelse(HUC6@data$Discharge_ave==0,NA,HUC6@data$Discharge_ave)
+  HUC6@data$Discharge_ave<-apply(HUC6@data[,c("Discharges_2010","Discharges_2011","Discharges_2012",
+                                                            "Discharges_2013","Discharges_2014","Discharges_2015",
+                                                            "Discharges_2016")],1,median,na.rm=T)
   
   #----Withdrawals----#
-  for (i in 1:length(HUC6@data$TNMID)){
-    HUC6@data$Withdrawal_sum[i]<-(ifelse(is.na(HUC6@data$Withdrawals_2010[i]),0,HUC6@data$Withdrawals_2010[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2011[i]),0,HUC6@data$Withdrawals_2011[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2012[i]),0,HUC6@data$Withdrawals_2012[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2013[i]),0,HUC6@data$Withdrawals_2013[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2014[i]),0,HUC6@data$Withdrawals_2014[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2015[i]),0,HUC6@data$Withdrawals_2015[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2016[i]),0,HUC6@data$Withdrawals_2016[i])+
-                                           ifelse(is.na(HUC6@data$Withdrawals_2017[i]),0,HUC6@data$Withdrawals_2017[i]))
-  }
-  HUC6@data$Withdrawal_ave<-HUC6@data$Withdrawal_sum/8
-  HUC6@data$Withdrawal_ave<-ifelse(HUC6@data$Withdrawal_ave==0,NA,HUC6@data$Withdrawal_ave)
-  
+  HUC6@data$Withdrawal_ave<-apply(HUC6@data[,c("Withdrawals_2010","Withdrawals_2011","Withdrawals_2012",
+                                                             "Withdrawals_2013","Withdrawals_2014","Withdrawals_2015",
+                                                             "Withdrawals_2016")],1,median,na.rm=T)
   
   #----Net Water Balance-----#
-  for (i in 1:length(HUC6@data$TNMID)){
-    HUC6@data$NetWB_sum[i]<-(ifelse(is.na(HUC6@data$NetWB_2010[i]),0,HUC6@data$NetWB_2010[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2011[i]),0,HUC6@data$NetWB_2011[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2012[i]),0,HUC6@data$NetWB_2012[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2013[i]),0,HUC6@data$NetWB_2013[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2014[i]),0,HUC6@data$NetWB_2014[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2015[i]),0,HUC6@data$NetWB_2015[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2016[i]),0,HUC6@data$NetWB_2016[i])+
-                                      ifelse(is.na(HUC6@data$NetWB_2017[i]),0,HUC6@data$NetWB_2017[i]))
-  }
-  HUC6@data$NetWB_ave<-HUC6@data$NetWB_sum/8
-  HUC6@data$NetWB_ave<-ifelse(HUC6@data$NetWB_ave==0,NA,HUC6@data$NetWB_ave)
+  HUC6@data$NetWB_ave<-apply(HUC6@data[,c("NetWB_2010","NetWB_2011","NetWB_2012",
+                                                        "NetWB_2013","NetWB_2014","NetWB_2015",
+                                                        "NetWB_2016")],1,median,na.rm=T)
   
   #----Consumption----#
+   HUC6@data$Consumption_ave<-apply(HUC6@data[,c("Consumption_2010","Consumption_2011","Consumption_2012",
+                                                               "Consumption_2013","Consumption_2014","Consumption_2015",
+                                                               "Consumption_2016")],1,median,na.rm=T)
   
-  for (i in 1:length(HUC6@data$TNMID)){
-    HUC6@data$Consumption_sum[i]<-(ifelse(is.na(HUC6@data$Consumption_2010[i]),0,HUC6@data$Consumption_2010[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2011[i]),0,HUC6@data$Consumption_2011[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2012[i]),0,HUC6@data$Consumption_2012[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2013[i]),0,HUC6@data$Consumption_2013[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2014[i]),0,HUC6@data$Consumption_2014[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2015[i]),0,HUC6@data$Consumption_2015[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2016[i]),0,HUC6@data$Consumption_2016[i])+
-                                            ifelse(is.na(HUC6@data$Consumption_2017[i]),0,HUC6@data$Consumption_2017[i]))
-  }
-  
-  HUC6@data$Consumption_ave<-HUC6@data$Consumption_sum/8
-  HUC6@data$Consumption_ave<-ifelse(HUC6@data$Consumption_ave==0,NA,HUC6@data$Consumption_ave)
-  
-  #-----------------With Transfers-------------------------#
-  for (i in 1:length(HUC6@data$TNMID)){
-    HUC6@data$NetWB_t_sum[i]<-(ifelse(is.na(HUC6@data$NetWB_2010_t[i]),0,HUC6@data$NetWB_2010_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2011_t[i]),0,HUC6@data$NetWB_2011_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2012_t[i]),0,HUC6@data$NetWB_2012_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2013_t[i]),0,HUC6@data$NetWB_2013_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2014_t[i]),0,HUC6@data$NetWB_2014_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2015_t[i]),0,HUC6@data$NetWB_2015_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2016_t[i]),0,HUC6@data$NetWB_2016_t[i])+
-                                        ifelse(is.na(HUC6@data$NetWB_2017_t[i]),0,HUC6@data$NetWB_2017_t[i]))
-  }
-  HUC6@data$NetWB_t_ave<-HUC6@data$NetWB_t_sum/8
-  HUC6@data$NetWB_t_ave<-ifelse(HUC6@data$NetWB_t_ave==0,NA,HUC6@data$NetWB_t_ave)
-  
-  for (i in 1:length(HUC6@data$TNMID)){
-    HUC6@data$Consumption_t_sum[i]<-(ifelse(is.na(HUC6@data$Consumption_2010_t[i]),0,HUC6@data$Consumption_2010_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2011_t[i]),0,HUC6@data$Consumption_2011_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2012_t[i]),0,HUC6@data$Consumption_2012_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2013_t[i]),0,HUC6@data$Consumption_2013_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2014_t[i]),0,HUC6@data$Consumption_2014_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2015_t[i]),0,HUC6@data$Consumption_2015_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2016_t[i]),0,HUC6@data$Consumption_2016_t[i])+
-                                              ifelse(is.na(HUC6@data$Consumption_2017_t[i]),0,HUC6@data$Consumption_2017_t[i]))
-  }
-  
-  HUC6@data$Consumption_t_ave<-HUC6@data$Consumption_t_sum/8
-  HUC6@data$Consumption_t_ave<-ifelse(HUC6@data$Consumption_t_ave==0,NA,HUC6@data$Consumption_t_ave)
+  HUC6@data$Consumption_ave<-ifelse(is.infinite(HUC6@data$Consumption_ave),NA,HUC6@data$Consumption_ave)
   
   HUC6_glimpse<-HUC6@data
-  HUC6_glimpse[15:98]<-sapply(HUC6_glimpse[15:98],as.numeric)
-  HUC6_glimpse[15:98]<<-round(HUC6_glimpse[15:98], digits=2)
-  
-  asign()
   assign(paste0("HUC6",label),HUC6,envir = .GlobalEnv)
-  
+  assign("HUC6_glimpse",HUC6_glimpse,envir = .GlobalEnv)
 }
-
 
 #---All Sectors---#
 
 #-All Facilities-#
-Ave_NWB_CU(HUC6,"")
+Ave_NWB_CU(HUC6_all,"")
 #-Fully Matched Facilities-#
 Ave_NWB_CU(HUC6_matched,"_matched")
 
@@ -1069,17 +1461,37 @@ Ave_NWB_CU(HUC6_matched,"_matched")
 
 #-All Facilities-#
 Ave_NWB_CU(HUC6_energy,"_energy")
-Ave_NWB_CU(HUC6_ag,"_ag")
+Ave_NWB_CU(HUC6_aq,"_aq")
 Ave_NWB_CU(HUC6_commercial,"_commercial")
 Ave_NWB_CU(HUC6_industrial,"_industrial")
 Ave_NWB_CU(HUC6_municipal,"_municipal")
 
+Ave_NWB_CU.ag<- function(HUC6_db,label){
+  
+  #----Withdrawals----#
+  HUC6_db@data$Withdrawal_ave<-apply(HUC6_db@data[,c("Withdrawals_2010","Withdrawals_2011","Withdrawals_2012",
+                                                                   "Withdrawals_2013","Withdrawals_2014","Withdrawals_2015",
+                                                                   "Withdrawals_2016")],1,median,na.rm=T)
+  
+  #----Consumption----#
+  HUC6_db@data$Consumption_ave<-apply(HUC6_db@data[,c("Consumption_2010","Consumption_2011","Consumption_2012",
+                                                                    "Consumption_2013","Consumption_2014","Consumption_2015",
+                                                                    "Consumption_2016")],1,median,na.rm=T)
+  
+  HUC6_db@data$Consumption_ave<-ifelse(is.infinite(HUC6_db@data$Consumption_ave),NA,HUC6_db@data$Consumption_ave)
+  
+  
+  HUC6_glimpse<-HUC6_db@data
+  assign(paste0("HUC6",label),HUC6_db,envir = .GlobalEnv)
+  assign("HUC6_glimpse",HUC6_glimpse,envir = .GlobalEnv)
+}
+Ave_NWB_CU.ag(HUC6_ag,"_ag")
+
 #-Fully Matched Facilities-#
 Ave_NWB_CU(HUC6_match_energy,"_match_energy")
-Ave_NWB_CU(HUC6_match_ag,"_match_ag")
+Ave_NWB_CU(HUC6_match_aq,"_match_aq")
 Ave_NWB_CU(HUC6_match_commercial,"_match_commercial")
 Ave_NWB_CU(HUC6_match_industrial,"_match_industrial")
-Ave_NWB_CU(HUC6_match_municipal,"_match_municipal")
 
 #---Non-Energy Sectors---#
 
@@ -1168,34 +1580,13 @@ scale_bar <- function(lon, lat, distance_lon, distance_lat, distance_legend, dis
 }
 
 
-#-----HUC6 Labels-----#
-HUC6_labels<- function(HUC6){
-  HUC6_Centroids<-as.data.frame(coordinates(HUC6))
-  names(HUC6_Centroids)<-c("Longitude","Latitude")
-  HUC6_Centroids$HUC6<-HUC6@data$HUC6
-  HUC6_Names<-subset(HUC6@data,select=c(11,12))
-  HUC6_Centroids<-merge(HUC6_Centroids,HUC6_Names,by="HUC6")
-  
-  ggplot()+
-    geom_polygon(data=HUC6,aes(x=long, y= lat, group=group), colour='black', fill=NA)+
-    geom_label_repel(data=HUC6_Centroids,aes(x=Longitude,y=Latitude,label=Name))+
-    scale_colour_manual(values=c("#252525"))+
-    theme(line=element_blank(),
-          axis.text=element_blank(),
-          axis.title=element_blank(),
-          panel.background = element_blank())+coord_equal()
-  
-}
-HUC6_labels(HUC6)
-
-
 ###########################################################################################################################################
 #-------------------------------------------Distribution of Discharging Facilities in HUC6----------------------------------------------#
 
-HUC6_discharge<- function(HUC6,ECHO_points, label){
+HUC6_discharge<- function(HUC6_db,ECHO_points, label,fileext){
   
-  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
-  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
   
   HUC6.df<-broom::tidy(HUC6_Clipped)
   HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
@@ -1204,12 +1595,12 @@ HUC6_discharge<- function(HUC6,ECHO_points, label){
   
   Dis_Discrete<- c("#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=HUC6.df,
       aes(x=long, y= lat, group=group,
           fill= cut(HUC6.df$Discharge_ave,breaks=c(0,1,5,10,25,50,max(HUC6.df$Discharge_ave,na.rm=T)),include.lowest=T), colour=""))+
-    scale_fill_manual(name="Summed Discharge (MGD)", values=(Dis_Discrete), 
+    scale_fill_manual(name="Discharge by HUC6 (MGD)", values=(Dis_Discrete), 
                       labels=c(paste("<",1),
                                paste(1,"-",5),
                                paste(5,"-",10),
@@ -1220,62 +1611,101 @@ HUC6_discharge<- function(HUC6,ECHO_points, label){
     geom_polygon(
       data=HUC6.df,
       aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
-    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="Outfall"),
-               size=1.25,colour="#252525")+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
     scale_shape_manual(name="", values=17)+
     scale_colour_manual(values=NA)+
     guides(fill=guide_legend(order=1),
            shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-    labs(title = paste0("Average Annual Total Discharge (MGD) 2010-2017: ",label))+
+    # labs(title = paste0("Average Annual Total Discharge (MGD) 2010-2017: ",label))+
     theme(line=element_blank(),
           axis.text=element_blank(),
           axis.title=element_blank(),
-          panel.background = element_blank())+coord_equal()+
-    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
   
+  assign(paste0("huc_dis_",fileext),plot1,envir = .GlobalEnv) 
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Discharges/"
+  
+  #ggsave(filename=paste0(path,"HUC6_discharge_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
   
 }
 
 #---All Sectors---#
 
 #-All Facilities-#
-HUC6_discharge(HUC6,ECHO.test,"All Reporting Facilities in All Sectors")
+HUC6_discharge(HUC6_all,ECHO.test,"All Reporting Facilities in All Sectors","all_fac_all_sec")
 #-Fully Matched Facilities-#
-HUC6_discharge(HUC6_matched,ECHO.test_matched,"Matched Facilities in All Sectors")
+HUC6_discharge(HUC6_matched,ECHO.test_matched,"Matched Facilities in All Sectors","match_all_sector")
 
 #---Subsetted by Sector---#
 
 #-All Facilities-#
-HUC6_discharge(HUC6_energy,ECHO.test_energy,"Energy Facilities")
-HUC6_discharge(HUC6_ag,ECHO.test_ag,"Agriculture/Irrigation Facilities")
-HUC6_discharge(HUC6_commercial,ECHO.test_commercial,"Commercial Facilities")
-HUC6_discharge(HUC6_industrial,ECHO.test_industrial,"Industrial Facilities")
-HUC6_discharge(HUC6_municipal,ECHO.test_municipal,"Municipal Facilities")
+HUC6_discharge(HUC6_energy,ECHO.test_energy,"Energy Facilities","all_energy")
+HUC6_discharge(HUC6_aq,ECHO.test_aq,"Aquaculture Facilities","all_aq")
+HUC6_discharge(HUC6_commercial,ECHO.test_commercial,"Commercial Facilities","all_commercial")
+HUC6_discharge(HUC6_industrial,ECHO.test_industrial,"Industrial Facilities","all_industrial")
+HUC6_discharge(HUC6_municipal,ECHO.test_municipal,"Municipal Facilities","all_municipal")
+HUC6_discharge(HUC6_nonenergy,ECHO.test_nonenergy,"Non-Energy Facilities","all_nonenergy")
+
+discharge_subplot_all<- function(){
+  
+  subplot<-ggpubr::ggarrange(huc_dis_all_energy,huc_dis_all_nonenergy,huc_dis_all_industrial,huc_dis_all_commercial,
+                             huc_dis_all_aq,huc_dis_all_municipal,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture","(f) Municipal"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("Visualizing Median Watershed Discharge 2010-2016: All Reporting VPDES Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"HUC6_Dis_All_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+discharge_subplot_all()
 
 #-Fully Matched Facilities-#
-HUC6_discharge(HUC6_match_energy,ECHO.test_match_energy,"Matched Energy Facilities")
-HUC6_discharge(HUC6_match_ag,ECHO.test_match_ag,"Matched Agriculture/Irrigation Facilities")
-HUC6_discharge(HUC6_match_commercial,ECHO.test_match_commercial,"Matched Commercial Facilities")
-HUC6_discharge(HUC6_match_industrial,ECHO.test_match_industrial,"Matched Industrial Facilities")
-HUC6_discharge(HUC6_match_municipal,ECHO.test_match_municipal,"Matched Municipal Facilities")
+HUC6_discharge(HUC6_match_energy,ECHO.test_match_energy,"Matched Energy Facilities","match_energy")
+HUC6_discharge(HUC6_match_aq,ECHO.test_match_aq,"Matched Aquaculture Facilities","match_aq")
+HUC6_discharge(HUC6_match_commercial,ECHO.test_match_commercial,"Matched Commercial Facilities","match_commercial")
+HUC6_discharge(HUC6_match_industrial,ECHO.test_match_industrial,"Matched Industrial Facilities","match_industrial")
+HUC6_discharge(HUC6_match_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
-#---Non-Energy Sectors---#
-
-#-All Facilities-#
-HUC6_discharge(HUC6_nonenergy,ECHO.test_nonenergy,"Non-Energy Facilities")
-
-#-Fully Matched Facilities-#
-HUC6_discharge(HUC6_nonenergy,ECHO.test_match_nonenergy,"Matched Non-Energy Facilities")
+discharge_subplot_match<- function(){
+  
+  subplot<-ggpubr::ggarrange(huc_dis_match_energy,huc_dis_match_nonenergy,huc_dis_match_industrial,huc_dis_match_commercial,
+                             huc_dis_match_aq,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("Visualizing Median Watershed Discharge 2010-2016: Matched VPDES Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"HUC6_Dis_Matched_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+discharge_subplot_match()
 
 ###########################################################################################################################################
 #-----------------------------------------Distribution of Withdrawing Facilities in HUC6------------------------------------------------#
 
-HUC6_withdrawal<- function(HUC6,VWUDS_points,label){
+HUC6_withdrawal<- function(HUC6_db,VWUDS_points,label,fileext){
   
-  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
-  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
   
   HUC6.df<-broom::tidy(HUC6_Clipped)
   HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
@@ -1283,12 +1713,12 @@ HUC6_withdrawal<- function(HUC6,VWUDS_points,label){
   
   With_Discrete<- c("#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#a50f15","#99000d")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=HUC6.df,
       aes(x=long, y= lat, group=group,
           fill= cut(HUC6.df$Withdrawal_ave,breaks=c(0,1,5,10,25,50,max(HUC6.df$Withdrawal_ave,na.rm=TRUE)),include.lowest=T), colour=""))+
-    scale_fill_manual(name="Summed Withdrawal (MGD)", values=(With_Discrete),
+    scale_fill_manual(name="Withdrawal by HUC6 (MGD)", values=(With_Discrete),
                       labels=c(paste("<",1),
                                paste(1,"-",5),
                                paste(5,"-",10),
@@ -1299,61 +1729,104 @@ HUC6_withdrawal<- function(HUC6,VWUDS_points,label){
     geom_polygon(
       data=HUC6.df,
       aes(x=long, y= lat, group=group),color="#252525",fill="transparent")+
-    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, shape="Point Source"),
-               size=1.54,colour="#252525")+
+    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, shape="VWUDS Facility"),size=3.0,colour="#252525")+
     scale_shape_manual(name="", values=20)+
     scale_colour_manual(values=NA)+
     guides(fill=guide_legend(order=1),
            shape=guide_legend(override.aes=list(linetype=1,colour="black"),order=2),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=3))+
-    labs(title = paste0("Average Annual Summed Withdrawal (MGD) 2010-2017: ",label))+
+    # labs(title = paste0("Average Annual Summed Withdrawal (MGD) 2010-2017: ",label))+
     theme(line=element_blank(),
           axis.text=element_blank(),
           axis.title=element_blank(),
-          panel.background = element_blank())+coord_equal()+
-    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
-              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  
+  assign(paste0("huc_with_",fileext),plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Withdrawals/"
+  
+  #ggsave(filename=paste0(path,"HUC6_withdrawal_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
 }
 
 #---All Sectors---#
 
 #-All Facilities-#
-HUC6_withdrawal(HUC6,VWUDS.test,"All Reporting Facilities in All Sectors")
+HUC6_withdrawal(HUC6_all,VWUDS.test,"All Reporting Facilities in All Sectors","all_fac_all_sec")
 #-Fully Matched Facilities-#
-HUC6_withdrawal(HUC6_matched,VWUDS.test_matched,"Matched Facilities in All Sectors")
+HUC6_withdrawal(HUC6_matched,VWUDS.test_matched,"Matched Facilities in All Sectors","match_all_sector")
 
 #---Subsetted by Sector---#
 
 #-All Facilities-#
-HUC6_withdrawal(HUC6_energy,VWUDS.test_energy,"Energy Facilities")
-HUC6_withdrawal(HUC6_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities")
-HUC6_withdrawal(HUC6_commercial,VWUDS.test_commercial,"Commercial Facilities")
-HUC6_withdrawal(HUC6_industrial,VWUDS.test_industrial,"Industrial Facilities")
-HUC6_withdrawal(HUC6_municipal,VWUDS.test_municipal,"Municipal Facilities")
+HUC6_withdrawal(HUC6_energy,VWUDS.test_energy,"Energy Facilities","all_energy")
+HUC6_withdrawal(HUC6_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities","all_ag")
+HUC6_withdrawal(HUC6_aq,VWUDS.test_aq,"Aquaculture Facilities","all_aq")
+HUC6_withdrawal(HUC6_commercial,VWUDS.test_commercial,"Commercial Facilities","all_commercial")
+HUC6_withdrawal(HUC6_industrial,VWUDS.test_industrial,"Industrial Facilities","all_industrial")
+HUC6_withdrawal(HUC6_municipal,VWUDS.test_municipal,"Municipal Facilities","all_municipal")
+HUC6_withdrawal(HUC6_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities","all_nonenergy")
+
+withdrawal_subplot_all<- function(){
+  
+  subplot<-ggpubr::ggarrange(huc_with_all_energy,huc_with_all_nonenergy,huc_with_all_industrial,huc_with_all_commercial,
+                             huc_with_all_aq,huc_with_all_ag,huc_with_all_municipal,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(d) Aquaculture","(e) Agriculture/Irrigation","(f) Municipal"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=4)%>%annotate_figure(
+                               top = text_grob("Visualizing Median Watershed Withdrawal 2010-2016: All Reporting VWUDS Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"HUC6_With_All_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+withdrawal_subplot_all()
 
 #-Fully Matched Facilities-#
-HUC6_withdrawal(HUC6_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities")
-HUC6_withdrawal(HUC6_match_ag,VWUDS.test_match_ag,"Matched Agriculture/Irrigation Facilities")
-HUC6_withdrawal(HUC6_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities")
-HUC6_withdrawal(HUC6_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities")
-HUC6_withdrawal(HUC6_match_municipal,VWUDS.test_match_municipal,"Matched Municipal Facilities")
+HUC6_withdrawal(HUC6_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities","match_energy")
+HUC6_withdrawal(HUC6_match_aq,VWUDS.test_match_aq,"Matched Aquaculture Facilities","match_aq")
+HUC6_withdrawal(HUC6_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities","match_commercial")
+HUC6_withdrawal(HUC6_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities","match_industrial")
+HUC6_withdrawal(HUC6_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
-#---Non-Energy Sectors---#
-
-#-All Facilities-#
-HUC6_withdrawal(HUC6_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities")
-
-#-Fully Matched Facilities-#
-HUC6_withdrawal(HUC6_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities")
-
+withdrawal_subplot_match<- function(){
+  
+  subplot<-ggpubr::ggarrange(huc_with_match_energy,huc_with_match_nonenergy,huc_with_match_industrial,
+                             huc_with_match_commercial,
+                             huc_with_match_aq,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Commercial",
+                                      "(e) Aquaculture"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("Visualizing Median Watershed Withdrawal 2010-2016: Matched VWUDS Facilities", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"HUC6_With_Matched_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+withdrawal_subplot_match()
 
 ###########################################################################################################################################
 #---------------------------------------------------Consumption over HUC6 Watersheds-------------------------------------------------------------#
 
-HUC6_consumption<- function(HUC6, ECHO_points ,VWUDS_points, label){
+HUC6_consumption<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
   
-  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
-  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
   
   HUC6.df<-broom::tidy(HUC6_Clipped)
   HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
@@ -1361,13 +1834,13 @@ HUC6_consumption<- function(HUC6, ECHO_points ,VWUDS_points, label){
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=HUC6.df,
       aes(x=long, y= lat, group=group,
           fill=cut(HUC6.df$Consumption_ave,breaks=c(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
     scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
-                      labels=c(paste(round(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),digits=2),"-",0),
+                      labels=c(paste("<",0),
                                paste(0,"-",0.25),
                                paste(0.25,"-",0.5),
                                paste(0.5,"-",0.75),
@@ -1377,17 +1850,329 @@ HUC6_consumption<- function(HUC6, ECHO_points ,VWUDS_points, label){
       data=HUC6.df,
       aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
     scale_colour_manual(values=NA)+
-    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="Outfall"),
-               size=1.75,colour="#252525")+
-    scale_shape_manual(name="", values=17)+
-    geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="Withdrawing Source"),
-               colour="#252525")+
-    scale_size_manual(name="", values=1.75)+
+    # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+    # scale_shape_manual(name="", values=17)+
+    # geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    #scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              #arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  # path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+         #plot=plot1, 
+         #width=13.33, height=6.66,units="in")
+  
+  # return(list(plot1))
+}
+
+#--------------------All Reporting Facilities---------------------#
+HUC6_consumption(HUC6_all,ECHO.test,VWUDS.test,"All Reporting Facilities in All Sectors","all_fac_all_sector")
+
+HUC6_consumption(HUC6_commercial,ECHO.test_commercial,VWUDS.test_commercial,"Commercial Facilities","all_commercial")
+HUC6_consumption(HUC6_industrial,ECHO.test_industrial,VWUDS.test_industrial,"Industrial Facilities","all_industrial")
+HUC6_consumption(HUC6_municipal,ECHO.test_municipal,VWUDS.test_municipal,"Municipal Facilities","all_municipal")
+HUC6_consumption(HUC6_nonenergy,ECHO.test_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities","HUC6_all_nonenergy")
+HUC6_consumption(HUC6_energy,ECHO.test_energy,VWUDS.test_energy,"Energy Facilities","all_energy")
+
+HUC6_consumption_ag<- function(HUC6_db,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(
+                        paste(0,"-",0.25),
+                        paste(0.25,"-",0.5),
+                        paste(0.5,"-",0.75),
+                        paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    # scale_shape_manual(name="", values=17)+
+    # geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    # scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              # arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), plot=plot1, width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
+}
+HUC6_consumption_ag(HUC6_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities","all_ag")
+
+HUC6_consumption_aq<- function(HUC6, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=2.0,colour="#252525")+
+    # scale_shape_manual(name="", values=17)+
+    # geom_point(data=VWUDS_points, aes(x=VWUDS.Long, y=VWUDS.Lat, size="VWUDS Facility"),colour="#252525")+
+    # scale_size_manual(name="", values=2.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+    # scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              # arrow_length=75, arrow_distance = 60, arrow_north_size = 6)
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  # path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  # ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), plot=plot1, width=13.33, height=6.66,units="in")
+  
+}
+HUC6_consumption_aq(HUC6_aq,ECHO.test_aq,VWUDS.test_aq,"Aquaculture Facilities","all_aq")
+
+all_subplot<- function(){
+  subplot<-ggpubr::ggarrange(all_energy,all_nonenergy,all_industrial,
+                             all_aq,all_commercial,all_ag,all_municipal,
+                             labels=c("(a) Energy","(b) Non-Energy","(c) Industrial","(d) Aquaculture",
+                                      "(e) Commercial","(f) Agriculture/Irrigation","(g) Municipal"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=4)%>%annotate_figure(top = text_grob("Visualizing Watershed Consumption: All Reporting Facilities", color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"HUC6_CU_All_Subplot.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+all_subplot()
+
+#--------------------Matched Facilities---------------------#
+HUC6_consumption<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+     # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+     # scale_shape_manual(name="", values=17)+
+     # geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, size="VWUDS Facility"),colour="#252525")+
+     # scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+  # plot=plot1, 
+  #width=13.33, height=6.66,units="in")
+
+}
+
+HUC6_consumption(HUC6_match_energy,ECHO.test_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities","match_energy")
+HUC6_consumption(HUC6_match_commercial,ECHO.test_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities","match_commercial")
+HUC6_consumption(HUC6_match_industrial,ECHO.test_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities","match_industrial")
+HUC6_consumption(HUC6_match_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities","HUC6_match_nonenergy")
+
+HUC6_consumption_aq<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  plot1<-ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+     geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, shape="VPDES Facility"),size=3.0,colour="#252525")+
+     scale_shape_manual(name="", values=17)+
+     geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, size="VWUDS Facility"),colour="#252525")+
+     scale_size_manual(name="", values=3.0)+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent"),order=2))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  
+  
+  assign(fileext,plot1,envir = .GlobalEnv)
+  
+  #path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  #ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+  # plot=plot1, 
+  #width=13.33, height=6.66,units="in")
+}
+HUC6_consumption_aq(HUC6_match_aq,ECHO.test_match_aq,VWUDS.test_match_aq,"Matched Aquaculture Facilities","match_aq")
+
+matched_subplot<- function(){
+  
+  subplot<-ggpubr::ggarrange(match_energy,match_nonenergy,match_industrial,
+                             match_aq,match_commercial,labels=c("(a) Energy","(b) Non-Energy","(c) Industrial",
+                                                                "(d) Aquaculture","(e) Commercial"),
+                             common.legend = T,
+                             legend="bottom",
+                             ncol=2,nrow=3)%>%annotate_figure(
+                               top = text_grob("2010-2016 Median Annual HUC 6 Watershed Consumption Considering Matched Facility Data", 
+                                               color = "black", face = "bold", size = 14))
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggexport(filename=paste0(path,"HUC6_CU_Matched_Subplot_points.pdf"), plot=subplot, width=13.33, height=6.66,units="in")
+  
+}
+matched_subplot()
+
+
+
+#------------------------------------------------------------------------------------#
+#-----------------------------Matched Facilities-------------------------------------#
+
+# With sizes of point corresponding to median annual consumption in MGD
+
+#--Aquaculture--#
+HUC6_consumption_aquaculture<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(0,0.05,0.5,1),
+               labels=c(paste(0,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
     guides(fill=guide_legend(order=1),
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
-           shape=guide_legend(order=3),
            size=guide_legend(order=4))+
-    labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
     scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
               arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
     theme(line=element_blank(),
@@ -1395,42 +2180,312 @@ HUC6_consumption<- function(HUC6, ECHO_points ,VWUDS_points, label){
           axis.title=element_blank(),
           panel.background = element_blank())+coord_equal()
   
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
   
 }
+HUC6_consumption_aquaculture(HUC6_match_aq,ECHO.test_match_aq,VWUDS.test_match_aq,"Matched Aquaculture Facilities","match_aq")
 
-#-All Facilities-#
-HUC6_consumption(HUC6,ECHO.test,VWUDS.test,"All Reporting Facilities in All Sectors")
-#-Fully Matched Facilities-#
-HUC6_consumption(HUC6_matched,ECHO.test_matched,VWUDS.test_matched,"Matched Facilities in All Sectors")
+#--Commercial--#
+HUC6_consumption_commercial<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.05,0.5,1),
+               labels=c(paste("<",0),
+                        paste(0,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+HUC6_consumption_commercial(HUC6_match_commercial,ECHO.test_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities","match_commercial")
 
-#---Subsetted by Sector---#
+#--Industrial--#
+HUC6_consumption_industrial<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.001,0.05,0.5,1),
+               labels=c(paste("<",0),
+                        paste(0,"-",0.001),
+                        paste(0.001,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+HUC6_consumption_industrial(HUC6_match_industrial,ECHO.test_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities","match_industrial")
 
-#-All Facilities-#
-HUC6_consumption(HUC6_energy,ECHO.test_energy,VWUDS.test_energy,"Energy Facilities")
-HUC6_consumption(HUC6_ag,ECHO.test_ag,VWUDS.test_ag,"Agriculture/Irrigation Facilities")
-HUC6_consumption(HUC6_commercial,ECHO.test_commercial,VWUDS.test_commercial,"Commercial Facilities")
-HUC6_consumption(HUC6_industrial,ECHO.test_industrial,VWUDS.test_industrial,"Industrial Facilities")
-HUC6_consumption(HUC6_municipal,ECHO.test_municipal,VWUDS.test_municipal,"Municipal Facilities")
-
-#-Fully Matched Facilities-#
-HUC6_consumption(HUC6_match_energy,ECHO.test_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities")
-HUC6_consumption(HUC6_match_ag,ECHO.test_match_ag,VWUDS.test_match_ag,"Matched Agriculture/Irrigation Facilities")
-HUC6_consumption(HUC6_match_commercial,ECHO.test_match_commercial,VWUDS.test_match_commercial,"Matched Commercial Facilities")
-HUC6_consumption(HUC6_match_industrial,ECHO.test_match_industrial,VWUDS.test_match_industrial,"Matched Industrial Facilities")
-HUC6_consumption(HUC6_match_municipal,ECHO.test_match_municipal,VWUDS.test_match_municipal,"Matched Municipal Facilities")
 
 #---Non-Energy Sectors---#
+HUC6_consumption_non_energy<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T))
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU),shape=20,colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.001,0.05,0.5,1),
+               labels=c(paste("<",0),
+                        paste(0,"-",0.001),
+                        paste(0.001,"-",0.05),
+                        paste(0.05,"-",0.5),
+                        paste(0.5,"-",1),
+                        paste(1,"<")),
+               range=c(2,11),
+               trans="sqrt"
+    )+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+HUC6_consumption_non_energy(HUC6_match_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
-#-All Facilities-#
-HUC6_consumption(HUC6_nonenergy,ECHO.test_nonenergy,VWUDS.test_nonenergy,"Non-Energy Facilities")
-
-#-Fully Matched Facilities-#
-HUC6_consumption(HUC6_nonenergy,ECHO.test_match_nonenergy,VWUDS.test_match_nonenergy,"Matched Non-Energy Facilities")
+#--Energy--#
+HUC6_consumption_energy<- function(HUC6_db, ECHO_points ,VWUDS_points, label,fileext){
+  
+  HUC6_Clipped<-gIntersection(HUC6_db,VA,id=as.character(HUC6_db@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
+  HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6_db@data[as.character(HUC6_db@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
+  
+  HUC6.df<-broom::tidy(HUC6_Clipped)
+  HUC6_Clipped$polyID<-sapply(slot(HUC6_Clipped,"polygons"), function(x) slot(x, "ID"))
+  HUC6.df<-merge(HUC6.df, HUC6_Clipped, by.x="id", by.y="polyID")
+  
+  
+  CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
+  
+  ECHO_points$CU<-ECHO_points$Withdrawals_MGD-ECHO_points$Discharges_MGD
+  
+  ECHO_points<-ECHO_points%>%
+    dplyr::group_by(VPDES.Facility.ID)%>%
+    dplyr::summarise(Fac.Lat=first(Fac.Lat),Fac.Long=first(Fac.Long),
+                     Ave_CU=median(CU,na.rm=T),Fuel_Type=first(Fuel_Type))
+  
+  ECHO_points<-dplyr::mutate_if(ECHO_points,is.factor,as.character)
+  
+  ECHO_points$Fuel_Type<-ifelse(ECHO_points$Fuel_Type=="Natural Gas","Combination Fossil",ECHO_points$Fuel_Type)
+  
+  plot1<-ggplot2::ggplot()+
+    geom_polygon(
+      data=HUC6.df,
+      aes(x=long, y= lat, group=group,
+          fill=cut(HUC6.df$Consumption_ave,breaks=c(quantile(HUC6.df$Consumption_ave,c(0.0),na.rm=T),0,0.25,0.5,0.75,1),include.lowest=T),colour=""))+
+    scale_fill_manual(name="Consumption Coefficient", values=CU_Discrete, 
+                      labels=c(paste("<",0),
+                               paste(0,"-",0.25),
+                               paste(0.25,"-",0.5),
+                               paste(0.5,"-",0.75),
+                               paste(0.75,"-",1)),
+                      na.value="transparent", drop=FALSE)+
+    geom_polygon(data=HUC6.df,aes(x=long, y= lat, group=group),colour="#252525",fill="transparent")+
+    scale_colour_manual(values=NA)+
+    geom_point(data=ECHO_points, aes(x=Fac.Long, y=Fac.Lat, 
+                                     size=ECHO_points$Ave_CU,shape=ECHO_points$Fuel_Type),colour="#252525")+
+    scale_size(name="Average Consumption (MGD)", 
+               breaks=c(min(ECHO_points$Ave_CU,na.rm=T),0,0.5,1,5,10),
+               trans="sqrt",
+               labels=c(paste("<",0),
+                        paste(0,"-",0.5),
+                        paste(0.5,"-",1.0),
+                        paste(1.0,"-",5.0),
+                        paste(5.0,"-",10.0),
+                        paste(10,"<")),
+               range=c(2,12))+
+    scale_shape_manual(name="Fuel Type",
+                       values=c("Coal"=15,"Nuclear"=16,"Combination Fossil"=17,
+                                "Biomass"=18))+
+    guides(fill=guide_legend(order=1),
+           colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
+           size=guide_legend(order=4),
+           shape=guide_legend(override.aes = list(size=3), order=3))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
+              arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
+    theme(line=element_blank(),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          panel.background = element_blank())+coord_equal()
+  
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"HUC6_CU_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  assign("ECHO_points",ECHO_points,envir = .GlobalEnv)
+  
+  return(list(plot1))
+  
+}
+HUC6_consumption_energy(HUC6_match_energy,ECHO.test_match_energy,VWUDS.test_match_energy,"Matched Energy Facilities","match_energy")
 
 ###########################################################################################################################################
 #-----------------------------------------Consumption over HUC6 Watersheds (without points)------------------------------------------------------#
 
-HUC6_consumption_nopnt<- function(HUC6, label){
+HUC6_consumption_nopnt<- function(HUC6, label,fileext){
   
   HUC6_Clipped<-gIntersection(HUC6,VA,id=as.character(HUC6@data$HUC6),byid=TRUE,drop_lower_td=TRUE)
   HUC6_Clipped<-SpatialPolygonsDataFrame(HUC6_Clipped,HUC6@data[as.character(HUC6@data$HUC6)%in%names(HUC6_Clipped),],match.ID = "HUC6")
@@ -1441,7 +2496,7 @@ HUC6_consumption_nopnt<- function(HUC6, label){
   
   CU_Discrete<-c("#2b8cbe","#fcbba1","#fb6a4a","#de2d26","#a50f15")
   
-  ggplot()+
+  plot1<-ggplot()+
     geom_polygon(
       data=HUC6.df,
       aes(x=long, y= lat, group=group,
@@ -1461,7 +2516,7 @@ HUC6_consumption_nopnt<- function(HUC6, label){
            colour=guide_legend("No Data", override.aes = list(colour="black",fill="transparent",order=2)),
            shape=guide_legend(order=3),
            size=guide_legend(order=4))+
-    labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
+    # labs(title = paste0("Average Consumption Coefficient 2010-2017: ", label))+
     scale_bar(lon=-85,lat=36, distance_lon = 50, distance_lat = 20, distance_legend = 40, dist_unit = "km",
               arrow_length=75, arrow_distance = 60, arrow_north_size = 6)+
     theme(line=element_blank(),
@@ -1469,37 +2524,45 @@ HUC6_consumption_nopnt<- function(HUC6, label){
           axis.title=element_blank(),
           panel.background = element_blank())+coord_equal()
   
+  path="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/HUC6 Analysis/Consumption/"
+  
+  ggsave(filename=paste0(path,"HUC6_CU_nopnt_",fileext,".pdf"), 
+         plot=plot1, 
+         width=13.33, height=6.66,units="in")
+  
+  return(list(plot1))
+  
   
 }
 
 #-All Facilities-#
-HUC6_consumption_nopnt(HUC6,"All Reporting Facilities in All Sectors")
+HUC6_consumption_nopnt(HUC6,"All Reporting Facilities in All Sectors","all_fac_all_sector")
 #-Fully Matched Facilities-#
-HUC6_consumption_nopnt(HUC6_matched,"Matched Facilities in All Sectors")
+HUC6_consumption_nopnt(HUC6_matched,"Matched Facilities in All Sectors","match_all_sector")
 
 #---Subsetted by Sector---#
 
 #-All Facilities-#
-HUC6_consumption_nopnt(HUC6_energy,"Energy Facilities")
-HUC6_consumption_nopnt(HUC6_ag,"Agriculture/Irrigation Facilities")
-HUC6_consumption_nopnt(HUC6_commercial,"Commercial Facilities")
-HUC6_consumption_nopnt(HUC6_industrial,"Industrial Facilities")
-HUC6_consumption_nopnt(HUC6_municipal,"Municipal Facilities")
+HUC6_consumption_nopnt(HUC6_energy,"Energy Facilities","all_energy")
+HUC6_consumption_nopnt(HUC6_ag,"Agriculture/Irrigation Facilities","all_ag")
+HUC6_consumption_nopnt(HUC6_commercial,"Commercial Facilities","all_commercial")
+HUC6_consumption_nopnt(HUC6_industrial,"Industrial Facilities","all_industrial")
+HUC6_consumption_nopnt(HUC6_municipal,"Municipal Facilities","all_municipal")
 
 #-Fully Matched Facilities-#
-HUC6_consumption_nopnt(HUC6_match_energy,"Matched Energy Facilities")
-HUC6_consumption_nopnt(HUC6_match_ag,"Matched Agriculture/Irrigation Facilities")
-HUC6_consumption_nopnt(HUC6_match_commercial,"Matched Commercial Facilities")
-HUC6_consumption_nopnt(HUC6_match_industrial,"Matched Industrial Facilities")
-HUC6_consumption_nopnt(HUC6_match_municipal,"Matched Municipal Facilities")
+HUC6_consumption_nopnt(HUC6_match_energy,"Matched Energy Facilities","match_energy")
+HUC6_consumption_nopnt(HUC6_match_ag,"Matched Agriculture/Irrigation Facilities","match_ag")
+HUC6_consumption_nopnt(HUC6_match_commercial,"Matched Commercial Facilities","match_commercial")
+HUC6_consumption_nopnt(HUC6_match_industrial,"Matched Industrial Facilities","match_industrial")
+HUC6_consumption_nopnt(HUC6_match_municipal,"Matched Municipal Facilities",",match_municipal")
 
 #---Non-Energy Sectors---#
 
 #-All Facilities-#
-HUC6_consumption_nopnt(HUC6_nonenergy,"Non-Energy Facilities")
+HUC6_consumption_nopnt(HUC6_nonenergy,"Non-Energy Facilities","all_nonenergy")
 
 #-Fully Matched Facilities-#
-HUC6_consumption_nopnt(HUC6_nonenergy,"Matched Non-Energy Facilities")
+HUC6_consumption_nopnt(HUC6_nonenergy,"Matched Non-Energy Facilities","match_nonenergy")
 
 
 ###########################################################################################################################################
@@ -1553,7 +2616,7 @@ HUC6_NWB<- function(HUC6,label){
 full_match_2010_2017_summary<-full_match_2010_2017%>%dplyr::group_by(VPDES.Facility.ID)%>%
   dplyr::summarise(VWUDS.Facility.ID=first(VWUDS.Facility.ID),OutfallID=first(OutfallID),VWUDS.Name=first(VWUDS.Name),VPDES.Name=first(VPDES.Name),
                    Use.Type=first(Use.Type), VPDES.Fac.Lat=first(Fac.Lat),VPDES.Fac.Long=first(Fac.Long),VWUDS.Fac.Lat=first(VWUDS.Lat),VWUDS.Fac.Long=first(VWUDS.Long),
-                   Ave_Withdrawal_mgd=mean(Withdrawals_MGD,na.rm=T),Ave_Discharge_mgd=mean(Discharges_MGD,na.rm=T),HUC6Name=first(HUC6Name),Waterbody=first(Waterbody))
+                   Ave_Withdrawal_mgd=median(Withdrawals_MGD,na.rm=T),Ave_Discharge_mgd=median(Discharges_MGD,na.rm=T),HUC6Name=first(HUC6Name),Waterbody=first(Waterbody))
 
 VA_River<-readOGR("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/VA_Rivers_Clip.shp")
 VA_River<-sp::spTransform(VA_River, CRS("+init=epsg:4269"))#Reproject shapefiles to NAD83=EPSG Code of 4269
@@ -1637,7 +2700,7 @@ MK_HUC6_Compile<- function(ECHO_2010_2017,VWUDS_2010_2017,label){
   
   assign(label,TS_CU_HUC6,envir = .GlobalEnv)
   
-  save(TS_CU_HUC6,file=paste0("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/",label,".RData"))
+  save(TS_CU_HUC6,file=paste0("G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_Updated/Code/R Workspaces/HUC6_",label,".RData"))
   
 }
 
