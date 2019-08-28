@@ -111,10 +111,7 @@ HUC6_overlay(NC_Facilities,"NC_Facilities")
 HUC6_overlay(PA_Facilities,"PA_Facilities")
 HUC6_overlay(WV_Facilities,"WV_Facilities")
 
-ECHO_Facilities<-rbind(NC_Facilities,MD_Facilities,VA_Facilities,DC_Facilities
-                       #,PA_Facilities, 
-                       #WV_Facilities
-                       )
+ECHO_Facilities<-rbind(NC_Facilities,MD_Facilities,VA_Facilities,DC_Facilities, PA_Facilities, WV_Facilities)
 
 ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
 
@@ -174,10 +171,10 @@ df_coord_pull<- function(){
   
   rm(NC_Facilities,
      VA_Facilities,
-     #WV_Facilities,
+     WV_Facilities,
      MD_Facilities,
-     DC_Facilities
-     #,PA_Facilities
+     DC_Facilities,
+     PA_Facilities
      )
 }
 df_coord_pull()
@@ -234,10 +231,10 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration){
     
     Facility.ID<-ECHO_Facilities$Facility.ID[i]
     print(paste("Processing Facility ID: ", Facility.ID, "(",i," of ",length(ECHO_Facilities$Facility.ID),")", sep=""))
- 
-   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility.ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
     
-     DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility.ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+    DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+    
     DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
     data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
     if(data_length>0){ #if the value is NOT NA, enter loop
@@ -313,8 +310,10 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration){
       violation_severity<-c(violation_severity,NA)
     }
   }
+  
+  
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode,nodi=nodi,violation=violation,violation_severity=violation_severity)
-#line 315 is where the facilities are checked and recorded to have outfalls and it starts listing them all - the next 5 lines are not run 
+
   timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
   timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
   
@@ -429,7 +428,7 @@ assign("adminreg",adminreg,envir = .GlobalEnv)
 write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
 
 }
-
+adminreg_compile(ECHO_Facilities)
 ##################################################################################################################################
 ###################################################2 Import Facilities############################################################
 #Purpose: Extract all discharging facilities found in ECHO 
@@ -721,7 +720,7 @@ conveyance_generation(ECHO_Outfalls)
 
 
 outfall_properties<- function(){
-  outfall_types<-read.table(file="G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Outfall_Types.txt",header=T,sep="|")
+  outfall_types<-read.table(file="C:/Users/maf95834/Documents/Github/USGS_Consumptive_Use/Code/Data Cleaning/Outfall_Types.txt",header=T,sep="|")
   
   
   cooling<-subset(outfall_types,outfall_types$Outfall_Type=="COOL")
@@ -749,7 +748,7 @@ outfall_properties<- function(){
                         propcode="internal_sum",stringsAsFactors = F)
   
   outfall_props<<-rbind(cooling,stormwater,internal,internal_sum)
-  
+  assign("outfall_props",outfall_props,envir = .GlobalEnv)
   }
 outfall_properties()
 ##################################################################################################################################
@@ -816,14 +815,14 @@ n_states<- function(database){
   
 }
 
-n_states(release.dataframe)
+#n_states(release.dataframe)
 n_states(timeseries)
 
 ##################################################################################################################################
 ###########################################Pushing DMR timeseries Data to VAHydro#################################################
 
-site <- "http://deq1.bse.vt.edu/d.bet"    #Specify the site of interest, either d.bet OR d.dh
-hydro_tools <- 'G:\\My Drive\\hydro-tools' #location of hydro-tools repo
+site <- "http://deq1.bse.vt.edu/d.alpha"    #Specify the site of interest, either d.bet OR d.dh
+hydro_tools <- 'C:\\Users\\maf95834\\Documents\\Github\\hydro-tools' #location of hydro-tools repo
 
 #----------------------------------------------#
 
@@ -886,10 +885,14 @@ permit.adminid<-data.frame(admincode=permit.dataframe$admincode,adminid=permit.d
 assign("permit.dataframe",permit.dataframe,envir = .GlobalEnv)
 assign("permit.adminid",permit.adminid,envir = .GlobalEnv)
 
-write.table(permit.dataframe,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/Imported_link_locations/permit.dataframe.txt",sep="\t",row.names=F)
+write.table(permit.dataframe,paste0(Outputpath,"/permit.dataframe.txt"),sep="\t",row.names = F)
 
 }
+
 permit_import(adminreg,1)
+
+
+save.image(file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/afterpermitimport.RData")
 
 ############################################################################################
 # RETRIEVE/CREATE/UPDATE FACILITY DH FEATURE
@@ -900,100 +903,103 @@ permit_import(adminreg,1)
 # This is a manual step that requires matching of facilities. 
 
 matched_switch<- function(facilities){
-
-facility.dataframe <- data.frame()
-facility.dataframe_ii<-data.frame()
-
-facility_inputs <- data.frame(
-  bundle = as.character(facilities$bundle),
-  ftype = as.character(facilities$ftype),
-  hydrocode = as.character(facilities$hydrocode),
-  name = as.character(facilities$name),
-  fstatus = as.character(facilities$fstatus),
-  address1 = as.character(facilities$address1),
-  city = as.character(facilities$city),
-  dh_link_admin_location = permit.adminid$adminid[match(permit.adminid$admincode,facilities$dh_link_admin_location)], #%in% operator looks for matches in left operand and returns permit.adminid if there is one
-  dh_geofield = as.character(facilities$dh_geofield),
-  stringsAsFactors=FALSE
-) 
-
-# We keep the same NPDES permit dh_link 
-Matched<-read.csv("G:/My Drive/USGS_ConsumptiveUse/Spring, 2019/Matched Facilities/Runninglist_Matches.csv",sep=",", header = T, stringsAsFactors = F)
-Matched$VWUDS.Hydrocode<-gsub("\\s+$","",Matched$VWUDS.Hydrocode)
-
-#--Retrieve attributes of corresponding matched facility in VAHydro with getFeature
-facility_inputs<-subset(facility_inputs,facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,select=c(1,3))
-facility_inputs$hydrocode<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$hydrocode)
-facility_inputs$hydrocode<-gsub("\\s+$","",facility_inputs$hydrocode) #trim any trailing whitespaces--very important
-
-for (i in 1:length(facility_inputs$hydrocode)){
-  print(paste("Processing Facility ",i, "(",facility_inputs$hydrocode[i],")","  of ", length(facilities$dh_link_admin_location)))
-  facility.dataframe_i <- getFeature(facility_inputs[i,], token, site, feature) #need token now for access
-  facility.dataframe<-rbind(facility.dataframe,facility.dataframe_i)
+  
+  facility.dataframe <- data.frame()
+  facility.dataframe_ii<-data.frame()
+  
+  facility_inputs <- data.frame(
+    bundle = as.character(facilities$bundle),
+    ftype = as.character(facilities$ftype),
+    hydrocode = as.character(facilities$hydrocode),
+    name = as.character(facilities$name),
+    fstatus = as.character(facilities$fstatus),
+    address1 = as.character(facilities$address1),
+    city = as.character(facilities$city),
+    dh_link_admin_location = permit.adminid$adminid[match(permit.adminid$admincode,facilities$dh_link_admin_location)], #%in% operator looks for matches in left operand and returns permit.adminid if there is one
+    dh_geofield = as.character(facilities$dh_geofield),
+    stringsAsFactors=FALSE
+  ) 
+  
+  # We keep the same NPDES permit dh_link 
+  Matched<-read.csv("https://raw.githubusercontent.com/HARPgroup/USGS_Consumptive_Use/master/Code/Facility%20Matching/Runninglist_Matches.csv",sep=",", header = T, stringsAsFactors = F)
+  Matched$VWUDS.Hydrocode<-gsub("\\s+$","",Matched$VWUDS.Hydrocode)
+  
+  #--Retrieve attributes of corresponding matched facility in VAHydro with getFeature
+  facility_inputs<-subset(facility_inputs,facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,select=c(1,3))
+  facility_inputs$hydrocode<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$hydrocode)
+  facility_inputs$hydrocode<-gsub("\\s+$","",facility_inputs$hydrocode) #trim any trailing whitespaces--very important
+  
+  for (i in 1:length(facility_inputs$hydrocode)){
+    print(paste("Processing Facility ",i, "(",facility_inputs$hydrocode[i],")","  of ", length(facility_inputs$hydrocode)))
+    facility.dataframe_i <- getFeature(facility_inputs[i,], token, site, feature) #need token now for access
+    facility.dataframe<-rbind(facility.dataframe,facility.dataframe_i)
+  }
+  
+  facility.dataframe<-subset(facility.dataframe,select=c(3,4,6,7,9,10,11,20,23))
+  colnames(facility.dataframe)[2]<-c("VWUDS.Hydrocode")
+  Matched<-merge(Matched,facility.dataframe,by=c("VWUDS.Hydrocode"))
+  Matched<-mutate_if(Matched,is.factor,as.character)
+  Matched$VWUDS.Name<-gsub(".*: ","",Matched$VWUDS.Name)
+  
+  facility_inputs <- data.frame(
+    bundle = as.character(facilities$bundle),
+    ftype = as.character(facilities$ftype),
+    hydrocode = as.character(facilities$hydrocode),
+    name = as.character(facilities$name),
+    fstatus = as.character(facilities$fstatus),
+    address1 = as.character(facilities$address1),
+    city = as.character(facilities$city),
+    dh_link_admin_location = as.character(permit.adminid$adminid[match(permit.adminid$admincode,facilities$dh_link_admin_location)]), #%in% operator looks for matches in left operand and returns permit.adminid if there is one
+    dh_geofield = as.character(facilities$dh_geofield),
+    stringsAsFactors=FALSE
+  ) 
+  
+  #--If there is a match, there is no need to create a new facility feature. Therefore replace ECHO/VPDES hydrocode with the VWUDS hydrocode and other attributes--#
+  facility_inputs$ftype<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$ftype[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$ftype)
+  facility_inputs$name<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Name[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$name)
+  facility_inputs$fstatus<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$fstatus[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$fstatus)
+  facility_inputs$address1<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$address1[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$address1)
+  facility_inputs$city<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$city[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$city)
+  facility_inputs$dh_geofield<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$dh_geofield[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$dh_geofield)
+  
+  #--Replace VPDES hydrocode with matching VWUDS hydrocode to attach properties to existing facilities in VAHydro--#
+  wb_gnis_name$hydrocode<-ifelse(wb_gnis_name$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(wb_gnis_name$hydrocode,Matched$VPDES.Hydrocode)],wb_gnis_name$hydrocode)
+  css$hydrocode<-ifelse(css$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(css$hydrocode,Matched$VPDES.Hydrocode)],css$hydrocode)
+  cwp_cso_outfalls$hydrocode<-ifelse(cwp_cso_outfalls$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(cwp_cso_outfalls$hydrocode,Matched$VPDES.Hydrocode)],cwp_cso_outfalls$hydrocode)
+  design_flow$hydrocode<-ifelse(design_flow$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(design_flow$hydrocode,Matched$VPDES.Hydrocode)],design_flow$hydrocode)
+  impair_cause$hydrocode<-ifelse(impair_cause$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(impair_cause$hydrocode,Matched$VPDES.Hydrocode)],impair_cause$hydrocode)
+  last_inspect$hydrocode<-ifelse(last_inspect$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(last_inspect$hydrocode,Matched$VPDES.Hydrocode)],last_inspect$hydrocode)
+  reachcode_rad$hydrocode<-ifelse(reachcode_rad$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(reachcode_rad$hydrocode,Matched$VPDES.Hydrocode)],reachcode_rad$hydrocode)
+  
+  releasepoint$dh_link_facility_mps<-ifelse(releasepoint$dh_link_facility_mps%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(releasepoint$dh_link_facility_mps,Matched$VPDES.Hydrocode)],releasepoint$dh_link_facility_mps)
+  outfalls$dh_link_facility_mps<-ifelse(outfalls$dh_link_facility_mps%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(outfalls$dh_link_facility_mps,Matched$VPDES.Hydrocode)],outfalls$dh_link_facility_mps)
+  
+  # Important to do this switch last 
+  facility_inputs$hydrocode<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$hydrocode)
+  
+  # assign updated facilities to global environment
+  assign("releasepoint",releasepoint,envir=.GlobalEnv)
+  assign("outfalls",outfalls,envir=.GlobalEnv)
+  
+  assign("wb_gnis_name",wb_gnis_name,envir=.GlobalEnv)
+  assign("css",css,envir=.GlobalEnv)
+  assign("cwp_cso_outfalls",cwp_cso_outfalls,envir=.GlobalEnv)
+  assign("design_flow",design_flow,envir=.GlobalEnv)
+  assign("impair_cause",impair_cause,envir=.GlobalEnv)
+  assign("last_inspect",last_inspect,envir=.GlobalEnv)
+  assign("reachcode_rad",reachcode_rad,envir=.GlobalEnv)
+  
+  assign("facility_inputs",facility_inputs,envir=.GlobalEnv)
+  
 }
-
-facility.dataframe<-subset(facility.dataframe,select=c(3,4,6,7,9,10,11,20,23))
-colnames(facility.dataframe)[2]<-c("VWUDS.Hydrocode")
-Matched<-merge(Matched,facility.dataframe,by=c("VWUDS.Hydrocode"))
-Matched<-mutate_if(Matched,is.factor,as.character)
-Matched$VWUDS.Name<-gsub(".*: ","",Matched$VWUDS.Name)
-
-facility_inputs <- data.frame(
-  bundle = as.character(facilities$bundle),
-  ftype = as.character(facilities$ftype),
-  hydrocode = as.character(facilities$hydrocode),
-  name = as.character(facilities$name),
-  fstatus = as.character(facilities$fstatus),
-  address1 = as.character(facilities$address1),
-  city = as.character(facilities$city),
-  dh_link_admin_location = as.character(permit.adminid$adminid[match(permit.adminid$admincode,facilities$dh_link_admin_location)]), #%in% operator looks for matches in left operand and returns permit.adminid if there is one
-  dh_geofield = as.character(facilities$dh_geofield),
-  stringsAsFactors=FALSE
-) 
-
-#--If there is a match, there is no need to create a new facility feature. Therefore replace ECHO/VPDES hydrocode with the VWUDS hydrocode and other attributes--#
-facility_inputs$ftype<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$ftype[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$ftype)
-facility_inputs$name<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Name[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$name)
-facility_inputs$fstatus<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$fstatus[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$fstatus)
-facility_inputs$address1<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$address1[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$address1)
-facility_inputs$city<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$city[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$city)
-facility_inputs$dh_geofield<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$dh_geofield[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$dh_geofield)
-
-#--Replace VPDES hydrocode with matching VWUDS hydrocode to attach properties to existing facilities in VAHydro--#
-wb_gnis_name$hydrocode<-ifelse(wb_gnis_name$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(wb_gnis_name$hydrocode,Matched$VPDES.Hydrocode)],wb_gnis_name$hydrocode)
-css$hydrocode<-ifelse(css$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(css$hydrocode,Matched$VPDES.Hydrocode)],css$hydrocode)
-cwp_cso_outfalls$hydrocode<-ifelse(cwp_cso_outfalls$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(cwp_cso_outfalls$hydrocode,Matched$VPDES.Hydrocode)],cwp_cso_outfalls$hydrocode)
-design_flow$hydrocode<-ifelse(design_flow$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(design_flow$hydrocode,Matched$VPDES.Hydrocode)],design_flow$hydrocode)
-impair_cause$hydrocode<-ifelse(impair_cause$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(impair_cause$hydrocode,Matched$VPDES.Hydrocode)],impair_cause$hydrocode)
-last_inspect$hydrocode<-ifelse(last_inspect$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(last_inspect$hydrocode,Matched$VPDES.Hydrocode)],last_inspect$hydrocode)
-reachcode_rad$hydrocode<-ifelse(reachcode_rad$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(reachcode_rad$hydrocode,Matched$VPDES.Hydrocode)],reachcode_rad$hydrocode)
-
-releasepoint$dh_link_facility_mps<-ifelse(releasepoint$dh_link_facility_mps%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(releasepoint$dh_link_facility_mps,Matched$VPDES.Hydrocode)],releasepoint$dh_link_facility_mps)
-outfalls$dh_link_facility_mps<-ifelse(outfalls$dh_link_facility_mps%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(outfalls$dh_link_facility_mps,Matched$VPDES.Hydrocode)],outfalls$dh_link_facility_mps)
-
-# Important to do this switch last 
-facility_inputs$hydrocode<-ifelse(facility_inputs$hydrocode%in%Matched$VPDES.Hydrocode,Matched$VWUDS.Hydrocode[match(facility_inputs$hydrocode,Matched$VPDES.Hydrocode)],facility_inputs$hydrocode)
-
-# assign updated facilities to global environment
-assign("releasepoint",releasepoint,envir=.GlobalEnv)
-assign("outfalls",outfalls,envir=.GlobalEnv)
-
-assign("wb_gnis_name",wb_gnis_name,envir=.GlobalEnv)
-assign("css",css,envir=.GlobalEnv)
-assign("cwp_cso_outfalls",cwp_cso_outfalls,envir=.GlobalEnv)
-assign("design_flow",design_flow,envir=.GlobalEnv)
-assign("impair_cause",impair_cause,envir=.GlobalEnv)
-assign("last_inspect",last_inspect,envir=.GlobalEnv)
-assign("reachcode_rad",reachcode_rad,envir=.GlobalEnv)
-
-assign("facility_inputs",facility_inputs,envir=.GlobalEnv)
-
-}
+#matched_switch(facilities)
+#matched_switch(facility.test)
 matched_switch(facilities)
+
 #--------------------------------------------------------#
 
 facility_import<- function(facility_inputs,iteration){
-
+  old <- Sys.time() # get start time
   facility.dataframe <- data.frame()
 
 for (i in iteration:length(facility_inputs$hydrocode)){
@@ -1018,11 +1024,13 @@ facility.hydroid<-data.frame(hydrocode=facility.dataframe$hydrocode,hydroid=faci
 assign("facility.dataframe",facility.dataframe,envir = .GlobalEnv)
 assign("facility.hydroid",facility.hydroid,envir = .GlobalEnv)
 
-write.table(facility.dataframe,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/Imported_link_locations/facility.dataframe.txt",sep="\t",row.names=F)
-
+write.table(facility.dataframe,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/facility.dataframe.txt",sep="\t",row.names=F)
+new <- Sys.time() - old # calculate difference
+print <- Sys.time()
+print(new) # print in nice format
 }
 facility_import(facility_inputs,1)
-
+#start at iteration == 12576
 ############################################################################################
 # RETRIEVE/CREATE/UPDATE FACILITY METADATA PROPERTIES
 # Make sure hydrocodes are in same order as in the facility data frame as well
@@ -1048,7 +1056,8 @@ prop_inputs <-data.frame(
 
 for (i in iteration:length(prop_inputs$featureid)){
   print(paste("Processing Hydrocode ",i," of ", length(wb_gnis_name$hydrocode)))
-  property.dataframe_i <- getProperty(prop_inputs[i,], site, prop) #"http://deq1.bse.vt.edu/d.bet" 
+  
+  property.dataframe_i <- getProperty(prop_inputs[i,], site, prop) #"http://deq1.bse.vt.edu/d.alpha" 
   
   if(property.dataframe_i[1]==FALSE){
   property.dataframe_ii <- postProperty(prop_inputs[i,], fxn_locations, site, prop)
@@ -1370,7 +1379,7 @@ release.hydroid<-data.frame(hydrocode=release.dataframe$hydrocode, hydroid=relea
 assign("release.dataframe",release.dataframe,env=.GlobalEnv)
 assign("release.hydroid",release.hydroid,env=.GlobalEnv)
 
-write.table(release.dataframe,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/Imported_link_locations/release.dataframe.txt",sep="\t",row.names=F)
+write.table(release.dataframe,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/release.dataframe.txt",sep="\t",row.names=F)
 
 }
 release_import(releasepoint,1)
@@ -1415,7 +1424,7 @@ outfall_import<- function(outfalls,iteration){
   assign("outfall.dataframe",outfall.hydroid,env=.GlobalEnv)
   assign("outfall.hydroid",outfall.hydroid,env=.GlobalEnv)
   
-  write.table(outfall.dataframe,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/Imported_link_locations/outfall.dataframe.txt",sep="\t",row.names=F)
+  write.table(outfall.dataframe,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/outfall.dataframe.txt",sep="\t",row.names=F)
 }
 outfall_import(outfalls,1)
 
@@ -1436,7 +1445,7 @@ outfall_type_import<- function(outfall_props,iteration){
   
   for (i in iteration:length(prop_inputs$featureid)){
     print(paste("Processing Hydrocode ",i," of ", length(prop_inputs$featureid)))
-    property.dataframe_i <- getProperty(prop_inputs[i,], site, prop) #"http://deq1.bse.vt.edu/d.bet" 
+    property.dataframe_i <- getProperty(prop_inputs[i,], site, prop) #"http://deq1.bse.vt.edu/d.alpha" 
     
     if(property.dataframe_i[1]==FALSE){
       property.dataframe_ii <- postProperty(prop_inputs[i,], fxn_locations, site, prop)
@@ -1505,7 +1514,7 @@ conveyance.hydroid<-data.frame(hydrocode=conveyance.dataframe$hydrocode,hydroid=
 assign("conveyance.dataframe",conveyance.dataframe,env=.GlobalEnv)
 assign("conveyance.hydroid",conveyance.hydroid,env=.GlobalEnv)
 
-write.table(conveyance.dataframe,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/Imported_link_locations/conveyance.dataframe.txt",sep="\t",row.names=F)
+write.table(conveyance.dataframe,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/conveyance.dataframe.txt",sep="\t",row.names=F)
 
 }
 conveyance_import(conveyance,1)
@@ -1638,7 +1647,7 @@ assign("flag_inputs_1000000",flag_inputs_1000000,envir=.GlobalEnv)
 assign("flag_inputs_dmr_flag_units_100",flag_inputs_dmr_flag_units_100,envir=.GlobalEnv)
 assign("No dmr_flag_desflow flag",flag_inputs_dmr_flag_units_100,envir=.GlobalEnv)
 
-write.table(timeseries.dataframe,file="G:/My Drive/ECHO NPDES/USGS_Consumptive_Use_mccartma/Documentation/ECHO_VAHydro Imports/Imported_link_locations/timeseries.dataframe.txt",sep="\t",row.names=F)
+write.table(timeseries.dataframe,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/timeseries.dataframe.txt",sep="\t",row.names=F)
 
 }
 ts_import(timeseries,1)
