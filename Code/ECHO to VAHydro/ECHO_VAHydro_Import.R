@@ -130,7 +130,7 @@ coordinates(ECHO_Facility) <- c("FacLong", "FacLat")
 # read in National Parks polygons
 #parks <- readOGR(".", "10m_us_parks_area")
 HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
-
+HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
 
 # tell R that bear coordinates are in the same lat/lon reference system
 # as the parks data -- BUT ONLY BECAUSE WE KNOW THIS IS THE CASE!
