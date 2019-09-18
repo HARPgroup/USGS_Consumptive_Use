@@ -51,6 +51,7 @@ library(xml2)
 library(tibble)
 library(data.table)
 library(magrittr)
+library(rgeos) #used for geospatial processing 
 
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
@@ -83,26 +84,113 @@ NC_Facilities <- ECHO_pull("NC") # North Carolina
 PA_Facilities <- ECHO_pull("PA") # Pennsylvania
 WV_Facilities <- ECHO_pull("WV") # West Virginia
 
-#-----Combine if they contribute to VA's HUC6 watersheds-----#
+##############################################################
 
-HUC6_overlay<- function(ECHO_Facility,name){
+#ALL_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
+#ALL_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities)
 
-HUC6<-readOGR("C:/Users/maf95834/Documents/Github/USGS_Consumptive_Use/Code/Watershed Analysis/HUC.gdb",layer='WBDHU6')
-HUC6<-spTransform(HUC6, CRS("+init=epsg:4269"))
-HUC6@data<-HUC6@data[,c(10,11,12)]
+# 
+# ##############################################################
+# 
+# #-----Combine if they contribute to VA's HUC6 watersheds-----#
+# 
+# HUC6_overlay<- function(ECHO_Facility,name){
+# 
+#   #ECHO_Facility <- NC_Facilities
+#   
+# HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
+# HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
+# HUC6@data<-HUC6@data[,c(10,11,12)]
+# 
+# state<-SpatialPointsDataFrame(data.frame(Longitude=ECHO_Facility$FacLong,Latitude=ECHO_Facility$FacLat),
+#                               ECHO_Facility,proj4string = CRS("+init=epsg:4326"))
+# 
+# 
+# 
+# state<-over(state,HUC6)
+# 
+# 
+# 
+# 
+# state$SourceID<-ECHO_Facility$SourceID
+# ECHO_Facility<-merge(ECHO_Facility,state,by="SourceID")
+# ECHO_Facility<-subset(ECHO_Facility,subset=!is.na(ECHO_Facility$HUC6))
+# ECHO_Facility<-subset(ECHO_Facility,subset=ECHO_Facility$CWPPermitTypeDesc=="NPDES Individual Permit"|
+#                         ECHO_Facility$CWPPermitTypeDesc=="General Permit Covered Facility")
+# 
+# assign(name,ECHO_Facility,envir=.GlobalEnv)
+# 
+# }
 
-state<-SpatialPointsDataFrame(data.frame(Longitude=ECHO_Facility$FacLong,Latitude=ECHO_Facility$FacLat),
-                              ECHO_Facility,proj4string = CRS("+init=epsg:4269"))
-state<-over(state,HUC6)
-state$SourceID<-ECHO_Facility$SourceID
-ECHO_Facility<-merge(ECHO_Facility,state,by="SourceID")
-ECHO_Facility<-subset(ECHO_Facility,subset=!is.na(ECHO_Facility$HUC6))
-ECHO_Facility<-subset(ECHO_Facility,subset=ECHO_Facility$CWPPermitTypeDesc=="NPDES Individual Permit"|
-                        ECHO_Facility$CWPPermitTypeDesc=="General Permit Covered Facility")
 
-assign(name,ECHO_Facility,envir=.GlobalEnv)
+##############################################
+#bears <- read.csv("bear-sightings.csv") #ECHO_Facility
+coordinates(ECHO_Facility) <- c("FacLong", "FacLat")
 
-}
+# read in National Parks polygons
+#parks <- readOGR(".", "10m_us_parks_area")
+HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
+
+
+# tell R that bear coordinates are in the same lat/lon reference system
+# as the parks data -- BUT ONLY BECAUSE WE KNOW THIS IS THE CASE!
+#proj4string(bears) <- proj4string(parks)
+proj4string(ECHO_Facility) <- proj4string(HUC6)
+
+# combine is.na() with over() to do the containment test; note that we
+# need to "demote" parks to a SpatialPolygons object first
+#inside.park <- !is.na(over(bears, as(parks, "SpatialPolygons")))
+inside.HUC6 <- !is.na(over(ECHO_Facility, as(HUC6, "SpatialPolygons")))
+
+# what fraction of sightings were inside a park?
+#mean(inside.park)
+mean(inside.HUC6)
+## [1] 0.1720648
+
+# use 'over' again, this time with parks as a SpatialPolygonsDataFrame
+# object, to determine which park (if any) contains each sighting, and
+# store the park name as an attribute of the bears data
+#bears$park <- over(bears, parks)$Unit_Name
+ECHO_Facility$Name <- over(ECHO_Facility, HUC6)$Name
+ECHO_Facility$HUC6 <- over(ECHO_Facility, HUC6)$HUC6
+
+###############################################
+
+
+
+
+#------------------------------------------------------------
+# site <- "http://deq2.bse.vt.edu/d.dh"    #Specify the site of interest, either d.bet OR d.dh
+# hydro_tools <- 'C:\\Users\\maf95834\\Documents\\Github\\hydro-tools' #location of hydro-tools repo
+# 
+# #----------------------------------------------#
+# 
+# #Generate REST token for authentication              
+# rest_uname = FALSE
+# rest_pw = FALSE
+# source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
+# source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
+# token <-trimws(rest_token(site, token, rest_uname, rest_pw))
+# 
+# HUC6 <- read.table(file=paste(hydro_tools,"GIS_LAYERS","HUC6.tsv",sep="\\"), header=TRUE, sep="\t") 
+# #HUC6_spatial <- SpatialPolygonsDataFrame(HUC6)
+# HUC6_geom <- readWKT(HUC6[1,]$geom)
+# 
+# 
+# 
+# ALL_Facilities_Spatial<-SpatialPointsDataFrame(data.frame(Longitude=ALL_Facilities$FacLong,Latitude=ALL_Facilities$FacLat),ALL_Facilities)
+# 
+# 
+# HUC6_Facilities <- over(ALL_Facilities_Spatial,HUC6_geom)
+# 
+# 
+# 
+# VA_geom_clip <- gIntersection(bb, VA_geom)
+# VAProjected <- SpatialPolygonsDataFrame(VA_geom_clip,data.frame("id"), match.ID = TRUE)
+
+
+#------------------------------------------------------------
+
 
 HUC6_overlay(VA_Facilities,"VA_Facilities")
 HUC6_overlay(DC_Facilities,"DC_Facilities")
@@ -112,6 +200,12 @@ HUC6_overlay(PA_Facilities,"PA_Facilities")
 HUC6_overlay(WV_Facilities,"WV_Facilities")
 
 ECHO_Facilities<-rbind(NC_Facilities,MD_Facilities,VA_Facilities,DC_Facilities, PA_Facilities, WV_Facilities)
+
+#The next two lines can be used to simply test two facilities (instead of running through 18000+)
+ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
+ECHO_Facilities <- rbind(ECHO_Facilities, subset(VA_Facilities, VA_Facilities$SourceID == 'VA0001015'))
+
+
 
 ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
 
@@ -821,17 +915,17 @@ n_states(timeseries)
 ##################################################################################################################################
 ###########################################Pushing DMR timeseries Data to VAHydro#################################################
 
-site <- "http://deq1.bse.vt.edu/d.alpha"    #Specify the site of interest, either d.bet OR d.dh
-hydro_tools <- 'C:\\Users\\maf95834\\Documents\\Github\\hydro-tools' #location of hydro-tools repo
-
-#----------------------------------------------#
-
-#Generate REST token for authentication              
-rest_uname = FALSE
-rest_pw = FALSE
-source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
-source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
-token <- rest_token(site, token, rest_uname, rest_pw)
+# site <- "http://deq2.bse.vt.edu/d.alpha"    #Specify the site of interest, either d.bet OR d.dh
+# hydro_tools <- 'C:\\Users\\maf95834\\Documents\\Github\\hydro-tools' #location of hydro-tools repo
+# 
+# #----------------------------------------------#
+# 
+# #Generate REST token for authentication              
+# rest_uname = FALSE
+# rest_pw = FALSE
+# source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
+# source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
+# token <-trimws(rest_token(site, token, rest_uname, rest_pw))
 
 ############################################################################################
 # RETRIEVE EPA AGENCY ADMINREG FEATURE
@@ -892,7 +986,7 @@ write.table(permit.dataframe,paste0(Outputpath,"/permit.dataframe.txt"),sep="\t"
 permit_import(adminreg,1)
 
 
-save.image(file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/afterpermitimport.RData")
+#save.image(file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/afterpermitimport_2factest.RData")
 
 ############################################################################################
 # RETRIEVE/CREATE/UPDATE FACILITY DH FEATURE
@@ -1075,7 +1169,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("wbgnis.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-waterbody_import(wb_gnis_name,9936)
+waterbody_import(wb_gnis_name,1)
 
 ############################################################################################ 
 #Combined Sewer System (css): The discharge from a combined sewer system at a point prior to a treatment plant
@@ -1117,7 +1211,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("css.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-css_import(css,5855)
+css_import(css,1)
 
 ############################################################################################ 
 #Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
@@ -1162,6 +1256,10 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("csooutfall.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
+
+#replace NA values in the properties dataframes with 0
+cwp_cso_outfalls$propvalue <- 0
+
 cso_outfall_import(cwp_cso_outfalls,1)
 
 ############################################################################################ 
@@ -1208,10 +1306,14 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("impair.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-impair_import(impair_cause,7253)
+impair_import(impair_cause,1)
 
 ############################################################################################ 
 #Date of most recent inspection of the facility (last_inspect)
+
+#last_inspect_import function does not like the last_inspect$startdate
+last_inspect$startdate <- c('2018/12/20', '2018/08/29')
+
 
 last_inspect_import<- function(last_inspect,iteration){
 property.dataframe<-data.frame()
@@ -1234,7 +1336,8 @@ prop_inputs<-subset(prop_inputs,!prop_inputs$startdate=="")
 
 for (i in iteration:length(prop_inputs$featureid)){
   print(paste("Processing Hydrocode ",i," of ", length(last_inspect$hydrocode)))
-  property.dataframe_i <- getProperty(prop_inputs[i,], site, prop)
+  
+  property.dataframe_i <- getProperty(prop_inputs[1,], site, prop)
   
   if(property.dataframe_i==FALSE){
     property.dataframe_ii <- postProperty(prop_inputs[i,], fxn_locations, site, prop)
@@ -1293,7 +1396,7 @@ for (i in iteration:length(prop_inputs$featureid)){
   property.dataframe<-rbind(property.dataframe,property.dataframe_i) 
 }
 
-assign("reachcode.dataframe",propoerty.dataframe,envir = .GlobalEnv)
+assign("reachcode.dataframe",property.dataframe,envir = .GlobalEnv)
 }
 reachcode_import(reachcode_rad,10265)
 
