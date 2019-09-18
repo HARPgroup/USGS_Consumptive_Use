@@ -56,101 +56,60 @@ library(rgeos) #used for geospatial processing
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
 
-Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
-Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
+#Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
+#Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
 
 ####################################################################
 #----------States Contributing to HUC6 Watersheds in VA------------#
 
-ECHO_pull<- function(state){
-  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
-  URL_Download<-getURL(Req_URL) #Download URL from above
-  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
-  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
-  QID<-QID$QueryID
-  GET_Facilities<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID)
-  Facilities<-read.csv(GET_Facilities,stringsAsFactors = F) #Important to note this returns all facilities, active or not
-  Facilities$CWPName<-toupper(Facilities$CWPName) 
-  
-  #assign(paste0((state),"_Facilities"),Facilities,envir=.GlobalEnv)
-  Facilities
+ECHO_state_pull<- function(state,QID){
+localpath <- tempdir()
+filename <- paste("echo_fac_",state,".csv",sep="")
+destfile <- paste(localpath,filename,sep="\\")  
+download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
+data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
 }
 
-#merge all of these into 1 facilities object (maybe be able to pass in multiple states? in the function arguments)
-VA_Facilities <- ECHO_pull("VA") # Virginia
-DC_Facilities <- ECHO_pull("DC") # District of Columbia
-MD_Facilities <- ECHO_pull("MD") # Maryland
-NC_Facilities <- ECHO_pull("NC") # North Carolina
-PA_Facilities <- ECHO_pull("PA") # Pennsylvania
-WV_Facilities <- ECHO_pull("WV") # West Virginia
 
-##############################################################
+#ALTERNATE METHOD FOR QUERYING QID
+# state <- "VA"
+# Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+# URL_Download<-getURL(Req_URL) #Download URL from above
+# URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+# QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
+# QID<-QID$QueryID
 
-#ALL_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
-#ALL_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities)
+VA_Facilities <- ECHO_state_pull("VA",217) # Virginia
+DC_Facilities <- ECHO_state_pull("DC",423) # District of Columbia
+MD_Facilities <- ECHO_state_pull("MD",428) # Maryland
+NC_Facilities <- ECHO_state_pull("NC",464) # North Carolina
+PA_Facilities <- ECHO_state_pull("PA",507) # Pennsylvania
+WV_Facilities <- ECHO_state_pull("WV",586) # West Virginia
 
-# 
-# ##############################################################
-# 
-# #-----Combine if they contribute to VA's HUC6 watersheds-----#
-# 
-# HUC6_overlay<- function(ECHO_Facility,name){
-# 
-#   #ECHO_Facility <- NC_Facilities
-#   
-# HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
-# HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
-# HUC6@data<-HUC6@data[,c(10,11,12)]
-# 
-# state<-SpatialPointsDataFrame(data.frame(Longitude=ECHO_Facility$FacLong,Latitude=ECHO_Facility$FacLat),
-#                               ECHO_Facility,proj4string = CRS("+init=epsg:4326"))
-# 
-# 
-# 
-# state<-over(state,HUC6)
-# 
-# 
-# 
-# 
-# state$SourceID<-ECHO_Facility$SourceID
-# ECHO_Facility<-merge(ECHO_Facility,state,by="SourceID")
-# ECHO_Facility<-subset(ECHO_Facility,subset=!is.na(ECHO_Facility$HUC6))
-# ECHO_Facility<-subset(ECHO_Facility,subset=ECHO_Facility$CWPPermitTypeDesc=="NPDES Individual Permit"|
-#                         ECHO_Facility$CWPPermitTypeDesc=="General Permit Covered Facility")
-# 
-# assign(name,ECHO_Facility,envir=.GlobalEnv)
-# 
-# }
 
+ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
 
 ##############################################
-#bears <- read.csv("bear-sightings.csv") #ECHO_Facility
 coordinates(ECHO_Facility) <- c("FacLong", "FacLat")
 
-# read in National Parks polygons
-#parks <- readOGR(".", "10m_us_parks_area")
+# read in HUC6 polygons
 HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
 HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
 
-# tell R that bear coordinates are in the same lat/lon reference system
-# as the parks data -- BUT ONLY BECAUSE WE KNOW THIS IS THE CASE!
-#proj4string(bears) <- proj4string(parks)
+# tell R that facility coordinates are in the same lat/lon reference system
+# as the facility data -- BUT ONLY BECAUSE WE KNOW THIS IS THE CASE!
 proj4string(ECHO_Facility) <- proj4string(HUC6)
 
 # combine is.na() with over() to do the containment test; note that we
-# need to "demote" parks to a SpatialPolygons object first
-#inside.park <- !is.na(over(bears, as(parks, "SpatialPolygons")))
+# need to "demote" facility to a SpatialPolygons object first
 inside.HUC6 <- !is.na(over(ECHO_Facility, as(HUC6, "SpatialPolygons")))
 
-# what fraction of sightings were inside a park?
-#mean(inside.park)
+# what fraction of facilities are inside a HUC6?
 mean(inside.HUC6)
-## [1] 0.1720648
 
-# use 'over' again, this time with parks as a SpatialPolygonsDataFrame
-# object, to determine which park (if any) contains each sighting, and
-# store the park name as an attribute of the bears data
-#bears$park <- over(bears, parks)$Unit_Name
+# use 'over' again, this time with HUC6 as a SpatialPolygonsDataFrame
+# object, to determine which HUC6 (if any) contains each facility, and
+# store the HUC6 name and code as attributes of the facility data
 ECHO_Facility$Name <- over(ECHO_Facility, HUC6)$Name
 ECHO_Facility$HUC6 <- over(ECHO_Facility, HUC6)$HUC6
 
