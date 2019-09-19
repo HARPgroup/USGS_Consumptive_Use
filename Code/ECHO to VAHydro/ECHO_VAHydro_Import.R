@@ -53,42 +53,21 @@ library(data.table)
 library(magrittr)
 library(rgeos) #used for geospatial processing 
 
+localpath <-"C:/Users/maf95834/Documents/Github/"
+
+#Load functions
+source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+
+
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
 
 #Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
 #Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
 
+
 ####################################################################
-#----------States Contributing to HUC6 Watersheds in VA------------#
-
-ECHO_state_pull<- function(state,QID){
-  localpath <- tempdir()
-  print(paste("Downloading ECHO data to ",localpath,sep=""))
-  filename <- paste("echo_fac_",state,".csv",sep="")
-  destfile <- paste(localpath,filename,sep="\\")  
-  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
-  data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
-  print(head(data.all))
-  return(data.all)
-}
-
-
-#ALTERNATE METHOD FOR QUERYING QID
-#state <- "VA"
- 
- QID <- function(state){
-  print(paste("Retrieving QID for ",state,sep=""))
-  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
-  print(paste("Using URL: ",Req_URL,sep=""))
-  URL_Download<-getURL(Req_URL) #Download URL from above
-  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
-  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
-  QID<-QID$QueryID
-  print(paste("QID for ",state," = ",QID,sep=""))
-  return(QID)
- }
-
+# Querying Facility data from ECHO database
 VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
 DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
 MD_Facilities <- ECHO_state_pull("MD", QID("MD")) # Maryland
@@ -103,7 +82,7 @@ ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,P
 coordinates(ECHO_Facility) <- c("FacLong", "FacLat")
 
 # read in HUC6 polygons
-HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
+HUC6<-readOGR(paste(localpath,"hydro-tools/GIS_LAYERS/HUC.gdb",sep=""),layer='WBDHU6')
 HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
 
 # tell R that facility coordinates are in the same lat/lon reference system
