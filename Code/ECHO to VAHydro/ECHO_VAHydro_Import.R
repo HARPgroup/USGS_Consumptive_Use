@@ -60,15 +60,11 @@ HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 #Load functions
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
-
-##################################################################################################################################
-###############################################Inputs#############################################################################
-
+####################################Inputs##############################################
 #Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
 #Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
-
-
 ####################################################################
+
 # Querying Facility data from ECHO database
 VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
 DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
@@ -76,7 +72,6 @@ MD_Facilities <- ECHO_state_pull("MD", QID("MD")) # Maryland
 NC_Facilities <- ECHO_state_pull("NC", QID("NC")) # North Carolina
 PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
 WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
-
 
 ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
 
