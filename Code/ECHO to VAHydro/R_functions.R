@@ -41,38 +41,42 @@ QID <- function(state){
 
 
 
-poly_path <- "hydro-tools/GIS_LAYERS/HUC.gdb"
-poly_layer <- 'WBDHU6'
-
 #Spatial containment function 
 # Supply 1) file path to .gdb containing layer of polygon features 
 #        2) polygon layer of interest within the .gdb above
-#        3) dataframe of point features with columns for latitude and longitude 
-sp_contain <- function(poly_path,poly_layer,point_path){
-##############################################
-coordinates(ECHO_Facility) <- c("FacL+ong", "FacLat")
+#        3) Large SpatialPointsDataFrame of point features with column of coordinates
+#        4) epsg code of interest, default to 4326
+# Function returns a Large SpatialPointsDataFrame
+sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
 
-# read in HUC6 polygons
-HUC6<-readOGR(paste(localpath,poly_path,sep=""),layer=poly_layer)
-HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
+  start_time <- Sys.time()
+  print(paste("Start time: ",start_time,sep=""))
+  
+  # read in polygons
+  poly_layer_load <- readOGR(paste(localpath,poly_path,sep=""),layer=poly_layer_name)
+  poly_layer <-spTransform(poly_layer_load, CRS(paste("+init=epsg:",epsg_code,sep="")))
 
-# tell R that facility coordinates are in the same lat/lon reference system
-# as the facility data -- BUT ONLY BECAUSE WE KNOW THIS IS THE CASE!
-proj4string(ECHO_Facility) <- proj4string(HUC6)
+  # tell R that point_df coordinates are in the same lat/lon reference system
+  # as the poly_layer data 
+  proj4string(point_df) <- proj4string(poly_layer)
 
-# combine is.na() with over() to do the containment test; note that we
-# need to "demote" facility to a SpatialPolygons object first
-inside.HUC6 <- !is.na(over(ECHO_Facility, as(HUC6, "SpatialPolygons")))
+  # combine is.na() with over() to do the containment test; note that we
+  # need to "demote" point_df to a SpatialPolygons object first
+  inside.poly_layer <- !is.na(over(point_df, as(poly_layer, "SpatialPolygons")))
 
-# what fraction of facilities are inside a HUC6?
-mean(inside.HUC6)
-
-# use 'over' again, this time with HUC6 as a SpatialPolygonsDataFrame
-# object, to determine which HUC6 (if any) contains each facility, and
-# store the HUC6 name and code as attributes of the facility data
-ECHO_Facility$Name <- over(ECHO_Facility, HUC6)$Name
-ECHO_Facility$HUC6 <- over(ECHO_Facility, HUC6)$HUC6
-
+  # what fraction of points are inside a polygon?
+  print(paste("Fraction of points within polygon layer: ", mean(inside.poly_layer),sep=""))
+  
+  # use 'over' again, this time with poly_layer as a SpatialPolygonsDataFrame
+  # object, to determine which polygon (if any) contains each point, and
+  # store the polygon name and code as attributes of the point data
+  point_df$Name <- over(point_df, poly_layer)$Name
+  point_df$poly_layer <- over(point_df, poly_layer)$poly_layer
+  
+  end_time <- Sys.time()
+  print(paste("Time elapsed: ",end_time-start_time,sep=""))
+  
+  return(point_df)
 }
 
 
