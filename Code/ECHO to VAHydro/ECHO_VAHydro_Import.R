@@ -60,6 +60,7 @@ HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 #Load functions
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
+
 ####################################Inputs##############################################
 #Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
 #Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
@@ -73,24 +74,26 @@ NC_Facilities <- ECHO_state_pull("NC", QID("NC")) # North Carolina
 PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
 WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
 
-ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
+ECHO_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
 
-coordinates(ECHO_Facility) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
-ECHO_Facility <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facility)
+coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
+ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
 #------------------------------------------------------------
 
-ECHO_Facility <- ECHO_Facility[-which(is.na(ECHO_Facility$Poly_Code)),]
-length(ECHO_Facility[,1])
+ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
+#think about adding a visual check like plotting on a map
+length(ECHO_Facilities[,1])
+
+
 #The next two lines can be used to simply test two facilities (instead of running through 18000+)
 #ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
 #ECHO_Facilities <- rbind(ECHO_Facilities, subset(VA_Facilities, VA_Facilities$SourceID == 'VA0001015'))
 
 
-
+#use sqldf for replacements
 ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
 
-ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit"|
-                          ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
+ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit" | ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
 
 colnames(ECHO_Facilities)[1]<-c("Facility.ID")
 
