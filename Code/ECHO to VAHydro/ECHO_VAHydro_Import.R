@@ -63,28 +63,38 @@ library(rgeos) #used for geospatial processing
 #----------States Contributing to HUC6 Watersheds in VA------------#
 
 ECHO_state_pull<- function(state,QID){
-localpath <- tempdir()
-filename <- paste("echo_fac_",state,".csv",sep="")
-destfile <- paste(localpath,filename,sep="\\")  
-download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
-data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+  localpath <- tempdir()
+  print(paste("Downloading ECHO data to ",localpath,sep=""))
+  filename <- paste("echo_fac_",state,".csv",sep="")
+  destfile <- paste(localpath,filename,sep="\\")  
+  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
+  data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+  print(head(data.all))
+  return(data.all)
 }
 
 
 #ALTERNATE METHOD FOR QUERYING QID
-# state <- "VA"
-# Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
-# URL_Download<-getURL(Req_URL) #Download URL from above
-# URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
-# QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
-# QID<-QID$QueryID
+#state <- "VA"
+ 
+ QID <- function(state){
+  print(paste("Retrieving QID for ",state,sep=""))
+  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+  print(paste("Using URL: ",Req_URL,sep=""))
+  URL_Download<-getURL(Req_URL) #Download URL from above
+  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
+  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
+  QID<-QID$QueryID
+  print(paste("QID for ",state," = ",QID,sep=""))
+  return(QID)
+ }
 
-VA_Facilities <- ECHO_state_pull("VA",217) # Virginia
-DC_Facilities <- ECHO_state_pull("DC",423) # District of Columbia
-MD_Facilities <- ECHO_state_pull("MD",428) # Maryland
-NC_Facilities <- ECHO_state_pull("NC",464) # North Carolina
-PA_Facilities <- ECHO_state_pull("PA",507) # Pennsylvania
-WV_Facilities <- ECHO_state_pull("WV",586) # West Virginia
+VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
+DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
+MD_Facilities <- ECHO_state_pull("MD", QID("MD")) # Maryland
+NC_Facilities <- ECHO_state_pull("NC", QID("NC")) # North Carolina
+PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
+WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
 
 
 ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
