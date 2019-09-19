@@ -43,7 +43,7 @@ QID <- function(state){
 
 #Spatial containment function 
 # Supply 1) file path to .gdb containing layer of polygon features 
-#        2) polygon layer of interest within the .gdb above
+#        2) polygon layer of interest within the .gdb above (must have "Name" and "Code" attributes)
 #        3) Large SpatialPointsDataFrame of point features with column of coordinates
 #        4) epsg code of interest, default to 4326
 # Function returns a Large SpatialPointsDataFrame
@@ -70,8 +70,8 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
   # use 'over' again, this time with poly_layer as a SpatialPolygonsDataFrame
   # object, to determine which polygon (if any) contains each point, and
   # store the polygon name and code as attributes of the point data
-  point_df$Name <- over(point_df, poly_layer)$Name
-  point_df$poly_layer <- over(point_df, poly_layer)$poly_layer
+  point_df$Poly_Name <- over(point_df, poly_layer)$Name
+  point_df$Poly_Code <- over(point_df, poly_layer)$Code
   
   end_time <- Sys.time()
   print(paste("Time elapsed: ",end_time-start_time,sep=""))
