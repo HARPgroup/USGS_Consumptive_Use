@@ -53,42 +53,23 @@ library(data.table)
 library(magrittr)
 library(rgeos) #used for geospatial processing 
 
+localpath <-"C:/Users/maf95834/Documents/Github/"
+HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
+HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
+
+#Load functions
+source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+
+
 ##################################################################################################################################
 ###############################################Inputs#############################################################################
 
 #Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
 #Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
 
+
 ####################################################################
-#----------States Contributing to HUC6 Watersheds in VA------------#
-
-ECHO_state_pull<- function(state,QID){
-  localpath <- tempdir()
-  print(paste("Downloading ECHO data to ",localpath,sep=""))
-  filename <- paste("echo_fac_",state,".csv",sep="")
-  destfile <- paste(localpath,filename,sep="\\")  
-  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
-  data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
-  print(head(data.all))
-  return(data.all)
-}
-
-
-#ALTERNATE METHOD FOR QUERYING QID
-#state <- "VA"
- 
- QID <- function(state){
-  print(paste("Retrieving QID for ",state,sep=""))
-  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
-  print(paste("Using URL: ",Req_URL,sep=""))
-  URL_Download<-getURL(Req_URL) #Download URL from above
-  URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
-  QID<-xmlToList(URL_Parse)#Converts parsed query to a more R-like list and stores it as a variable
-  QID<-QID$QueryID
-  print(paste("QID for ",state," = ",QID,sep=""))
-  return(QID)
- }
-
+# Querying Facility data from ECHO database
 VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
 DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
 MD_Facilities <- ECHO_state_pull("MD", QID("MD")) # Maryland
@@ -99,76 +80,14 @@ WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
 
 ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
 
-##############################################
-coordinates(ECHO_Facility) <- c("FacLong", "FacLat")
-
-# read in HUC6 polygons
-HUC6<-readOGR("C:/Users/maf95834/Documents/Github/hydro-tools/GIS_LAYERS/HUC.gdb",layer='WBDHU6')
-HUC6<-spTransform(HUC6, CRS("+init=epsg:4326"))
-
-# tell R that facility coordinates are in the same lat/lon reference system
-# as the facility data -- BUT ONLY BECAUSE WE KNOW THIS IS THE CASE!
-proj4string(ECHO_Facility) <- proj4string(HUC6)
-
-# combine is.na() with over() to do the containment test; note that we
-# need to "demote" facility to a SpatialPolygons object first
-inside.HUC6 <- !is.na(over(ECHO_Facility, as(HUC6, "SpatialPolygons")))
-
-# what fraction of facilities are inside a HUC6?
-mean(inside.HUC6)
-
-# use 'over' again, this time with HUC6 as a SpatialPolygonsDataFrame
-# object, to determine which HUC6 (if any) contains each facility, and
-# store the HUC6 name and code as attributes of the facility data
-ECHO_Facility$Name <- over(ECHO_Facility, HUC6)$Name
-ECHO_Facility$HUC6 <- over(ECHO_Facility, HUC6)$HUC6
-
-###############################################
-
+coordinates(ECHO_Facility) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
+ECHO_Facility <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facility)
+#head(data.frame(ECHO_Facility))
 
 
 
 #------------------------------------------------------------
-# site <- "http://deq2.bse.vt.edu/d.dh"    #Specify the site of interest, either d.bet OR d.dh
-# hydro_tools <- 'C:\\Users\\maf95834\\Documents\\Github\\hydro-tools' #location of hydro-tools repo
-# 
-# #----------------------------------------------#
-# 
-# #Generate REST token for authentication              
-# rest_uname = FALSE
-# rest_pw = FALSE
-# source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
-# source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
-# token <-trimws(rest_token(site, token, rest_uname, rest_pw))
-# 
-# HUC6 <- read.table(file=paste(hydro_tools,"GIS_LAYERS","HUC6.tsv",sep="\\"), header=TRUE, sep="\t") 
-# #HUC6_spatial <- SpatialPolygonsDataFrame(HUC6)
-# HUC6_geom <- readWKT(HUC6[1,]$geom)
-# 
-# 
-# 
-# ALL_Facilities_Spatial<-SpatialPointsDataFrame(data.frame(Longitude=ALL_Facilities$FacLong,Latitude=ALL_Facilities$FacLat),ALL_Facilities)
-# 
-# 
-# HUC6_Facilities <- over(ALL_Facilities_Spatial,HUC6_geom)
-# 
-# 
-# 
-# VA_geom_clip <- gIntersection(bb, VA_geom)
-# VAProjected <- SpatialPolygonsDataFrame(VA_geom_clip,data.frame("id"), match.ID = TRUE)
 
-
-#------------------------------------------------------------
-
-
-HUC6_overlay(VA_Facilities,"VA_Facilities")
-HUC6_overlay(DC_Facilities,"DC_Facilities")
-HUC6_overlay(MD_Facilities,"MD_Facilities")
-HUC6_overlay(NC_Facilities,"NC_Facilities")
-HUC6_overlay(PA_Facilities,"PA_Facilities")
-HUC6_overlay(WV_Facilities,"WV_Facilities")
-
-ECHO_Facilities<-rbind(NC_Facilities,MD_Facilities,VA_Facilities,DC_Facilities, PA_Facilities, WV_Facilities)
 
 #The next two lines can be used to simply test two facilities (instead of running through 18000+)
 ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
