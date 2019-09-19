@@ -82,16 +82,13 @@ ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,P
 
 coordinates(ECHO_Facility) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
 ECHO_Facility <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facility)
-#head(data.frame(ECHO_Facility))
-
-
-
 #------------------------------------------------------------
 
-
+ECHO_Facility <- ECHO_Facility[-which(is.na(ECHO_Facility$Poly_Code)),]
+length(ECHO_Facility[,1])
 #The next two lines can be used to simply test two facilities (instead of running through 18000+)
-ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
-ECHO_Facilities <- rbind(ECHO_Facilities, subset(VA_Facilities, VA_Facilities$SourceID == 'VA0001015'))
+#ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
+#ECHO_Facilities <- rbind(ECHO_Facilities, subset(VA_Facilities, VA_Facilities$SourceID == 'VA0001015'))
 
 
 
