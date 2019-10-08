@@ -12,7 +12,7 @@ ECHO_state_pull<- function(state,QID){
   print(paste("Downloading ECHO data to ",localpath,"(Start time: ",start_time,")",sep=""))
   filename <- paste("echo_fac_",state,".csv",sep="")
   destfile <- paste(localpath,filename,sep="\\")  
-  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,64,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
+  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,64,65,66,67,68,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
   data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
   print(head(data.all))
   
@@ -26,7 +26,7 @@ ECHO_state_pull<- function(state,QID){
 
 QID <- function(state){
   start_time <- Sys.time()
-  print(paste("Retrieving QID for ",state,"(Start time: ",start_time,")",sep=""))
+  print(paste("Retrieving QID for ",state," (Start time: ",start_time,")",sep=""))
   
   Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1&passthrough=Y&p_st=",state)
   print(paste("Using URL: ",Req_URL,sep=""))
@@ -82,15 +82,5 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
   
   return(point_df)
 }
-
-
-
-
-
-
-
-
-
-
 
 
