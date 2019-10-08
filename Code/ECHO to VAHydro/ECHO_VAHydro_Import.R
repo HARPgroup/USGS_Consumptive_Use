@@ -61,20 +61,14 @@ HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
 basepath <- "http://deq2.bse.vt.edu/d.alpha"
 
-hydro_tools <- 'C:\\Users\\maf95834\\Documents\\Github\\hydro-tools' #location of hydro-tools repo
-
 # #Generate REST token for authentication              
  rest_uname = FALSE
  rest_pw = FALSE
- source(paste(hydro_tools,"auth.private", sep = "\\")); #load rest username and password, contained in auth.private file
- source(paste(hydro_tools,"VAHydro-2.0","rest_functions.R", sep = "\\")) #load REST functions
+ source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+ source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
  token <-trimws(rest_token(basepath, token, rest_uname, rest_pw))
 
-
-
-
 #Load functions
-source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 
@@ -136,101 +130,14 @@ agency_adminid <- as.character(agency_dataframe$adminid)
 
 #i <- 1
 ECHO_Facilities <- ECHO_Facilities[1:5,]
-#for (i in 1:(length(ECHO_Facilities))){}
+for (i in 1:(length(ECHO_Facilities[,1]))){
   print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   
   ECHO_Facilities_i <- ECHO_Facilities[i,]
-  
-  
-      if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
-        permit_ftype <- "npdes_gp"
-      } else if (ECHO_Facilities_i$CWPPermitTypeDesc == "NPDES Individual Permit") {
-        permit_ftype <- "npdes_ip"
-      }
-  
-  #CWPPermitStatusDesc = Pending is set as "unknown" for now but may want to create a new fstatus
-    permit_fstatus <- as.character(ECHO_Facilities_i$CWPPermitStatusDesc)
-    if (length(grep('Effective',permit_fstatus))>0|
-        length(grep('Admin Continued',permit_fstatus))>0){
-        permit_fstatus <-'active'
-    } else if (length(grep('Terminated', permit_fstatus))>0){
-        permit_fstatus <-'revoked'
-    } else if (length(grep('Not Needed', permit_fstatus))>0|
-               length(grep('NA', permit_fstatus))>0|
-               length(grep('Pending', permit_fstatus))>0){
-        permit_fstatus <-'unknown'
-    } else if (length(grep('Expired', permit_fstatus))>0){
-      permit_fstatus <-'expired'
-    } 
-  print(paste("permit fstatus: ",permit_fstatus))
-  #prints list of all status type in column CWPPermitStatusDesc
-  #is_it_there <- "select distinct CWPPermitStatusDesc
-  #from ECHO_Facilities_original"
-  #sqldf(is_it_there)
-  
 
+  permit_adminid <- permit_REST(ECHO_Facilities_i)
   
-    permit_inputs <- data.frame(
-      bundle = 'permit',
-      ftype = permit_ftype,
-      admincode = as.character(ECHO_Facilities_i$Facility_ID),
-      name = as.character(ECHO_Facilities_i$CWPName),
-      fstatus = permit_fstatus,
-      description = as.character(ECHO_Facilities_i$CWPPermitTypeDesc),
-      startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPEffectiveDate)))), 
-      enddate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPExpirationDate)))),
-      permit_id = as.character(adminreg$admincode),
-      dh_link_admin_reg_issuer = agency.adminid, #actual id and not "epa"
-      stringsAsFactors = FALSE
-    ) 
-    
-    
-    
-    for (i in iteration:length(permit_inputs$admincode)){
-      print(paste("Processing Permit ",i, "(ID:",permit_inputs$admincode[i],")"," of ", length(permit_inputs$admincode))) #track iterations
-      
-      permit.dataframe_i <- getAdminregFeature(permit_inputs[i,], site, adminreg_feature)
-      if(permit.dataframe_i[1]==FALSE){ #if the features exists in VAHydro, it will not create it
-        permit.dataframe_ii <- postAdminregFeature(permit_inputs[i,], site, adminreg_feature) #status 201 if feature created succesfully
-        print(permit.dataframe_ii) #print status of updating: error 403 means administration block
-        permit.dataframe_i <- getAdminregFeature(permit_inputs[i,], site, adminreg_feature) #grab info that has just been imported into VAHydro
-      } else {
-        print("This Adminreg Feature already exists")
-      }
-      permit.dataframe<-rbind(permit.dataframe,permit.dataframe_i) #creating this to keep adminids
-    }
-    
-    #unique adminid's for each permit. Used to link facilities to permits
-    permit.adminid<-data.frame(admincode=permit.dataframe$admincode,adminid=permit.dataframe$adminid) 
-    
-    assign("permit.dataframe",permit.dataframe,envir = .GlobalEnv)
-    assign("permit.adminid",permit.adminid,envir = .GlobalEnv)
-    
-    write.table(permit.dataframe,paste0(Outputpath,"/permit.dataframe.txt"),sep="\t",row.names = F)
-    
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  permit <- postAdminregFeature(inputs,basepath)
-    
-    
-    
+}
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
 
