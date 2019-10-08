@@ -53,6 +53,7 @@ library(data.table)
 library(magrittr)
 library(rgeos) #used for geospatial processing 
 library(sqldf) #used for subsetting and filtering 
+library(anytime) #required for date formatting (may change later)
 
 localpath <-"C:/Users/maf95834/Documents/Github/"
 HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
@@ -148,7 +149,7 @@ ECHO_Facilities <- ECHO_Facilities[1:5,]
       }
   
   #CWPPermitStatusDesc = Pending is set as "unknown" for now but may want to create a new fstatus
-    permit_fstatus <- as.character(permit_fstatus)
+    permit_fstatus <- as.character(ECHO_Facilities_i$CWPPermitStatusDesc)
     if (length(grep('Effective',permit_fstatus))>0|
         length(grep('Admin Continued',permit_fstatus))>0){
         permit_fstatus <-'active'
@@ -167,6 +168,7 @@ ECHO_Facilities <- ECHO_Facilities[1:5,]
   #from ECHO_Facilities_original"
   #sqldf(is_it_there)
   
+
   
     permit_inputs <- data.frame(
       bundle = 'permit',
@@ -175,8 +177,8 @@ ECHO_Facilities <- ECHO_Facilities[1:5,]
       name = as.character(ECHO_Facilities_i$CWPName),
       fstatus = permit_fstatus,
       description = as.character(ECHO_Facilities_i$CWPPermitTypeDesc),
-      startdate = format(as.POSIXlt(ECHO_Facilities_i$CWPEffectiveDate),"%s"), 
-      enddate = format(as.POSIXlt(adminreg$enddate),"%s"),
+      startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPEffectiveDate)))), 
+      enddate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPExpirationDate)))),
       permit_id = as.character(adminreg$admincode),
       dh_link_admin_reg_issuer = agency.adminid, #actual id and not "epa"
       stringsAsFactors = FALSE
