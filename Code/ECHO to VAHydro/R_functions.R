@@ -1,6 +1,10 @@
 #SEE BELOW FOR ECHO R FUNCTIONS
 
 
+
+#Use link below to see all available data columns from echo webservice
+#paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=",paste(1:500,collapse=","),"&passthrough=Y&qid=","QID")
+       
 ECHO_state_pull<- function(state,QID){
   
   start_time <- Sys.time()
@@ -8,7 +12,7 @@ ECHO_state_pull<- function(state,QID){
   print(paste("Downloading ECHO data to ",localpath,"(Start time: ",start_time,")",sep=""))
   filename <- paste("echo_fac_",state,".csv",sep="")
   destfile <- paste(localpath,filename,sep="\\")  
-  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
+  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,64,65,66,67,68,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
   data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
   print(head(data.all))
   
@@ -22,9 +26,9 @@ ECHO_state_pull<- function(state,QID){
 
 QID <- function(state){
   start_time <- Sys.time()
-  print(paste("Retrieving QID for ",state,"(Start time: ",start_time,")",sep=""))
+  print(paste("Retrieving QID for ",state," (Start time: ",start_time,")",sep=""))
   
-  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,65,67,84,91,95,97,204,205,206,207,209,210,224&passthrough=Y&p_st=",state)
+  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1&passthrough=Y&p_st=",state)
   print(paste("Using URL: ",Req_URL,sep=""))
   URL_Download<-getURL(Req_URL) #Download URL from above
   URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
@@ -81,12 +85,53 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
 
 
 
+permit_REST <- function(ECHO_Facilities_i,permit_adminid){
 
+if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
+  permit_ftype <- "npdes_gp"
+} else if (ECHO_Facilities_i$CWPPermitTypeDesc == "NPDES Individual Permit") {
+  permit_ftype <- "npdes_ip"
+}
 
+#CWPPermitStatusDesc = Pending is set as "unknown" for now but may want to create a new fstatus
+permit_fstatus <- as.character(ECHO_Facilities_i$CWPPermitStatusDesc)
+if (length(grep('Effective',permit_fstatus))>0|
+    length(grep('Admin Continued',permit_fstatus))>0){
+  permit_fstatus <-'active'
+} else if (length(grep('Terminated', permit_fstatus))>0){
+  permit_fstatus <-'revoked'
+} else if (length(grep('Not Needed', permit_fstatus))>0|
+           length(grep('NA', permit_fstatus))>0|
+           length(grep('Pending', permit_fstatus))>0){
+  permit_fstatus <-'unknown'
+} else if (length(grep('Expired', permit_fstatus))>0){
+  permit_fstatus <-'expired'
+} 
+print(paste("permit fstatus: ",permit_fstatus))
+#prints list of all status type in column CWPPermitStatusDesc
+#is_it_there <- "select distinct CWPPermitStatusDesc
+#from ECHO_Facilities_original"
+#sqldf(is_it_there)
 
+permit_inputs <- data.frame(
+  bundle = 'permit',
+  ftype = permit_ftype,
+  admincode = as.character(ECHO_Facilities_i$Facility_ID),
+  name = as.character(ECHO_Facilities_i$CWPName),
+  fstatus = permit_fstatus,
+  description = as.character(ECHO_Facilities_i$CWPPermitTypeDesc),
+  startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPEffectiveDate)))), 
+  enddate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPExpirationDate)))),
+  permit_id = as.character(ECHO_Facilities_i$Facility_ID),
+  dh_link_admin_reg_issuer = agency_adminid,
+  stringsAsFactors = FALSE
+) 
 
+permit <- getAdminregFeature(permit_inputs, basepath)
+permit <- postAdminregFeature(permit_inputs, basepath)
+permit <- getAdminregFeature(permit_inputs, basepath)
+permit_adminid <- as.character(permit$adminid)
 
-
-
-
+return(permit_adminid)
+}
 

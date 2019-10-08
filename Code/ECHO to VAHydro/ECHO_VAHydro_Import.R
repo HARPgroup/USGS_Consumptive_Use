@@ -36,12 +36,12 @@
 ##################################################Library Initialization##########################################################
 
 library(foreign)
-library(sp) #load sp before rgdal
-library(rgdal)
+library(sp) #load sp before rgdal 
+library(rgdal) #used in r_functions 
 library(dplyr) #conflicts with plyr, so be mindful of this 
-library(XML)
-library(RCurl)
-library(readxl)
+library(XML) #used in r_functions 
+library(RCurl) #used in r_functions 
+library(readxl) 
 library(jsonlite)
 library(lubridate)
 library(httr)
@@ -52,23 +52,31 @@ library(tibble)
 library(data.table)
 library(magrittr)
 library(rgeos) #used for geospatial processing 
+library(sqldf) #used for subsetting and filtering 
+library(anytime) #required for date formatting (may change later)
 
 localpath <-"C:/Users/maf95834/Documents/Github/"
 HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
+basepath <- "http://deq2.bse.vt.edu/d.alpha"
+
+# #Generate REST token for authentication              
+ rest_uname = FALSE
+ rest_pw = FALSE
+ source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+ source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
+ token <-trimws(rest_token(basepath, token, rest_uname, rest_pw))
+
 #Load functions
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 
-##################################################################################################################################
-###############################################Inputs#############################################################################
-
+####################################Inputs##############################################
 #Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
 #Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
-
-
 ####################################################################
+
 # Querying Facility data from ECHO database
 VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
 DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
@@ -77,29 +85,59 @@ NC_Facilities <- ECHO_state_pull("NC", QID("NC")) # North Carolina
 PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
 WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
 
+ECHO_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
+paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1]))
 
-ECHO_Facility <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
-
-coordinates(ECHO_Facility) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
-ECHO_Facility <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facility)
+coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
+ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
 #------------------------------------------------------------
+#ECHO_Facilities_original <- ECHO_Facilities 
+ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
+#think about adding a visual check like plotting on a map
+paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1]))
 
-ECHO_Facility <- ECHO_Facility[-which(is.na(ECHO_Facility$Poly_Code)),]
-length(ECHO_Facility[,1])
+
 #The next two lines can be used to simply test two facilities (instead of running through 18000+)
 #ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
 #ECHO_Facilities <- rbind(ECHO_Facilities, subset(VA_Facilities, VA_Facilities$SourceID == 'VA0001015'))
 
+ECHO_Facilities <- data.frame(ECHO_Facilities)
+#use sqldf for replacements
+keep_permits <- "SELECT *
+                FROM ECHO_Facilities
+                WHERE CWPPermitTypeDesc = 'NPDES Individual Permit'
+                OR CWPPermitTypeDesc = 'General Permit Covered Facility'"
+ECHO_Facilities <- sqldf(keep_permits)
+
+paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1]))
+# 
+# ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
+
+# ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit" | ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
+
+#colnames(ECHO_Facilities)[1]<-c("Facility.ID")
+#rename SourceID column to Facility_ID 
+colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID"
+
+# write.table(ECHO_Facilities,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/Facilities_Table.csv",sep="|",row.names=F)
 
 
-ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
+#GET EPA ADMINREG FEATURE FROM VAHYDRO
+agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
+agency_dataframe <- getAdminregFeature(agency_inputs, basepath, adminreg_feature)
+agency_adminid <- as.character(agency_dataframe$adminid)
 
-ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit"|
-                          ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
 
-colnames(ECHO_Facilities)[1]<-c("Facility.ID")
+#i <- 1
+ECHO_Facilities <- ECHO_Facilities[1:5,]
+for (i in 1:(length(ECHO_Facilities[,1]))){
+  print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+  
+  ECHO_Facilities_i <- ECHO_Facilities[i,]
 
-write.table(ECHO_Facilities,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/Facilities_Table.csv",sep="|",row.names=F)
+  permit_adminid <- permit_REST(ECHO_Facilities_i)
+  
+}
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
 
@@ -816,9 +854,9 @@ n_states(timeseries)
 # RETRIEVE EPA AGENCY ADMINREG FEATURE
 ############################################################################################
 
-agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
-agency.dataframe <- getAdminregFeature(agency_inputs, site, adminreg_feature)
-agency.adminid <- as.character(agency.dataframe$adminid)
+# agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
+# agency.dataframe <- getAdminregFeature(agency_inputs, site, adminreg_feature)
+# agency.adminid <- as.character(agency.dataframe$adminid)
 
 ############################################################################################
 # RETRIEVE/CREATE/UPDATE PERMIT ADMINREG FEATURE
