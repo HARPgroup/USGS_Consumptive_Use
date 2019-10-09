@@ -35,23 +35,23 @@
 ##################################################################################################################################
 ##################################################Library Initialization##########################################################
 
-library(foreign)
-library(sp) #load sp before rgdal 
-library(rgdal) #used in r_functions 
+#library(foreign) --Not used in script from what I can see - JM
+library(sp) # used for coordinates() #load sp before rgdal #SPtransform() used in R_functions.R for spatial containment
+library(rgdal) #readOGR() used to read VPDES outfall layer in VPDES_Geodatabase.gdb #also used in r_functions 
 library(dplyr) #conflicts with plyr, so be mindful of this 
-library(XML) #used in r_functions 
-library(RCurl) #used in r_functions 
-library(readxl) 
-library(jsonlite)
-library(lubridate)
-library(httr)
-library(stringr)
-library(proj4)
-library(xml2)
-library(tibble)
-library(data.table)
-library(magrittr)
-library(rgeos) #used for geospatial processing 
+library(XML) #xmlParse and xmlToList() used in R_functions.R for QID pull 
+library(RCurl) #getURL() used in R_functions.R for QID pull 
+library(readxl) #read_excel() used for design flow spreadsheet pull from VPDES
+#library(jsonlite) --Not used in script from what I can see - JM
+library(lubridate) #round_date() used for monthly average outfall discharge 
+library(httr) #GET() used to pull design flow spreadsheet
+#library(stringr) --Not used in script (might be remnant from trying to trim whitespace str_trim()) - JM
+library(proj4) #project() used to change coordinate projections of VPDES outfalls
+#library(xml2) --Not used in script from what I can see - JM
+library(tibble) #add_column() used to add "Year" column to outfall ts   
+library(data.table) #first() used in group_by to summarize (not sure how that works)
+library(magrittr) #forward-pipe operator used to read dplyr functions left to right 
+library(rgeos) #over() used in R_functions.R for spatial containment function 
 library(sqldf) #used for subsetting and filtering 
 library(anytime) #required for date formatting (may change later)
 
