@@ -126,7 +126,8 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
 
   permit_adminid <- permit_REST(ECHO_Facilities_i, agency_adminid)
   
-  print("PROCESSING FACILITY")
+  print("---PROCESSING FACILITY")
+  facility_hydroid <- facility_REST(ECHO_Facilities_i, permit_adminid)
 }
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#

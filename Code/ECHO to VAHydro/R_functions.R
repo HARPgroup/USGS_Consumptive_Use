@@ -107,7 +107,7 @@ if (length(grep('Effective',permit_fstatus))>0|
 } else if (length(grep('Expired', permit_fstatus))>0){
   permit_fstatus <-'expired'
 } 
-print(paste("permit fstatus: ",permit_fstatus))
+print(paste("---permit fstatus: ",permit_fstatus))
 #prints list of all status type in column CWPPermitStatusDesc
 #is_it_there <- "select distinct CWPPermitStatusDesc
 #from ECHO_Facilities_original"
@@ -138,9 +138,8 @@ return(permit_adminid)
 
 facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
   facility_name <- as.character(ECHO_Facilities_i$CWPName)
-  facility_name <-'LITTLE COAL RIVER RESTORATION'
-  print(paste("Processing FTYPE for Facility:", facility_name), sep=" ")
-  facility_ftype<-'unknown'
+  print(paste("---Processing FTYPE for Facility:", facility_name), sep=" ")
+  facility_ftype <-'unknown'
   #determining ftype based on facility_name
   #SIC CODE could be used to determine ftype, if null then use name matching
     if (length(grep('\\bWASTE WATER\\b',facility_name))>0|
@@ -161,7 +160,7 @@ facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
                length(grep('\\bTRICKLING FILTER\\b',facility_name))>0|
                length(grep('\\bFILTRATION PLANT\\b',facility_name))>0|
                length(grep('\\bCENTRAL SYSTEM\\b',facility_name))>0|
-               length(grep("\\bMS4\\b",facility_name))>0| #Municipal Separate Strom Sewer System
+               length(grep("\\bMS4\\b",facility_name))>0| #Municipal Separate Storm Sewer System
                length(grep("\\bTRAILER\\b",facility_name))>0|
                length(grep("\\bMOBILE HOME\\b",facility_name))>0|
                length(grep("\\bTRACT\\b",facility_name))>0|
@@ -172,7 +171,7 @@ facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
                length(grep('\\bPARK WATER SYSTEM\\b',facility_name))>0|
                length(grep('\\bSTP\\b',facility_name))>0|
                length(grep('COMBINED SEWER SYSTEM',facility_name))>0){
-      facility_ftype<-'public water supply'
+      facility_ftype<-'municipal'
     } else if (length(grep('\\bPOWER\\b',facility_name))>0|
                length(grep('\\bPOWER STATION\\b',facility_name))>0|
                length(grep('\\bELECTRIC\\b',facility_name))>0){
@@ -182,28 +181,32 @@ facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
       } else if(length(grep("\\bHYDRO\\b",facility_name>0))){
         facility_ftype<-"hydropower"
       }
-    } else if(length(grep('\\bNUCLEAR\\b',facility_name))>0){
+    }  else if(length(grep('\\bNUCLEAR\\b',facility_name))>0){
       facility_ftype<-'nuclearpower' 
+    }  else if(length(grep('\\bHYDROELECTRIC\\b',facility_name))>0){
+      facility_ftype<-'hydropower' 
     }else if (length(grep("\\bMINE\\b",facility_name))>0|
               length(grep('\\bQUARRY\\b',facility_name))>0|
+              length(grep('\\bSAND AND GRAVEL\\b',facility_name))>0|
               length(grep("\\bMINING\\b",facility_name))>0){
       facility_ftype<-'mining'
-    } else if(length(grep('\\bFARM\\b',facility_name))>0|
+    } else if(length(grep('\\bIRRIGATION\\b',facility_name))>0|
+          length(grep('\\bNURSERY\\b',facility_name))>0|
+          length(grep('\\bNURSERIES\\b',facility_name))>0|
+          length(grep("\\bGREENHOUSE\\b",facility_name))>0){
+      facility_ftype<-"irrigation"
+  } else if (length(grep('\\bFARM\\b',facility_name))>0|
               length(grep('\\bORNAMENTALS\\b',facility_name))>0|
-              length(grep('\\bIRRIGATION\\b',facility_name))>0|
               length(grep('\\bPRODUCE\\b',facility_name))>0|
               length(grep('\\bLAWN\\b',facility_name))>0|
               length(grep('\\bCENTER PIVOT\\b',facility_name))>0|
               length(grep('\\bHOG\\b',facility_name))>0|
               length(grep('\\bDAIRY\\b',facility_name))>0|
               length(grep('\\bORCHARD\\b',facility_name))>0|
-              length(grep('\\bNURSERY\\b',facility_name))>0|
-              length(grep('\\bNURSERIES\\b',facility_name))>0|
               length(grep('\\bVINEYARD\\b',facility_name))>0|
               length(grep("\\bFISHERIES\\b",facility_name))>0|
               length(grep("\\bFISH\\b",facility_name))>0|
-              length(grep("\\bHATCHERY\\b",facility_name))>0|
-              length(grep("\\bGREENHOUSE\\b",facility_name))>0){
+              length(grep("\\bHATCHERY\\b",facility_name))>0){
       facility_ftype<-"agriculture"
     }else if(length(grep('\\bAIRPORT\\b',facility_name))>0|
              length(grep("\\bGOLF COURSE\\b",facility_name))>0|
@@ -248,29 +251,25 @@ facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
              length(grep("\\bCOOPERATIVE\\b",facility_name))>0|
              length(grep("\\bBUSCH GARDENS\\b",facility_name))>0|
              length(grep("\\bRETREAT\\b",facility_name))>0|
+             length(grep('\\bTIMBER\\b',facility_name))>0|
+             length(grep('\\bLUMBER\\b',facility_name))>0|
+             length(grep("\\bLANDFILL\\b",facility_name))>0|
              length(grep("\\bCAR WASH\\b",facility_name))>0){
       facility_ftype<-'commercial'
     } else if(length(grep('\\bPAPER\\b',facility_name))>0|
               length(grep('\\bCONCRETE\\b',facility_name))>0|
-              length(grep('\\bSAND AND GRAVEL\\b',facility_name))>0|
               length(grep('\\bAMMUNITION\\b',facility_name))>0|
-              length(grep('\\bFACILITY\\b',facility_name))>0|
               length(grep('\\bTERMINALS\\b',facility_name))>0|
-              length(grep('\\bLUMBER\\b',facility_name))>0|
               length(grep('\\bCONCENTRATOR\\b',facility_name))>0|
               length(grep('\\bCONSTRUCTION\\b',facility_name))>0|
               length(grep('\\bPLT\\b',facility_name))>0|
               length(grep('\\bMOTORS\\b',facility_name))>0|
-              length(grep('\\bOVENS\\b',facility_name))>0|
               length(grep('\\bPRODUCTS\\b',facility_name))>0|
-              length(grep('\\bTIMBER\\b',facility_name))>0|
               length(grep('\\bCHEMICAL\\b',facility_name))>0|
               length(grep('\\bINDUSTRIES\\b',facility_name))>0|
               length(grep('\\bINDUSTRIAL\\b',facility_name))>0|
               length(grep('\\bINDUSTRIAL PARK\\b',facility_name))>0|
-              length(grep('\\bDEVELOPMENT\\b',facility_name))>0|
               length(grep('\\bWAREHOUSE\\b',facility_name))>0|
-              length(grep("\\bLANDFILL\\b",facility_name))>0|
               length(grep('\\bBREWERY\\b',facility_name))>0|
               length(grep('\\bPURINA\\b',facility_name))>0){
       facility_ftype<-'industrial'
@@ -279,7 +278,7 @@ facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
       facility_ftype<-'manufacturing'
     #} 
   } #END OF FTYPE ASSIGNMENT
-  print(paste("FTYPE = ", facility_ftype, sep=""))
+  print(paste("---FTYPE = ", facility_ftype, sep=""))
   
   
   
