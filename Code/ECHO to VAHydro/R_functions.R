@@ -85,7 +85,7 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
 
 
 
-permit_REST <- function(ECHO_Facilities_i,permit_adminid){
+permit_REST <- function(ECHO_Facilities_i, agency_adminid, permit_adminid){
 
 if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
   permit_ftype <- "npdes_gp"
@@ -135,3 +135,154 @@ permit_adminid <- as.character(permit$adminid)
 return(permit_adminid)
 }
 
+
+facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
+  facility_name <- as.character(ECHO_Facilities_i$CWPName)
+  facility_name <-'LITTLE COAL RIVER RESTORATION'
+  print(paste("Processing FTYPE for Facility:", facility_name), sep=" ")
+  facility_ftype<-'unknown'
+  #determining ftype based on facility_name
+  #SIC CODE could be used to determine ftype, if null then use name matching
+    if (length(grep('\\bWASTE WATER\\b',facility_name))>0|
+        length(grep('\\bWWTP\\b',facility_name))>0|
+        length(grep('\\bWWTF\\b',facility_name))>0|
+        length(grep('\\bWASTEWATER\\b',facility_name))>0|
+        length(grep('\\bWASTEWATER Facility\\b',facility_name))>0|
+        length(grep('\\bWT PLANT\\b',facility_name))>0|
+        length(grep('\\bPOLLUTION CONTROL\\b',facility_name))>0|
+        length(grep('\\bPOLLUTION CONTR\\b',facility_name))>0){
+      facility_ftype<-'wwtp'
+    } else if (length(grep('COMBINED SEW SYSTEM',facility_name))|
+               length(grep('\\bMUNICIPAL\\b',facility_name))>0|
+               length(grep('\\bSERVICE AREA\\b',facility_name))>0|
+               length(grep('\\bSERV AREA\\b',facility_name))>0|
+               length(grep('\\bREGIONAL WATER SYSTEM\\b',facility_name))>0|
+               length(grep('\\bWWTREAT PLANT\\b',facility_name))>0|
+               length(grep('\\bTRICKLING FILTER\\b',facility_name))>0|
+               length(grep('\\bFILTRATION PLANT\\b',facility_name))>0|
+               length(grep('\\bCENTRAL SYSTEM\\b',facility_name))>0|
+               length(grep("\\bMS4\\b",facility_name))>0| #Municipal Separate Strom Sewer System
+               length(grep("\\bTRAILER\\b",facility_name))>0|
+               length(grep("\\bMOBILE HOME\\b",facility_name))>0|
+               length(grep("\\bTRACT\\b",facility_name))>0|
+               length(grep("\\bCOMMUNITY\\b",facility_name))>0|
+               length(grep("\\bHOMES\\b",facility_name))>0|
+               length(grep("\\bAPARTMENTS\\b",facility_name))>0|
+               length(grep("\\bSUBDIVISION\\b",facility_name))>0|
+               length(grep('\\bPARK WATER SYSTEM\\b',facility_name))>0|
+               length(grep('\\bSTP\\b',facility_name))>0|
+               length(grep('COMBINED SEWER SYSTEM',facility_name))>0){
+      facility_ftype<-'public water supply'
+    } else if (length(grep('\\bPOWER\\b',facility_name))>0|
+               length(grep('\\bPOWER STATION\\b',facility_name))>0|
+               length(grep('\\bELECTRIC\\b',facility_name))>0){
+      facility_ftype<-'fossilpower'
+      if(length(grep("\\bNUCLEAR\\b",facility_name>0))){
+        facility_ftype<-"nuclearpower"
+      } else if(length(grep("\\bHYDRO\\b",facility_name>0))){
+        facility_ftype<-"hydropower"
+      }
+    } else if(length(grep('\\bNUCLEAR\\b',facility_name))>0){
+      facility_ftype<-'nuclearpower' 
+    }else if (length(grep("\\bMINE\\b",facility_name))>0|
+              length(grep('\\bQUARRY\\b',facility_name))>0|
+              length(grep("\\bMINING\\b",facility_name))>0){
+      facility_ftype<-'mining'
+    } else if(length(grep('\\bFARM\\b',facility_name))>0|
+              length(grep('\\bORNAMENTALS\\b',facility_name))>0|
+              length(grep('\\bIRRIGATION\\b',facility_name))>0|
+              length(grep('\\bPRODUCE\\b',facility_name))>0|
+              length(grep('\\bLAWN\\b',facility_name))>0|
+              length(grep('\\bCENTER PIVOT\\b',facility_name))>0|
+              length(grep('\\bHOG\\b',facility_name))>0|
+              length(grep('\\bDAIRY\\b',facility_name))>0|
+              length(grep('\\bORCHARD\\b',facility_name))>0|
+              length(grep('\\bNURSERY\\b',facility_name))>0|
+              length(grep('\\bNURSERIES\\b',facility_name))>0|
+              length(grep('\\bVINEYARD\\b',facility_name))>0|
+              length(grep("\\bFISHERIES\\b",facility_name))>0|
+              length(grep("\\bFISH\\b",facility_name))>0|
+              length(grep("\\bHATCHERY\\b",facility_name))>0|
+              length(grep("\\bGREENHOUSE\\b",facility_name))>0){
+      facility_ftype<-"agriculture"
+    }else if(length(grep('\\bAIRPORT\\b',facility_name))>0|
+             length(grep("\\bGOLF COURSE\\b",facility_name))>0|
+             length(grep("\\bCOUNTRY CLUB\\b",facility_name))>0|
+             length(grep("\\bCOUNTRY CLB\\b",facility_name))>0|
+             length(grep("\\bCLUB\\b",facility_name))>0|
+             length(grep("\\bGOLF\\b",facility_name))>0|
+             length(grep("\\bCOURSE\\b",facility_name))>0|
+             length(grep("\\bCHURCH\\b",facility_name))>0|
+             length(grep("\\bCOMPLEX\\b",facility_name))>0|
+             length(grep("\\bSCHOOL\\b",facility_name))>0|
+             length(grep("\\bSCHOOLS\\b",facility_name))>0|
+             length(grep("\\bRECREATION\\b",facility_name))>0|
+             length(grep("\\bLEARNING CENTER\\b",facility_name))>0|
+             length(grep("\\bELEMENTARY\\b",facility_name))>0|
+             length(grep("\\bINSTITUTE\\b",facility_name))>0|
+             length(grep("\\bCOURTHOUSE\\b",facility_name))>0|
+             length(grep("\\bNAVAL\\b",facility_name))>0|
+             length(grep("\\bSPACE FLIGHT CENTER\\b",facility_name))>0|
+             length(grep("\\bEDUCATIONAL\\b",facility_name))>0|
+             length(grep("\\bCEMETERY\\b",facility_name))>0|
+             length(grep("\\bREST AREA\\b",facility_name))>0|
+             length(grep("\\bRENTALS\\b",facility_name))>0|
+             length(grep("\\bINN\\b",facility_name))>0|
+             length(grep("\\bMUSEUM\\b",facility_name))>0|
+             length(grep("\\bBUILDING\\b",facility_name))>0|
+             length(grep("\\bUNIVERSITY\\b",facility_name))>0|
+             length(grep("\\bHOSPITAL\\b",facility_name))>0|
+             length(grep("\\bRESTAURANT\\b",facility_name))>0|
+             length(grep("\\bCORRECTION CENTER\\b",facility_name))>0|
+             length(grep("\\bTRAINING CENTER\\b",facility_name))>0|
+             length(grep("\\bDETENTION CENTER\\b",facility_name))>0|
+             length(grep("\\bCORRECTIONAL\\b",facility_name))>0|
+             length(grep("\\bREHABILITATION\\b",facility_name))>0|
+             length(grep("\\bCAMPGROUND\\b",facility_name))>0|
+             length(grep("\\bCORRECTION UNIT\\b",facility_name))>0|
+             length(grep("\\bTRAVEL CENTER\\b",facility_name))>0|
+             length(grep("\\bSTATE PARK\\b",facility_name))>0|
+             length(grep("\\bDEPARTMENT OF LABOR\\b",facility_name))>0|
+             length(grep("\\bRESORT\\b",facility_name))>0|
+             length(grep("\\bYMCA\\b",facility_name))>0|
+             length(grep("\\bCOOPERATIVE\\b",facility_name))>0|
+             length(grep("\\bBUSCH GARDENS\\b",facility_name))>0|
+             length(grep("\\bRETREAT\\b",facility_name))>0|
+             length(grep("\\bCAR WASH\\b",facility_name))>0){
+      facility_ftype<-'commercial'
+    } else if(length(grep('\\bPAPER\\b',facility_name))>0|
+              length(grep('\\bCONCRETE\\b',facility_name))>0|
+              length(grep('\\bSAND AND GRAVEL\\b',facility_name))>0|
+              length(grep('\\bAMMUNITION\\b',facility_name))>0|
+              length(grep('\\bFACILITY\\b',facility_name))>0|
+              length(grep('\\bTERMINALS\\b',facility_name))>0|
+              length(grep('\\bLUMBER\\b',facility_name))>0|
+              length(grep('\\bCONCENTRATOR\\b',facility_name))>0|
+              length(grep('\\bCONSTRUCTION\\b',facility_name))>0|
+              length(grep('\\bPLT\\b',facility_name))>0|
+              length(grep('\\bMOTORS\\b',facility_name))>0|
+              length(grep('\\bOVENS\\b',facility_name))>0|
+              length(grep('\\bPRODUCTS\\b',facility_name))>0|
+              length(grep('\\bTIMBER\\b',facility_name))>0|
+              length(grep('\\bCHEMICAL\\b',facility_name))>0|
+              length(grep('\\bINDUSTRIES\\b',facility_name))>0|
+              length(grep('\\bINDUSTRIAL\\b',facility_name))>0|
+              length(grep('\\bINDUSTRIAL PARK\\b',facility_name))>0|
+              length(grep('\\bDEVELOPMENT\\b',facility_name))>0|
+              length(grep('\\bWAREHOUSE\\b',facility_name))>0|
+              length(grep("\\bLANDFILL\\b",facility_name))>0|
+              length(grep('\\bBREWERY\\b',facility_name))>0|
+              length(grep('\\bPURINA\\b',facility_name))>0){
+      facility_ftype<-'industrial'
+    }  else if(length(grep('\\bPLANT\\b',facility_name))>0|
+               length(grep('\\bMANUFACTURING\\b',facility_name))>0){ 
+      facility_ftype<-'manufacturing'
+    #} 
+  } #END OF FTYPE ASSIGNMENT
+  print(paste("FTYPE = ", facility_ftype, sep=""))
+  
+  
+  
+  
+  
+  } #END OF FACILITY_REST FUNCTION

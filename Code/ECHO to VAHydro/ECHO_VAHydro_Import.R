@@ -72,11 +72,7 @@ basepath <- "http://deq2.bse.vt.edu/d.alpha"
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 
-####################################Inputs##############################################
-#Inputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/USGS_Consumptive_Use_Updated"
-#Outputpath<-"C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports"
-####################################################################
-
+####################################Inputs##########################################
 # Querying Facility data from ECHO database
 VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
 DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
@@ -96,11 +92,6 @@ ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
 #think about adding a visual check like plotting on a map
 paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1]))
 
-
-#The next two lines can be used to simply test two facilities (instead of running through 18000+)
-#ECHO_Facilities <- subset(VA_Facilities, VA_Facilities$SourceID == 'VA0000370')
-#ECHO_Facilities <- rbind(ECHO_Facilities, subset(VA_Facilities, VA_Facilities$SourceID == 'VA0001015'))
-
 ECHO_Facilities <- data.frame(ECHO_Facilities)
 #use sqldf for replacements
 keep_permits <- "SELECT *
@@ -110,16 +101,14 @@ keep_permits <- "SELECT *
 ECHO_Facilities <- sqldf(keep_permits)
 
 paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1]))
-# 
+
 # ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
 
 # ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit" | ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
 
-#colnames(ECHO_Facilities)[1]<-c("Facility.ID")
+
 #rename SourceID column to Facility_ID 
 colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID"
-
-# write.table(ECHO_Facilities,file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/Facilities_Table.csv",sep="|",row.names=F)
 
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
@@ -135,8 +124,9 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   
   ECHO_Facilities_i <- ECHO_Facilities[i,]
 
-  permit_adminid <- permit_REST(ECHO_Facilities_i)
+  permit_adminid <- permit_REST(ECHO_Facilities_i, agency_adminid)
   
+  print("PROCESSING FACILITY")
 }
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
@@ -403,49 +393,49 @@ ts_flagging(timeseries)
 #important to note that Facility.ID in matrix a is equal to admincode. It becomes hydrocode when word 'echo_' is added before
 #permit ID not to be confused with outfallID which is unique for each outfall
 
-adminreg_compile<- function(ECHO_Facilities){
-adminreg<-data.frame(bundle='permit', admincode=ECHO_Facilities$Facility.ID, description=ECHO_Facilities$CWPPermitTypeDesc, name=ECHO_Facilities$CWPName,stringsAsFactors = F)
-adminreg<-subset(adminreg, subset=adminreg$description=="National Pollutant Discharge Elimination System (NPDES) Permit"|
-                   adminreg$description=="General Permit Covered Facility")
-adminreg$ftype<-ifelse(adminreg$description=="General Permit Covered Facility","npdes_gp","npdes_ip")
-
-adminreg$fstatus<-"unknown"
-ECHO_Facilities$CWPPermitStatusDesc<-toupper(ECHO_Facilities$CWPPermitStatusDesc)
-for (i in 1:length(adminreg$admincode)){
-  if (length(grep('EFFECTIVE',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-      length(grep('COMPLIANCE TRACKING OFF',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-      length(grep('ADMIN CONTINUED',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-      length(grep('EFFFECTIVE; COMPLIANCE TRACKING PARTIALLY OFF',ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-    adminreg$fstatus[i]<-'active'
-  }
-  else if (length(grep('TERMINATED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-           length(grep('TERMINATED; COMPLIANCE TRACKING OFF', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-    adminreg$fstatus[i]<-'revoked'
-  }
-  else if (length(grep('NOT NEEDED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-           length(grep('NA', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-    adminreg$fstatus[i]<-'unknown'
-  }
-  else if (length(grep('EXPIRED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-    adminreg$fstatus[i]<-'expired'
-  }
-}
-
-adminreg$startdate<-ECHO_Facilities$CWPEffectiveDate[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
-
-#end date is permit expiration date rather than limit_end_date
-adminreg$enddate<-ECHO_Facilities$CWPExpirationDate[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
-adminreg$permit_id<-ECHO_Facilities$Facility.ID[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
-adminreg$dh_link_admin_reg_issuer<-'epa'
-adminreg$startdate<-as.Date(adminreg$startdate,format="%m/%d/%Y")
-adminreg$enddate<-as.Date(adminreg$enddate,format="%m/%d/%Y")
-
-
-assign("adminreg",adminreg,envir = .GlobalEnv)
-write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
-
-}
-adminreg_compile(ECHO_Facilities)
+# adminreg_compile<- function(ECHO_Facilities){
+# adminreg<-data.frame(bundle='permit', admincode=ECHO_Facilities$Facility.ID, description=ECHO_Facilities$CWPPermitTypeDesc, name=ECHO_Facilities$CWPName,stringsAsFactors = F)
+# adminreg<-subset(adminreg, subset=adminreg$description=="National Pollutant Discharge Elimination System (NPDES) Permit"|
+#                    adminreg$description=="General Permit Covered Facility")
+# adminreg$ftype<-ifelse(adminreg$description=="General Permit Covered Facility","npdes_gp","npdes_ip")
+# 
+# adminreg$fstatus<-"unknown"
+# ECHO_Facilities$CWPPermitStatusDesc<-toupper(ECHO_Facilities$CWPPermitStatusDesc)
+# for (i in 1:length(adminreg$admincode)){
+#   if (length(grep('EFFECTIVE',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+#       length(grep('COMPLIANCE TRACKING OFF',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+#       length(grep('ADMIN CONTINUED',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+#       length(grep('EFFFECTIVE; COMPLIANCE TRACKING PARTIALLY OFF',ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
+#     adminreg$fstatus[i]<-'active'
+#   }
+#   else if (length(grep('TERMINATED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+#            length(grep('TERMINATED; COMPLIANCE TRACKING OFF', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
+#     adminreg$fstatus[i]<-'revoked'
+#   }
+#   else if (length(grep('NOT NEEDED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
+#            length(grep('NA', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
+#     adminreg$fstatus[i]<-'unknown'
+#   }
+#   else if (length(grep('EXPIRED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
+#     adminreg$fstatus[i]<-'expired'
+#   }
+# }
+# 
+# adminreg$startdate<-ECHO_Facilities$CWPEffectiveDate[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
+# 
+# #end date is permit expiration date rather than limit_end_date
+# adminreg$enddate<-ECHO_Facilities$CWPExpirationDate[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
+# adminreg$permit_id<-ECHO_Facilities$Facility.ID[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
+# adminreg$dh_link_admin_reg_issuer<-'epa'
+# adminreg$startdate<-as.Date(adminreg$startdate,format="%m/%d/%Y")
+# adminreg$enddate<-as.Date(adminreg$enddate,format="%m/%d/%Y")
+# 
+# 
+# assign("adminreg",adminreg,envir = .GlobalEnv)
+# write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
+# 
+# }
+# adminreg_compile(ECHO_Facilities)
 ##################################################################################################################################
 ###################################################2 Import Facilities############################################################
 #Purpose: Extract all discharging facilities found in ECHO 
@@ -599,6 +589,10 @@ for (i in 1:length(facilities$hydrocode)){
              length(grep('\\bMANUFACTURING\\b',facilities$name[i]))>0){ 
     facilities$ftype[i]<-'manufacturing'
   }
+  
+  
+  
+  
   facilities$fstatus[i]<-'inactive'
   if (ECHO_Facilities$CWPPermitStatusDesc[i]=='EFFECTIVE'){ #Check status of permit.
     facilities$fstatus[i]<-'active'
