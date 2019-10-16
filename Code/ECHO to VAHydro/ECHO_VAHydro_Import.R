@@ -124,10 +124,13 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   
   ECHO_Facilities_i <- ECHO_Facilities[i,]
 
-  permit_adminid <- permit_REST(ECHO_Facilities_i, agency_adminid)
+  permit <- permit_REST(ECHO_Facilities_i, agency_adminid)
+  print(permit)
+  
   
   print("---PROCESSING FACILITY")
-  facility_hydroid <- facility_REST(ECHO_Facilities_i, permit_adminid)
+  facility <- facility_REST(ECHO_Facilities_i, permit, token)
+  print(facility)
 }
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
@@ -449,148 +452,148 @@ ts_flagging(timeseries)
 #that format facility names and search them for any buzz words that might help group them into 
 #a VA Hydro ftype. For instance, "Surry Power Station" contains the word "Power" and is likely a 
 #power plant of some kind
-
-facilities_compile<- function(ECHO_Facilities){
-facilities<-data.frame(bundle='facility',name=ECHO_Facilities$CWPName,stringsAsFactors = F)
-facilities$ftype<-'unknown'
-facilities$hydrocode<-paste0("echo_",ECHO_Facilities$Facility.ID)
-for (i in 1:length(facilities$hydrocode)){
-  if (length(grep('\\bWASTE WATER\\b',facilities$name[i]))>0|
-      length(grep('\\bWWTP\\b',facilities$name[i]))>0|
-      length(grep('\\bWWTF\\b',facilities$name[i]))>0|
-      length(grep('\\bWASTEWATER\\b',facilities$name[i]))>0|
-      length(grep('\\bWASTEWATER Facility\\b',facilities$name[i]))>0|
-      length(grep('\\bWT PLANT\\b',facilities$name[i]))>0|
-      length(grep('\\bPOLLUTION CONTROL\\b',facilities$name[i]))>0|
-      length(grep('\\bPOLLUTION CONTR\\b',facilities$name[i]))>0){
-    facilities$ftype[i]<-'wwtp'
-  } else if (length(grep('COMBINED SEW SYSTEM',facilities$CWPName[i]))|
-             length(grep('\\bMUNICIPAL\\b',facilities$name[i]))>0|
-             length(grep('\\bSERVICE AREA\\b',facilities$name[i]))>0|
-             length(grep('\\bSERV AREA\\b',facilities$name[i]))>0|
-             length(grep('\\bREGIONAL WATER SYSTEM\\b',facilities$name[i]))>0|
-             length(grep('\\bWWTREAT PLANT\\b',facilities$name[i]))>0|
-             length(grep('\\bTRICKLING FILTER\\b',facilities$name[i]))>0|
-             length(grep('\\bFILTRATION PLANT\\b',facilities$name[i]))>0|
-             length(grep('\\bCENTRAL SYSTEM\\b',facilities$name[i]))>0|
-             length(grep("\\bMS4\\b",facilities$name[i]))>0| #Municipal Separate Strom Sewer System
-             length(grep("\\bTRAILER\\b",facilities$name[i]))>0|
-             length(grep("\\bMOBILE HOME\\b",facilities$name[i]))>0|
-             length(grep("\\bTRACT\\b",facilities$name[i]))>0|
-             length(grep("\\bCOMMUNITY\\b",facilities$name[i]))>0|
-             length(grep("\\bHOMES\\b",facilities$name[i]))>0|
-             length(grep("\\bAPARTMENTS\\b",facilities$name[i]))>0|
-             length(grep("\\bSUBDIVISION\\b",facilities$name[i]))>0|
-             length(grep('\\bPARK WATER SYSTEM\\b',facilities$name[i]))>0|
-             length(grep('\\bSTP\\b',facilities$name[i]))>0|
-             length(grep('COMBINED SEWER SYSTEM',facilities$CWPName[i]))>0){
-    facilities$ftype[i]<-'public water supply'
-  } else if (length(grep('\\bPOWER\\b',facilities$name[i]))>0|
-             length(grep('\\bPOWER STATION\\b',facilities$name[i]))>0|
-             length(grep('\\bELECTRIC\\b',facilities$CWPName[i]))>0){
-    facilities$ftype[i]<-'fossilpower'
-    if(length(grep("\\bNUCLEAR\\b",facilities$CWPName[i]>0))){
-      facilities$ftype[i]<-"nuclearpower"
-    } else if(length(grep("\\bHYDRO\\b",facilities$CWPName[i]>0))){
-      facilities$ftype[i]<-"hydropower"
-    }
-  } else if(length(grep('\\bNUCLEAR\\b',facilities$CWPName[i]))>0){
-    facilities$ftype[i]<-'nuclearpower' 
-  }else if (length(grep("\\bMINE\\b",facilities$CWPName[i]))>0|
-            length(grep('\\bQUARRY\\b',facilities$name[i]))>0|
-            length(grep("\\bMINING\\b",facilities$CWPName[i]))>0){
-    facilities$ftype[i]<-'mining'
-  } else if(length(grep('\\bFARM\\b',facilities$name[i]))>0|
-            length(grep('\\bORNAMENTALS\\b',facilities$name[i]))>0|
-            length(grep('\\bIRRIGATION\\b',facilities$name[i]))>0|
-            length(grep('\\bPRODUCE\\b',facilities$name[i]))>0|
-            length(grep('\\bLAWN\\b',facilities$name[i]))>0|
-            length(grep('\\bCENTER PIVOT\\b',facilities$name[i]))>0|
-            length(grep('\\bHOG\\b',facilities$name[i]))>0|
-            length(grep('\\bDAIRY\\b',facilities$name[i]))>0|
-            length(grep('\\bORCHARD\\b',facilities$name[i]))>0|
-            length(grep('\\bNURSERY\\b',facilities$name[i]))>0|
-            length(grep('\\bNURSERIES\\b',facilities$name[i]))>0|
-            length(grep('\\bVINEYARD\\b',facilities$name[i]))>0|
-            length(grep("\\bFISHERIES\\b",facilities$name[i]))>0|
-            length(grep("\\bFISH\\b",facilities$name[i]))>0|
-            length(grep("\\bHATCHERY\\b",facilities$name[i]))>0|
-            length(grep("\\bGREENHOUSE\\b",facilities$name[i]))>0){
-    facilities$ftype[i]<-"agriculture"
-  }else if(length(grep('\\bAIRPORT\\b',facilities$name[i]))>0|
-           length(grep("\\bGOLF COURSE\\b",facilities$name[i]))>0|
-           length(grep("\\bCOUNTRY CLUB\\b",facilities$name[i]))>0|
-           length(grep("\\bCOUNTRY CLB\\b",facilities$name[i]))>0|
-           length(grep("\\bCLUB\\b",facilities$name[i]))>0|
-           length(grep("\\bGOLF\\b",facilities$name[i]))>0|
-           length(grep("\\bCOURSE\\b",facilities$name[i]))>0|
-           length(grep("\\bCHURCH\\b",facilities$name[i]))>0|
-           length(grep("\\bCOMPLEX\\b",facilities$name[i]))>0|
-           length(grep("\\bSCHOOL\\b",facilities$name[i]))>0|
-           length(grep("\\bSCHOOLS\\b",facilities$name[i]))>0|
-           length(grep("\\bRECREATION\\b",facilities$name[i]))>0|
-           length(grep("\\bLEARNING CENTER\\b",facilities$name[i]))>0|
-           length(grep("\\bELEMENTARY\\b",facilities$name[i]))>0|
-           length(grep("\\bINSTITUTE\\b",facilities$name[i]))>0|
-           length(grep("\\bCOURTHOUSE\\b",facilities$name[i]))>0|
-           length(grep("\\bNAVAL\\b",facilities$name[i]))>0|
-           length(grep("\\bSPACE FLIGHT CENTER\\b",facilities$name[i]))>0|
-           length(grep("\\bEDUCATIONAL\\b",facilities$name[i]))>0|
-           length(grep("\\bCEMETERY\\b",facilities$name[i]))>0|
-           length(grep("\\bREST AREA\\b",facilities$name[i]))>0|
-           length(grep("\\bRENTALS\\b",facilities$name[i]))>0|
-           length(grep("\\bINN\\b",facilities$name[i]))>0|
-           length(grep("\\bMUSEUM\\b",facilities$name[i]))>0|
-           length(grep("\\bBUILDING\\b",facilities$name[i]))>0|
-           length(grep("\\bUNIVERSITY\\b",facilities$name[i]))>0|
-           length(grep("\\bHOSPITAL\\b",facilities$name[i]))>0|
-           length(grep("\\bRESTAURANT\\b",facilities$name[i]))>0|
-           length(grep("\\bCORRECTION CENTER\\b",facilities$name[i]))>0|
-           length(grep("\\bTRAINING CENTER\\b",facilities$name[i]))>0|
-           length(grep("\\bDETENTION CENTER\\b",facilities$name[i]))>0|
-           length(grep("\\bCORRECTIONAL\\b",facilities$name[i]))>0|
-           length(grep("\\bREHABILITATION\\b",facilities$name[i]))>0|
-           length(grep("\\bCAMPGROUND\\b",facilities$name[i]))>0|
-           length(grep("\\bCORRECTION UNIT\\b",facilities$name[i]))>0|
-           length(grep("\\bTRAVEL CENTER\\b",facilities$name[i]))>0|
-           length(grep("\\bSTATE PARK\\b",facilities$name[i]))>0|
-           length(grep("\\bDEPARTMENT OF LABOR\\b",facilities$name[i]))>0|
-           length(grep("\\bRESORT\\b",facilities$name[i]))>0|
-           length(grep("\\bYMCA\\b",facilities$name[i]))>0|
-           length(grep("\\bCOOPERATIVE\\b",facilities$name[i]))>0|
-           length(grep("\\bBUSCH GARDENS\\b",facilities$name[i]))>0|
-           length(grep("\\bRETREAT\\b",facilities$name[i]))>0|
-           length(grep("\\bCAR WASH\\b",facilities$name[i]))>0){
-    facilities$ftype[i]<-'commercial'
-  } else if(length(grep('\\bPAPER\\b',facilities$name[i]))>0|
-            length(grep('\\bCONCRETE\\b',facilities$name[i]))>0|
-            length(grep('\\bSAND AND GRAVEL\\b',facilities$name[i]))>0|
-            length(grep('\\bAMMUNITION\\b',facilities$name[i]))>0|
-            length(grep('\\bFACILITY\\b',facilities$name[i]))>0|
-            length(grep('\\bTERMINALS\\b',facilities$name[i]))>0|
-            length(grep('\\bLUMBER\\b',facilities$name[i]))>0|
-            length(grep('\\bCONCENTRATOR\\b',facilities$name[i]))>0|
-            length(grep('\\bCONSTRUCTION\\b',facilities$name[i]))>0|
-            length(grep('\\bPLT\\b',facilities$name[i]))>0|
-            length(grep('\\bMOTORS\\b',facilities$name[i]))>0|
-            length(grep('\\bOVENS\\b',facilities$name[i]))>0|
-            length(grep('\\bPRODUCTS\\b',facilities$name[i]))>0|
-            length(grep('\\bTIMBER\\b',facilities$name[i]))>0|
-            length(grep('\\bCHEMICAL\\b',facilities$name[i]))>0|
-            length(grep('\\bINDUSTRIES\\b',facilities$name[i]))>0|
-            length(grep('\\bINDUSTRIAL\\b',facilities$name[i]))>0|
-            length(grep('\\bINDUSTRIAL PARK\\b',facilities$name[i]))>0|
-            length(grep('\\bDEVELOPMENT\\b',facilities$name[i]))>0|
-            length(grep('\\bWAREHOUSE\\b',facilities$name[i]))>0|
-            length(grep("\\bLANDFILL\\b",facilities$name[i]))>0|
-            length(grep('\\bBREWERY\\b',facilities$name[i]))>0|
-            length(grep('\\bPURINA\\b',facilities$name[i]))>0){
-    facilities$ftype[i]<-'industrial'
-  }  else if(length(grep('\\bPLANT\\b',facilities$name[i]))>0|
-             length(grep('\\bMANUFACTURING\\b',facilities$name[i]))>0){ 
-    facilities$ftype[i]<-'manufacturing'
-  }
-  
+# 
+# facilities_compile<- function(ECHO_Facilities){
+# facilities<-data.frame(bundle='facility',name=ECHO_Facilities$CWPName,stringsAsFactors = F)
+# facilities$ftype<-'unknown'
+# facilities$hydrocode<-paste0("echo_",ECHO_Facilities$Facility.ID)
+# for (i in 1:length(facilities$hydrocode)){
+#   if (length(grep('\\bWASTE WATER\\b',facilities$name[i]))>0|
+#       length(grep('\\bWWTP\\b',facilities$name[i]))>0|
+#       length(grep('\\bWWTF\\b',facilities$name[i]))>0|
+#       length(grep('\\bWASTEWATER\\b',facilities$name[i]))>0|
+#       length(grep('\\bWASTEWATER Facility\\b',facilities$name[i]))>0|
+#       length(grep('\\bWT PLANT\\b',facilities$name[i]))>0|
+#       length(grep('\\bPOLLUTION CONTROL\\b',facilities$name[i]))>0|
+#       length(grep('\\bPOLLUTION CONTR\\b',facilities$name[i]))>0){
+#     facilities$ftype[i]<-'wwtp'
+#   } else if (length(grep('COMBINED SEW SYSTEM',facilities$CWPName[i]))|
+#              length(grep('\\bMUNICIPAL\\b',facilities$name[i]))>0|
+#              length(grep('\\bSERVICE AREA\\b',facilities$name[i]))>0|
+#              length(grep('\\bSERV AREA\\b',facilities$name[i]))>0|
+#              length(grep('\\bREGIONAL WATER SYSTEM\\b',facilities$name[i]))>0|
+#              length(grep('\\bWWTREAT PLANT\\b',facilities$name[i]))>0|
+#              length(grep('\\bTRICKLING FILTER\\b',facilities$name[i]))>0|
+#              length(grep('\\bFILTRATION PLANT\\b',facilities$name[i]))>0|
+#              length(grep('\\bCENTRAL SYSTEM\\b',facilities$name[i]))>0|
+#              length(grep("\\bMS4\\b",facilities$name[i]))>0| #Municipal Separate Strom Sewer System
+#              length(grep("\\bTRAILER\\b",facilities$name[i]))>0|
+#              length(grep("\\bMOBILE HOME\\b",facilities$name[i]))>0|
+#              length(grep("\\bTRACT\\b",facilities$name[i]))>0|
+#              length(grep("\\bCOMMUNITY\\b",facilities$name[i]))>0|
+#              length(grep("\\bHOMES\\b",facilities$name[i]))>0|
+#              length(grep("\\bAPARTMENTS\\b",facilities$name[i]))>0|
+#              length(grep("\\bSUBDIVISION\\b",facilities$name[i]))>0|
+#              length(grep('\\bPARK WATER SYSTEM\\b',facilities$name[i]))>0|
+#              length(grep('\\bSTP\\b',facilities$name[i]))>0|
+#              length(grep('COMBINED SEWER SYSTEM',facilities$CWPName[i]))>0){
+#     facilities$ftype[i]<-'public water supply'
+#   } else if (length(grep('\\bPOWER\\b',facilities$name[i]))>0|
+#              length(grep('\\bPOWER STATION\\b',facilities$name[i]))>0|
+#              length(grep('\\bELECTRIC\\b',facilities$CWPName[i]))>0){
+#     facilities$ftype[i]<-'fossilpower'
+#     if(length(grep("\\bNUCLEAR\\b",facilities$CWPName[i]>0))){
+#       facilities$ftype[i]<-"nuclearpower"
+#     } else if(length(grep("\\bHYDRO\\b",facilities$CWPName[i]>0))){
+#       facilities$ftype[i]<-"hydropower"
+#     }
+#   } else if(length(grep('\\bNUCLEAR\\b',facilities$CWPName[i]))>0){
+#     facilities$ftype[i]<-'nuclearpower' 
+#   }else if (length(grep("\\bMINE\\b",facilities$CWPName[i]))>0|
+#             length(grep('\\bQUARRY\\b',facilities$name[i]))>0|
+#             length(grep("\\bMINING\\b",facilities$CWPName[i]))>0){
+#     facilities$ftype[i]<-'mining'
+#   } else if(length(grep('\\bFARM\\b',facilities$name[i]))>0|
+#             length(grep('\\bORNAMENTALS\\b',facilities$name[i]))>0|
+#             length(grep('\\bIRRIGATION\\b',facilities$name[i]))>0|
+#             length(grep('\\bPRODUCE\\b',facilities$name[i]))>0|
+#             length(grep('\\bLAWN\\b',facilities$name[i]))>0|
+#             length(grep('\\bCENTER PIVOT\\b',facilities$name[i]))>0|
+#             length(grep('\\bHOG\\b',facilities$name[i]))>0|
+#             length(grep('\\bDAIRY\\b',facilities$name[i]))>0|
+#             length(grep('\\bORCHARD\\b',facilities$name[i]))>0|
+#             length(grep('\\bNURSERY\\b',facilities$name[i]))>0|
+#             length(grep('\\bNURSERIES\\b',facilities$name[i]))>0|
+#             length(grep('\\bVINEYARD\\b',facilities$name[i]))>0|
+#             length(grep("\\bFISHERIES\\b",facilities$name[i]))>0|
+#             length(grep("\\bFISH\\b",facilities$name[i]))>0|
+#             length(grep("\\bHATCHERY\\b",facilities$name[i]))>0|
+#             length(grep("\\bGREENHOUSE\\b",facilities$name[i]))>0){
+#     facilities$ftype[i]<-"agriculture"
+#   }else if(length(grep('\\bAIRPORT\\b',facilities$name[i]))>0|
+#            length(grep("\\bGOLF COURSE\\b",facilities$name[i]))>0|
+#            length(grep("\\bCOUNTRY CLUB\\b",facilities$name[i]))>0|
+#            length(grep("\\bCOUNTRY CLB\\b",facilities$name[i]))>0|
+#            length(grep("\\bCLUB\\b",facilities$name[i]))>0|
+#            length(grep("\\bGOLF\\b",facilities$name[i]))>0|
+#            length(grep("\\bCOURSE\\b",facilities$name[i]))>0|
+#            length(grep("\\bCHURCH\\b",facilities$name[i]))>0|
+#            length(grep("\\bCOMPLEX\\b",facilities$name[i]))>0|
+#            length(grep("\\bSCHOOL\\b",facilities$name[i]))>0|
+#            length(grep("\\bSCHOOLS\\b",facilities$name[i]))>0|
+#            length(grep("\\bRECREATION\\b",facilities$name[i]))>0|
+#            length(grep("\\bLEARNING CENTER\\b",facilities$name[i]))>0|
+#            length(grep("\\bELEMENTARY\\b",facilities$name[i]))>0|
+#            length(grep("\\bINSTITUTE\\b",facilities$name[i]))>0|
+#            length(grep("\\bCOURTHOUSE\\b",facilities$name[i]))>0|
+#            length(grep("\\bNAVAL\\b",facilities$name[i]))>0|
+#            length(grep("\\bSPACE FLIGHT CENTER\\b",facilities$name[i]))>0|
+#            length(grep("\\bEDUCATIONAL\\b",facilities$name[i]))>0|
+#            length(grep("\\bCEMETERY\\b",facilities$name[i]))>0|
+#            length(grep("\\bREST AREA\\b",facilities$name[i]))>0|
+#            length(grep("\\bRENTALS\\b",facilities$name[i]))>0|
+#            length(grep("\\bINN\\b",facilities$name[i]))>0|
+#            length(grep("\\bMUSEUM\\b",facilities$name[i]))>0|
+#            length(grep("\\bBUILDING\\b",facilities$name[i]))>0|
+#            length(grep("\\bUNIVERSITY\\b",facilities$name[i]))>0|
+#            length(grep("\\bHOSPITAL\\b",facilities$name[i]))>0|
+#            length(grep("\\bRESTAURANT\\b",facilities$name[i]))>0|
+#            length(grep("\\bCORRECTION CENTER\\b",facilities$name[i]))>0|
+#            length(grep("\\bTRAINING CENTER\\b",facilities$name[i]))>0|
+#            length(grep("\\bDETENTION CENTER\\b",facilities$name[i]))>0|
+#            length(grep("\\bCORRECTIONAL\\b",facilities$name[i]))>0|
+#            length(grep("\\bREHABILITATION\\b",facilities$name[i]))>0|
+#            length(grep("\\bCAMPGROUND\\b",facilities$name[i]))>0|
+#            length(grep("\\bCORRECTION UNIT\\b",facilities$name[i]))>0|
+#            length(grep("\\bTRAVEL CENTER\\b",facilities$name[i]))>0|
+#            length(grep("\\bSTATE PARK\\b",facilities$name[i]))>0|
+#            length(grep("\\bDEPARTMENT OF LABOR\\b",facilities$name[i]))>0|
+#            length(grep("\\bRESORT\\b",facilities$name[i]))>0|
+#            length(grep("\\bYMCA\\b",facilities$name[i]))>0|
+#            length(grep("\\bCOOPERATIVE\\b",facilities$name[i]))>0|
+#            length(grep("\\bBUSCH GARDENS\\b",facilities$name[i]))>0|
+#            length(grep("\\bRETREAT\\b",facilities$name[i]))>0|
+#            length(grep("\\bCAR WASH\\b",facilities$name[i]))>0){
+#     facilities$ftype[i]<-'commercial'
+#   } else if(length(grep('\\bPAPER\\b',facilities$name[i]))>0|
+#             length(grep('\\bCONCRETE\\b',facilities$name[i]))>0|
+#             length(grep('\\bSAND AND GRAVEL\\b',facilities$name[i]))>0|
+#             length(grep('\\bAMMUNITION\\b',facilities$name[i]))>0|
+#             length(grep('\\bFACILITY\\b',facilities$name[i]))>0|
+#             length(grep('\\bTERMINALS\\b',facilities$name[i]))>0|
+#             length(grep('\\bLUMBER\\b',facilities$name[i]))>0|
+#             length(grep('\\bCONCENTRATOR\\b',facilities$name[i]))>0|
+#             length(grep('\\bCONSTRUCTION\\b',facilities$name[i]))>0|
+#             length(grep('\\bPLT\\b',facilities$name[i]))>0|
+#             length(grep('\\bMOTORS\\b',facilities$name[i]))>0|
+#             length(grep('\\bOVENS\\b',facilities$name[i]))>0|
+#             length(grep('\\bPRODUCTS\\b',facilities$name[i]))>0|
+#             length(grep('\\bTIMBER\\b',facilities$name[i]))>0|
+#             length(grep('\\bCHEMICAL\\b',facilities$name[i]))>0|
+#             length(grep('\\bINDUSTRIES\\b',facilities$name[i]))>0|
+#             length(grep('\\bINDUSTRIAL\\b',facilities$name[i]))>0|
+#             length(grep('\\bINDUSTRIAL PARK\\b',facilities$name[i]))>0|
+#             length(grep('\\bDEVELOPMENT\\b',facilities$name[i]))>0|
+#             length(grep('\\bWAREHOUSE\\b',facilities$name[i]))>0|
+#             length(grep("\\bLANDFILL\\b",facilities$name[i]))>0|
+#             length(grep('\\bBREWERY\\b',facilities$name[i]))>0|
+#             length(grep('\\bPURINA\\b',facilities$name[i]))>0){
+#     facilities$ftype[i]<-'industrial'
+#   }  else if(length(grep('\\bPLANT\\b',facilities$name[i]))>0|
+#              length(grep('\\bMANUFACTURING\\b',facilities$name[i]))>0){ 
+#     facilities$ftype[i]<-'manufacturing'
+#   }
+#   
   
   
   

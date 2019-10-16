@@ -85,7 +85,7 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
 
 
 
-permit_REST <- function(ECHO_Facilities_i, agency_adminid, permit_adminid){
+permit_REST <- function(ECHO_Facilities_i, agency_adminid, permit){
 
 if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
   permit_ftype <- "npdes_gp"
@@ -130,13 +130,13 @@ permit_inputs <- data.frame(
 permit <- getAdminregFeature(permit_inputs, basepath)
 permit <- postAdminregFeature(permit_inputs, basepath)
 permit <- getAdminregFeature(permit_inputs, basepath)
-permit_adminid <- as.character(permit$adminid)
+#permit_adminid <- as.character(permit$adminid)
 
-return(permit_adminid)
+return(permit)
 }
 
 
-facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
+facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   facility_name <- as.character(ECHO_Facilities_i$CWPName)
   print(paste("---Processing FTYPE for Facility:", facility_name), sep=" ")
   facility_ftype <-'unknown'
@@ -276,12 +276,26 @@ facility_REST <- function(ECHO_Facilities_i, permit_adminid, facility_hydroid){
     }  else if(length(grep('\\bPLANT\\b',facility_name))>0|
                length(grep('\\bMANUFACTURING\\b',facility_name))>0){ 
       facility_ftype<-'manufacturing'
-    #} 
   } #END OF FTYPE ASSIGNMENT
   print(paste("---FTYPE = ", facility_ftype, sep=""))
   
   
+  facility_inputs <- data.frame(
+    bundle = 'facility',
+    name = facility_name,
+    ftype = facility_ftype,
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+    fstatus = as.character(permit$fstatus),
+    wkt_geom = paste0('POINT (', ECHO_Facilities_i$FacLong, ' ', ECHO_Facilities_i$FacLat,')'),
+    address1 = ECHO_Facilities_i$CWPStreet,
+    city = ECHO_Facilities_i$CWPCity,
+    dh_link_admin_location = permit$adminid,
+    stringsAsFactors = FALSE
+  ) 
   
-  
+  #facility <- getFeature(facility_inputs, basepath)
+  facility <- postFeature(facility_inputs, basepath)
+  facility <- getFeature(facility_inputs, token, basepath)
+  return(facility)
   
   } #END OF FACILITY_REST FUNCTION
