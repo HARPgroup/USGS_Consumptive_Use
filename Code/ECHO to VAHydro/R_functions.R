@@ -69,7 +69,7 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
   inside.poly_layer <- !is.na(over(point_df, as(poly_layer, "SpatialPolygons")))
 
   # what fraction of points are inside a polygon?
-  print(paste("Fraction of points within polygon layer: ", mean(inside.poly_layer),sep=""))
+  print(paste("Fraction of points within polygon layer: ", round(mean(inside.poly_layer),3),sep=""))
   
   # use 'over' again, this time with poly_layer as a SpatialPolygonsDataFrame
   # object, to determine which polygon (if any) contains each point, and
@@ -78,7 +78,7 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
   point_df$Poly_Code <- over(point_df, poly_layer)$Code
   
   end_time <- Sys.time()
-  print(paste("Time elapsed: ",end_time-start_time,sep=""))
+  print(paste("Time elapsed: ",round(end_time-start_time,3),sep=""))
   
   return(point_df)
 }
@@ -107,7 +107,7 @@ if (length(grep('Effective',permit_fstatus))>0|
 } else if (length(grep('Expired', permit_fstatus))>0){
   permit_fstatus <-'expired'
 } 
-print(paste("---permit fstatus: ",permit_fstatus))
+print(paste("permit fstatus: ",permit_fstatus))
 #prints list of all status type in column CWPPermitStatusDesc
 #is_it_there <- "select distinct CWPPermitStatusDesc
 #from ECHO_Facilities_original"
@@ -127,10 +127,8 @@ permit_inputs <- data.frame(
   stringsAsFactors = FALSE
 ) 
 
-permit <- getAdminregFeature(permit_inputs, basepath)
 permit <- postAdminregFeature(permit_inputs, basepath)
 permit <- getAdminregFeature(permit_inputs, basepath)
-#permit_adminid <- as.character(permit$adminid)
 
 return(permit)
 }
@@ -138,7 +136,7 @@ return(permit)
 
 facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   facility_name <- as.character(ECHO_Facilities_i$CWPName)
-  print(paste("---Processing FTYPE for Facility:", facility_name), sep=" ")
+  print(paste("Processing FTYPE for Facility:", facility_name), sep=" ")
   facility_ftype <-'unknown'
   #determining ftype based on facility_name
   #SIC CODE could be used to determine ftype, if null then use name matching
@@ -277,7 +275,7 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
                length(grep('\\bMANUFACTURING\\b',facility_name))>0){ 
       facility_ftype<-'manufacturing'
   } #END OF FTYPE ASSIGNMENT
-  print(paste("---FTYPE = ", facility_ftype, sep=""))
+  print(paste("FTYPE = ", facility_ftype, sep=""))
   
   
   facility_inputs <- data.frame(
@@ -286,14 +284,13 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
     ftype = facility_ftype,
     hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     fstatus = as.character(permit$fstatus),
-    wkt_geom = paste0('POINT (', ECHO_Facilities_i$FacLong, ' ', ECHO_Facilities_i$FacLat,')'),
+    dh_geofield = paste0('POINT (', ECHO_Facilities_i$FacLong, ' ', ECHO_Facilities_i$FacLat,')'),
     address1 = ECHO_Facilities_i$CWPStreet,
-    city = ECHO_Facilities_i$CWPCity,
-    dh_link_admin_location = permit$adminid,
+    city = as.character(ECHO_Facilities_i$CWPCity),
+    dh_link_admin_location = as.character(permit$adminid),
     stringsAsFactors = FALSE
   ) 
   
-  #facility <- getFeature(facility_inputs, basepath)
   facility <- postFeature(facility_inputs, basepath)
   facility <- getFeature(facility_inputs, token, basepath)
   return(facility)
