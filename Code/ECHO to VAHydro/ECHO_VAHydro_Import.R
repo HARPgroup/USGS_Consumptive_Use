@@ -55,7 +55,8 @@ library(rgeos) #over() used in R_functions.R for spatial containment function
 library(sqldf) #used for subsetting and filtering 
 library(anytime) #required for date formatting (may change later)
 
-localpath <-"C:/Users/maf95834/Documents/Github/"
+#localpath <-"C:/Users/maf95834/Documents/Github/"
+localpath <-"C:/Users/nrf46657/Desktop/VAHydro Development/GitHub/"
 HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
@@ -82,7 +83,7 @@ PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
 WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
 
 ECHO_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
-paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1]))
+print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
 
 coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
 ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
@@ -90,7 +91,7 @@ ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
 #ECHO_Facilities_original <- ECHO_Facilities 
 ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
 #think about adding a visual check like plotting on a map
-paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1]))
+print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
 
 ECHO_Facilities <- data.frame(ECHO_Facilities)
 #use sqldf for replacements
@@ -100,7 +101,7 @@ keep_permits <- "SELECT *
                 OR CWPPermitTypeDesc = 'General Permit Covered Facility'"
 ECHO_Facilities <- sqldf(keep_permits)
 
-paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1]))
+print(paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1])))
 
 # ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
 
@@ -120,17 +121,24 @@ agency_adminid <- as.character(agency_dataframe$adminid)
 #i <- 1
 ECHO_Facilities <- ECHO_Facilities[1:5,]
 for (i in 1:(length(ECHO_Facilities[,1]))){
-  print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
-  
   ECHO_Facilities_i <- ECHO_Facilities[i,]
-
+  
+  print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   permit <- permit_REST(ECHO_Facilities_i, agency_adminid)
   print(permit)
   
-  
-  print("---PROCESSING FACILITY")
+  print("PROCESSING FACILITY")
   facility <- facility_REST(ECHO_Facilities_i, permit, token)
   print(facility)
+  
+  print("PROCESSING FACILITY PROPERTIES")
+  #-Waterbody Name (GNIS)
+  #-Combined Sewer System Flag (CWPCsoFlag)
+  #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
+  #-Impairment Class or Category of the Waterbody (impair_cause)
+  #-Date of most recent inspection of the facility (last_inspect)
+  #-Unique ID for Waterbody (reachcode_rad)
+  #-Facility Design Flow in MGD (design_flow)
 }
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
@@ -597,35 +605,35 @@ ts_flagging(timeseries)
   
   
   
-  facilities$fstatus[i]<-'inactive'
-  if (ECHO_Facilities$CWPPermitStatusDesc[i]=='EFFECTIVE'){ #Check status of permit.
-    facilities$fstatus[i]<-'active'
-  }
-  if(!is.na(ECHO_Facilities$FacLat[i]) & !is.na(ECHO_Facilities$FacLong[i])){
-    facilities$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility.ID==ECHO_Facilities$Facility.ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility.ID==ECHO_Facilities$Facility.ID[i]],')')
-  } else {
-    lat<-VPDES_Outfalls$Latitude[VPDES_Outfalls$Facility.ID==VPDES_Outfalls$Facility.ID[i]]
-    long<-VPDES_Outfalls$Longitude[VPDES_Outfalls$Facility.ID==VPDES_Outfalls$Facility.ID[i]]
-    for (i in 1:length(lat)){
-      if(!is.na(lat[i]) & !is.na(long[i])){
-        facilities$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
-        break
-      } else {
-        facilities$dh_geofield[i]<-'NULL'
-      }
-    }
-  }
-}
-
-facilities$address1<-ECHO_Facilities$CWPStreet[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
-facilities$city<-ECHO_Facilities$CWPCity[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
-facilities$dh_link_admin_location<-ECHO_Facilities$Facility.ID[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
-
-assign("facilities",facilities,envir = .GlobalEnv)
-write.table(facilities,paste0(Outputpath,"/facilities.txt"),sep="\t",row.names = F)
-
-}
-facilities_compile(ECHO_Facilities)
+#   facilities$fstatus[i]<-'inactive'
+#   if (ECHO_Facilities$CWPPermitStatusDesc[i]=='EFFECTIVE'){ #Check status of permit.
+#     facilities$fstatus[i]<-'active'
+#   }
+#   if(!is.na(ECHO_Facilities$FacLat[i]) & !is.na(ECHO_Facilities$FacLong[i])){
+#     facilities$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility.ID==ECHO_Facilities$Facility.ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility.ID==ECHO_Facilities$Facility.ID[i]],')')
+#   } else {
+#     lat<-VPDES_Outfalls$Latitude[VPDES_Outfalls$Facility.ID==VPDES_Outfalls$Facility.ID[i]]
+#     long<-VPDES_Outfalls$Longitude[VPDES_Outfalls$Facility.ID==VPDES_Outfalls$Facility.ID[i]]
+#     for (i in 1:length(lat)){
+#       if(!is.na(lat[i]) & !is.na(long[i])){
+#         facilities$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
+#         break
+#       } else {
+#         facilities$dh_geofield[i]<-'NULL'
+#       }
+#     }
+#   }
+# }
+# 
+# facilities$address1<-ECHO_Facilities$CWPStreet[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
+# facilities$city<-ECHO_Facilities$CWPCity[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
+# facilities$dh_link_admin_location<-ECHO_Facilities$Facility.ID[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
+# 
+# assign("facilities",facilities,envir = .GlobalEnv)
+# write.table(facilities,paste0(Outputpath,"/facilities.txt"),sep="\t",row.names = F)
+# 
+# }
+# facilities_compile(ECHO_Facilities)
 
 ##################################################################################################################################
 ###########################################3 Release Point Generation#############################################################
