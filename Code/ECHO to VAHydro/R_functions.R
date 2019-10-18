@@ -300,71 +300,71 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
 ECHO_properties_REST <- function(ECHO_Facilities_i, token, basepath, prop){
 #last_inspect (Last date permit was inspected on-site)
   last_inspect_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'last_inspect',
     propname = 'last_inspect',
-    startdate = ECHO_Facilities_i$CWPDateLastInspection,
+    startdate = as.character(ECHO_Facilities_i$CWPDateLastInspection),
     stringsAsFactors = FALSE
   )
-  last_inspect_prop <- postProperty(last_inspect_input,base_url=basepath,prop)
+  last_inspect_prop <- postProperty(last_inspect_input,base_url=basepath)
   
 #css (Logical combined sewer system value)
   css_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'css',
     propname = 'css',
-    propcode = ECHO_Facilities_i$CWPCsoFlag,
+    propcode = as.character(ECHO_Facilities_i$CWPCsoFlag),
     stringsAsFactors = FALSE
   )
-  css_prop <- postProperty(css_input,base_url=basepath,prop)
+  css_prop <- postProperty(css_input,base_url=basepath)
   
 #cwp_cso_outfalls (number of upstream outfalls)
   cso_outfalls_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'cwp_cso_outfalls',
     propname = 'cwp_cso_outfalls',
-    propvalue = ECHO_Facilities_i$CWPCsoOutfalls,
+    propvalue = as.character(ECHO_Facilities_i$CWPCsoOutfalls),
     stringsAsFactors = FALSE
   )
-  cso_outfalls_prop <- postProperty(cso_outfalls_input,base_url=basepath,prop)
+  cso_outfalls_prop <- postProperty(cso_outfalls_input,base_url=basepath)
   
 #wb_gnis_name (Receiving waterbody USGS name)
   wb_gnis_name_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'wb_gnis_name',
     propname = 'wb_gnis_name',
-    propcode = ECHO_Facilities_i$RadGnisName,
+    propcode = as.character(ECHO_Facilities_i$RadGnisName),
     stringsAsFactors = FALSE
   )
-  wb_gnis_name_prop <- postProperty(wb_gnis_name_input,base_url=basepath,prop)
+  wb_gnis_name_prop <- postProperty(wb_gnis_name_input,base_url=basepath)
   
 #reachcode_rad (USGS reach code)
   reachcode_rad_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'reachcode_rad',
     propname = 'reachcode_rad',
-    propcode = ECHO_Facilities_i$RadReachcode,
+    propcode = as.character(ECHO_Facilities_i$RadReachcode),
     stringsAsFactors = FALSE
   )
-  reachcode_rad_prop <- postProperty(reachcode_rad_input,base_url=basepath,prop)
+  reachcode_rad_prop <- postProperty(reachcode_rad_input,base_url=basepath)
   
 #impair_cause (Stressors that are causing impairment)
   impair_cause_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'impair_cause',
     propname = 'impair_cause',
-    proptext = ECHO_Facilities_i$AttainsStateCauses,
+    proptext = as.character(ECHO_Facilities_i$AttainsStateCauses),
     stringsAsFactors = FALSE
   )
-  impair_cause_prop <- postProperty(impair_cause_input,base_url=basepath,prop)
+  impair_cause_prop <- postProperty(impair_cause_input,base_url=basepath)
   
 #design_flow (Design Flow)
   design_flow_input <- data.frame(
-    hydrocode = paste0("echo_",ECHO_Facilities_i$Facility_ID),
+    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
     varkey = 'design_flow',
     propname = 'design_flow',
-    propvalue = ECHO_Facilities_i$DesignFlow_mgd,
+    propvalue = as.character(ECHO_Facilities_i$DesignFlow_mgd),
     stringsAsFactors = FALSE
   )
-  design_flow_prop <- postProperty(design_flow_input,base_url=basepath,prop)
+  design_flow_prop <- postProperty(design_flow_input,base_url=basepath)
 }
