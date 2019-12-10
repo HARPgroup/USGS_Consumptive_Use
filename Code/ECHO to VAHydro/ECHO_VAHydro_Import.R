@@ -1179,7 +1179,7 @@ for (i in iteration:length(prop_inputs$featureid)){
 assign("impair.dataframe",property.dataframe,envir=.GlobalEnv)
 
 }
-impair_import(impair_cause,7253)
+impair_import(impair_cause,1)
 
 ############################################################################################ 
 #Date of most recent inspection of the facility (last_inspect)
@@ -1196,7 +1196,7 @@ prop_inputs <-data.frame(
   #propvalue = rep(NA,length(last_inspect$hydrocode)),
   #proptext = rep(NA,length(last_inspect$hydrocode)),
   #propcode = as.character(last_inspect$propcode),
-  startdate = as.character(last_inspect$startdate),
+  startdate = as.PosixCT(as.character(last_inspect$startdate),
   #enddate = rep(NA,length(last_inspect$hydrocode)),
   stringsAsFactors = F
 )
