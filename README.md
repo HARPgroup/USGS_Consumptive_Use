@@ -3,6 +3,10 @@
 ## Description
 This repository is intended to hold code, documentation, and tutorials for the USGS Consumptive Use Project run through Dr. Julie Shortridge and Dr. Durelle Scott of Virginia Tech as well as Robert Burgholzer and Joseph Kleiner of the Virginia Department of Environmental Quality.
 
+## Sponsorship and Disclaimer
+
+This material is based upon work supported by the U.S. Geological Survey under Cooperative Agreement No. G17AC00322. The views and conclusions contained in this document are those of the authors and should not be interpreted as representing the opinions or policies of the U.S. Geological Survey. Mention of trade names or commercial products does not constitute their endorsement by the U.S. Geological Survey.
+
 Assembled: 10/10/2017
 
 ## Objectives
