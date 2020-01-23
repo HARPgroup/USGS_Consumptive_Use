@@ -79,7 +79,8 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
  echoWaterGetMeta()
  ECHO_Facilities <- echoWaterGetFacilityInfo(xmin = '-84', ymin = '35', 
                                 xmax = '-75',  ymax = '41', 
-                                output = 'df')
+                                output = 'df',
+                                qcolumns="1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224")
 
  print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
  
@@ -91,8 +92,9 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
  #think about adding a visual check like plotting on a map
  print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
  
- 
+
 ECHO_Facilities <- data.frame(ECHO_Facilities)
+backup <- ECHO_Facilities
 #use sqldf for replacements
 keep_permits <- "SELECT *
                 FROM ECHO_Facilities
@@ -101,11 +103,6 @@ keep_permits <- "SELECT *
 ECHO_Facilities <- sqldf(keep_permits)
 
 print(paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1])))
-
-# ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
-
-# ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit" | ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
-
 
 #rename SourceID column to Facility_ID 
 colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID"
