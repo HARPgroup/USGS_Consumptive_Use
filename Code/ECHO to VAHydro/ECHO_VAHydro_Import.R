@@ -80,7 +80,7 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
  ECHO_Facilities <- echoWaterGetFacilityInfo(xmin = '-84', ymin = '35', 
                                 xmax = '-75',  ymax = '41', 
                                 output = 'df',
-                                qcolumns="1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224")
+                                qcolumns="1,2,3,4,5,9,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224")
 
  print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
  
@@ -127,8 +127,25 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   facility <- facility_REST(ECHO_Facilities_i, permit, token)
   print(facility)
   
-  print("PROCESSING FACILITY PROPERTIES")
-  facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
+  # print("PROCESSING FACILITY PROPERTIES")
+  # facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
+  
+  print("PROCESSING ECHO EFFLUENT DATA")
+  # #echor package has 2 functions for pulling effluent data echoGetEffluent() and downloadDMRs(). However, the url being used to download is not working causing these functions to fail. Manualing pulling from the rest_services url does work. 
+  # effluent_data <- echoGetEffluent(p_id = 'VA0089133',  parameter_code = '50050')
+  # 
+  # df <- tibble::tibble("permit" = c('VA0089133'))
+  # df <- downloadDMRs(df, permit)
+
+  startDate <- '01/01/2010'
+  endDate<-Sys.Date()
+  endDate<-format(as.Date(endDate), "%m/%d/%Y")
+  
+  DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
+#CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+  DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  
+  
   #-Waterbody Name (GNIS)
   #-Combined Sewer System Flag (CWPCsoFlag)
   #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
