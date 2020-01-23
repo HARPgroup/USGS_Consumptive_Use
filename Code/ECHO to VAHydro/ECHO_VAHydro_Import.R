@@ -54,6 +54,7 @@ library(magrittr) #forward-pipe operator used to read dplyr functions left to ri
 library(rgeos) #over() used in R_functions.R for spatial containment function 
 library(sqldf) #used for subsetting and filtering 
 library(anytime) #required for date formatting (may change later)
+library(echor) #used to pull ECHO data
 
 localpath <-"C:/Users/maf95834/Documents/Github/"
 #localpath <-"C:/Users/nrf46657/Desktop/VAHydro Development/GitHub/"
@@ -74,26 +75,26 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
 
 
 ####################################Inputs##########################################
-# Querying Facility data from ECHO database
-VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
-DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
-MD_Facilities <- ECHO_state_pull("MD", QID("MD")) # Maryland
-NC_Facilities <- ECHO_state_pull("NC", QID("NC")) # North Carolina
-PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
-WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
+ 
+ echoWaterGetMeta()
+ ECHO_Facilities <- echoWaterGetFacilityInfo(xmin = '-84', ymin = '35', 
+                                xmax = '-75',  ymax = '41', 
+                                output = 'df',
+                                qcolumns="1,2,3,4,5,9,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224")
 
-ECHO_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
-print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
-
-coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
-ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
-#------------------------------------------------------------
-#ECHO_Facilities_original <- ECHO_Facilities 
-ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
-#think about adding a visual check like plotting on a map
-print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
+ print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
+ 
+ coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
+ ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
+ #------------------------------------------------------------
+ #ECHO_Facilities_original <- ECHO_Facilities 
+ ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
+ #think about adding a visual check like plotting on a map
+ print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
+ 
 
 ECHO_Facilities <- data.frame(ECHO_Facilities)
+backup <- ECHO_Facilities
 #use sqldf for replacements
 keep_permits <- "SELECT *
                 FROM ECHO_Facilities
@@ -102,11 +103,6 @@ keep_permits <- "SELECT *
 ECHO_Facilities <- sqldf(keep_permits)
 
 print(paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1])))
-
-# ECHO_Facilities$CWPPermitTypeDesc<-ifelse(ECHO_Facilities$CWPPermitTypeDesc=="NPDES Individual Permit","National Pollutant Discharge Elimination System (NPDES) Permit",ECHO_Facilities$CWPPermitTypeDesc)
-
-# ECHO_Facilities<-subset(ECHO_Facilities,ECHO_Facilities$CWPPermitTypeDesc=="National Pollutant Discharge Elimination System (NPDES) Permit" | ECHO_Facilities$CWPPermitTypeDesc=="General Permit Covered Facility")
-
 
 #rename SourceID column to Facility_ID 
 colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID"
@@ -131,8 +127,25 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   facility <- facility_REST(ECHO_Facilities_i, permit, token)
   print(facility)
   
-  print("PROCESSING FACILITY PROPERTIES")
-  facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
+  # print("PROCESSING FACILITY PROPERTIES")
+  # facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
+  
+  print("PROCESSING ECHO EFFLUENT DATA")
+  # #echor package has 2 functions for pulling effluent data echoGetEffluent() and downloadDMRs(). However, the url being used to download is not working causing these functions to fail. Manualing pulling from the rest_services url does work. 
+  # effluent_data <- echoGetEffluent(p_id = 'VA0089133',  parameter_code = '50050')
+  # 
+  # df <- tibble::tibble("permit" = c('VA0089133'))
+  # df <- downloadDMRs(df, permit)
+
+  startDate <- '01/01/2010'
+  endDate<-Sys.Date()
+  endDate<-format(as.Date(endDate), "%m/%d/%Y")
+  
+  DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
+#CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+  DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  
+  
   #-Waterbody Name (GNIS)
   #-Combined Sewer System Flag (CWPCsoFlag)
   #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
