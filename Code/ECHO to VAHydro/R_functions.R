@@ -3,8 +3,8 @@
 
 
 #Use link below to see all available data columns from echo webservice
-#paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=",paste(1:500,collapse=","),"&passthrough=Y&qid=","QID")
-       
+#paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=",paste(1:305,collapse=","),"&passthrough=Y&qid=","QID")
+
 ECHO_state_pull<- function(state,QID){
   
   start_time <- Sys.time()
@@ -12,7 +12,7 @@ ECHO_state_pull<- function(state,QID){
   print(paste("Downloading ECHO data to ",localpath,"(Start time: ",start_time,")",sep=""))
   filename <- paste("echo_fac_",state,".csv",sep="")
   destfile <- paste(localpath,filename,sep="\\")  
-  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,60,61,63,64,65,66,67,68,84,91,95,97,204,205,206,207,209,210,223&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
+  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
   data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
   print(head(data.all))
   
@@ -93,7 +93,7 @@ if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
   permit_ftype <- "npdes_ip"
 }
 
-#CWPPermitStatusDesc = Pending is set as "unknown" for now but may want to create a new fstatus
+#CWPPermitStatusDesc = "Pending" and "Denied" set as "unknown" for now but may want to create a new fstatus
 permit_fstatus <- as.character(ECHO_Facilities_i$CWPPermitStatusDesc)
 if (length(grep('Effective',permit_fstatus))>0|
     length(grep('Admin Continued',permit_fstatus))>0){
@@ -102,16 +102,19 @@ if (length(grep('Effective',permit_fstatus))>0|
   permit_fstatus <-'revoked'
 } else if (length(grep('Not Needed', permit_fstatus))>0|
            length(grep('NA', permit_fstatus))>0|
+           length(grep('Denied', permit_fstatus))>0|
            length(grep('Pending', permit_fstatus))>0){
   permit_fstatus <-'unknown'
 } else if (length(grep('Expired', permit_fstatus))>0){
   permit_fstatus <-'expired'
 } 
 print(paste("permit fstatus: ",permit_fstatus))
-#prints list of all status type in column CWPPermitStatusDesc
-#is_it_there <- "select distinct CWPPermitStatusDesc
-#from ECHO_Facilities_original"
-#sqldf(is_it_there)
+
+# prints list of all status type in column CWPPermitStatusDesc
+# is_it_there <- "select distinct CWPPermitStatusDesc
+# from ECHO_Facilities_original"
+# sqldf(is_it_there)
+
 
 permit_inputs <- data.frame(
   bundle = 'permit',
@@ -140,6 +143,12 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   facility_ftype <-'unknown'
   #determining ftype based on facility_name
   #SIC CODE could be used to determine ftype, if null then use name matching
+  
+  # prints list of all SIC codes by major group in column CWPPSICCodes
+  # ECHO_Facilities_original$siccodes <- ECHO_Facilities_original$CWPSICCodes
+  # ECHO_Facilities_original$siccodes <- substr(ECHO_Facilities_original$siccodes, 1,2) 
+  # is_it_there <- distinct(ECHO_Facilities_original, siccodes)
+  
     if (length(grep('\\bWASTE WATER\\b',facility_name))>0|
         length(grep('\\bWWTP\\b',facility_name))>0|
         length(grep('\\bWWTF\\b',facility_name))>0|
@@ -297,74 +306,92 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   
   } #END OF FACILITY_REST FUNCTION
 
-ECHO_properties_REST <- function(ECHO_Facilities_i, token, basepath, prop){
-#last_inspect (Last date permit was inspected on-site)
-  last_inspect_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
-    varkey = 'last_inspect',
-    propname = 'last_inspect',
-    startdate = as.character(ECHO_Facilities_i$CWPDateLastInspection),
-    stringsAsFactors = FALSE
-  )
-  last_inspect_prop <- postProperty(last_inspect_input,base_url=basepath)
+ECHO_properties_REST <- function(ECHO_Facilities_i,facility, token, basepath, prop){
+  #facility_hydroid <- as.character(facility$hydroid)
   
+  
+#last_inspect (Last date permit was inspected on-site)
+  # last_inspect_input <- data.frame(
+  #   bundle = 'dh_properties',
+  #   entity_type = 'dh_feature',
+  #   featureid = facility_hydroid,
+  #   varkey = 'last_inspect',
+  #   propname = 'last_inspect',
+  #   startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPDateLastInspection)))),
+  #   stringsAsFactors = FALSE
+  # )
+  # last_inspect_prop <- postProperty(last_inspect_input,base_url=basepath)
+  # last_inspect_prop <- getProperty(last_inspect_input,base_url=basepath)
 #css (Logical combined sewer system value)
   css_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+    bundle = 'dh_properties',
+    entity_type = 'dh_feature',
+    #hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID))
+    featureid = as.character(facility$hydroid),
     varkey = 'css',
     propname = 'css',
     propcode = as.character(ECHO_Facilities_i$CWPCsoFlag),
     stringsAsFactors = FALSE
   )
   css_prop <- postProperty(css_input,base_url=basepath)
-  
+  css_prop <- getProperty(css_input,base_url=basepath)
 #cwp_cso_outfalls (number of upstream outfalls)
   cso_outfalls_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+    bundle = 'dh_properties',
+    entity_type = 'dh_feature',
+    featureid = facility_hydroid,
     varkey = 'cwp_cso_outfalls',
     propname = 'cwp_cso_outfalls',
     propvalue = as.character(ECHO_Facilities_i$CWPCsoOutfalls),
     stringsAsFactors = FALSE
   )
   cso_outfalls_prop <- postProperty(cso_outfalls_input,base_url=basepath)
-  
+  cso_outfalls_prop <- getProperty(cso_outfalls_input,base_url=basepath)
 #wb_gnis_name (Receiving waterbody USGS name)
   wb_gnis_name_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+    bundle = 'dh_properties',
+    entity_type = 'dh_feature',
+    featureid = facility_hydroid,
     varkey = 'wb_gnis_name',
     propname = 'wb_gnis_name',
     propcode = as.character(ECHO_Facilities_i$RadGnisName),
     stringsAsFactors = FALSE
   )
   wb_gnis_name_prop <- postProperty(wb_gnis_name_input,base_url=basepath)
-  
+  wb_gnis_name_prop <- getProperty(wb_gnis_name_input,base_url=basepath)
 #reachcode_rad (USGS reach code)
   reachcode_rad_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+    bundle = 'dh_properties',
+    entity_type = 'dh_feature',
+    featureid = facility_hydroid,
     varkey = 'reachcode_rad',
     propname = 'reachcode_rad',
     propcode = as.character(ECHO_Facilities_i$RadReachcode),
     stringsAsFactors = FALSE
   )
   reachcode_rad_prop <- postProperty(reachcode_rad_input,base_url=basepath)
-  
+  reachcode_rad_prop <- getProperty(reachcode_rad_input,base_url=basepath)
 #impair_cause (Stressors that are causing impairment)
   impair_cause_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+    bundle = 'dh_properties',
+    entity_type = 'dh_feature',
+    featureid = facility_hydroid,
     varkey = 'impair_cause',
     propname = 'impair_cause',
     proptext = as.character(ECHO_Facilities_i$AttainsStateCauses),
     stringsAsFactors = FALSE
   )
   impair_cause_prop <- postProperty(impair_cause_input,base_url=basepath)
-  
-#design_flow (Design Flow)
-  design_flow_input <- data.frame(
-    hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
-    varkey = 'design_flow',
-    propname = 'design_flow',
-    propvalue = as.character(ECHO_Facilities_i$DesignFlow_mgd),
-    stringsAsFactors = FALSE
-  )
-  design_flow_prop <- postProperty(design_flow_input,base_url=basepath)
+  impair_cause_prop <- getProperty(impair_cause_input,base_url=basepath)
+# #design_flow (Design Flow)
+#   design_flow_input <- data.frame(
+#   bundle = 'dh_properties',
+#   entity_type = 'dh_feature',
+#   hydrocode = as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID)),
+#   varkey = 'design_flow',
+#   propname = 'design_flow',
+#   propvalue = as.numeric(ECHO_Facilities_i$DesignFlow_mgd),
+#   stringsAsFactors = FALSE
+#   )
+#   design_flow_prop <- postProperty(design_flow_input,base_url=basepath)
 }

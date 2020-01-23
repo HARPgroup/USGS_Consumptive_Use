@@ -55,8 +55,8 @@ library(rgeos) #over() used in R_functions.R for spatial containment function
 library(sqldf) #used for subsetting and filtering 
 library(anytime) #required for date formatting (may change later)
 
-#localpath <-"C:/Users/maf95834/Documents/Github/"
-localpath <-"C:/Users/nrf46657/Desktop/VAHydro Development/GitHub/"
+localpath <-"C:/Users/maf95834/Documents/Github/"
+#localpath <-"C:/Users/nrf46657/Desktop/VAHydro Development/GitHub/"
 HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
@@ -118,7 +118,7 @@ agency_dataframe <- getAdminregFeature(agency_inputs, basepath, adminreg_feature
 agency_adminid <- as.character(agency_dataframe$adminid)
 
 
-#i <- 1
+#i <- 5
 ECHO_Facilities <- ECHO_Facilities[1:5,]
 for (i in 1:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
@@ -132,6 +132,7 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   print(facility)
   
   print("PROCESSING FACILITY PROPERTIES")
+  facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
   #-Waterbody Name (GNIS)
   #-Combined Sewer System Flag (CWPCsoFlag)
   #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
