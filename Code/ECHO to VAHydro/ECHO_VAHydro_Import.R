@@ -54,6 +54,7 @@ library(magrittr) #forward-pipe operator used to read dplyr functions left to ri
 library(rgeos) #over() used in R_functions.R for spatial containment function 
 library(sqldf) #used for subsetting and filtering 
 library(anytime) #required for date formatting (may change later)
+library(echor) #used to pull ECHO data
 
 localpath <-"C:/Users/maf95834/Documents/Github/"
 #localpath <-"C:/Users/nrf46657/Desktop/VAHydro Development/GitHub/"
@@ -74,25 +75,23 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
 
 
 ####################################Inputs##########################################
-# Querying Facility data from ECHO database
-VA_Facilities <- ECHO_state_pull("VA", QID("VA")) # Virginia
-DC_Facilities <- ECHO_state_pull("DC", QID("DC")) # District of Columbia
-MD_Facilities <- ECHO_state_pull("MD", QID("MD")) # Maryland
-NC_Facilities <- ECHO_state_pull("NC", QID("NC")) # North Carolina
-PA_Facilities <- ECHO_state_pull("PA", QID("PA")) # Pennsylvania
-WV_Facilities <- ECHO_state_pull("WV", QID("WV")) # West Virginia
+ 
+ echoWaterGetMeta()
+ ECHO_Facilities <- echoWaterGetFacilityInfo(xmin = '-84', ymin = '35', 
+                                xmax = '-75',  ymax = '41', 
+                                output = 'df')
 
-ECHO_Facilities <- rbind(VA_Facilities,DC_Facilities,MD_Facilities,NC_Facilities,PA_Facilities,WV_Facilities)
-print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
-
-coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
-ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
-#------------------------------------------------------------
-#ECHO_Facilities_original <- ECHO_Facilities 
-ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
-#think about adding a visual check like plotting on a map
-print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
-
+ print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
+ 
+ coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
+ ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
+ #------------------------------------------------------------
+ #ECHO_Facilities_original <- ECHO_Facilities 
+ ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
+ #think about adding a visual check like plotting on a map
+ print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
+ 
+ 
 ECHO_Facilities <- data.frame(ECHO_Facilities)
 #use sqldf for replacements
 keep_permits <- "SELECT *
