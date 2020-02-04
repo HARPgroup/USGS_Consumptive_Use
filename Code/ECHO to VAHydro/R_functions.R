@@ -137,6 +137,22 @@ return(permit)
 }
 
 
+#fipscode <- 51109
+fips_REST <- function(fipscode,token){
+  print(paste("Retrieving hydroid for fips code:", fipscode), sep=" ")
+  
+  fips_inputs <- data.frame(
+    bundle = 'usafips',
+    hydrocode = fipscode,
+    stringsAsFactors = FALSE
+  ) 
+  
+  fips_hydroid <- getFeature(fips_inputs, token, basepath)
+  fips_hydroid <- as.character(fips_hydroid$hydroid)
+  
+  return(fips_hydroid)
+}
+
 facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   facility_name <- as.character(ECHO_Facilities_i$CWPName)
   print(paste("Processing FTYPE for Facility:", facility_name), sep=" ")
@@ -297,6 +313,7 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
     address1 = ECHO_Facilities_i$CWPStreet,
     city = as.character(ECHO_Facilities_i$CWPCity),
     dh_link_admin_location = as.character(permit$adminid),
+    dh_link_admin_fa_usafips = fips_REST(as.character(ECHO_Facilities_i$FacFIPSCode),token),
     stringsAsFactors = FALSE
   ) 
   

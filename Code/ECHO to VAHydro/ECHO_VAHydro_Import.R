@@ -75,13 +75,20 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
 
 
 ####################################Inputs##########################################
- 
+ #shows a list of all fields and descriptions
  echoWaterGetMeta()
+ #using bounding box extent of VA to restrict which facilities are pulled
+ start_time <- Sys.time()
+ print(paste("Using echoWaterGetFacilityInfo() | (Start time: ",start_time,")",sep=""))
  ECHO_Facilities <- echoWaterGetFacilityInfo(xmin = '-84', ymin = '35', 
                                 xmax = '-75',  ymax = '41', 
                                 output = 'df',
                                 qcolumns="1,2,3,4,5,9,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224")
 
+ end_time <- Sys.time()
+ print(paste("Download Process Complete: ",end_time ,sep=""))
+ print(paste("Time elapsed: ",end_time-start_time,sep=""))
+ 
  print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
  
  coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
@@ -94,7 +101,7 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
  
 
 ECHO_Facilities <- data.frame(ECHO_Facilities)
-backup <- ECHO_Facilities
+
 #use sqldf for replacements
 keep_permits <- "SELECT *
                 FROM ECHO_Facilities
@@ -106,7 +113,7 @@ print(paste("Number of Facilities After Permit Type Description Subset: ",length
 
 #rename SourceID column to Facility_ID 
 colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID"
-
+backup <- ECHO_Facilities
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
 agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
@@ -114,7 +121,7 @@ agency_dataframe <- getAdminregFeature(agency_inputs, basepath, adminreg_feature
 agency_adminid <- as.character(agency_dataframe$adminid)
 
 
-#i <- 5
+#i <- 1048
 ECHO_Facilities <- ECHO_Facilities[1:5,]
 for (i in 1:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
@@ -126,6 +133,12 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   print("PROCESSING FACILITY")
   facility <- facility_REST(ECHO_Facilities_i, permit, token)
   print(facility)
+  
+  inputs = list(
+    hydroid = as.character(facility$hydroid)
+  );
+  base_url <- basepath
+ test <- getFeature(pbody, token, basepath)
   
   # print("PROCESSING FACILITY PROPERTIES")
   # facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
