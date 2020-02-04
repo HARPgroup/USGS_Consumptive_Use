@@ -163,24 +163,7 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
 #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
   
-  outfall_features <- sqldf("SELECT  
-                            ('echo_' || npdes_id || rightstr('000' || perm_feature_nmbr, 3)) as hydrocode,
-                            ('FROM ' || npdes_id) as name,
-                            'transfer' as bundle,
-                            'outfall' as ftype,
-                            'active' as fstatus
-                            FROM DMR_data
-                            GROUP BY perm_feature_nmbr")
-  outfall_features$dh_link_facility_mps <- as.character(facility$hydroid)
-  outfall_features$geom <- as.character(facility$geom)
-  
-  #currently, fstatus = 'active' for ALL outfalls
-  #currently, outfall location defaults to facility location
-  
-    outfall <- outfall_REST(outfall_features, facility, token)
-  
-
-
+    outfall <- outfall_features_REST(DMR_data, facility, token, basepath)
   
 }
 
