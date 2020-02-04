@@ -120,6 +120,9 @@ agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admin
 agency_dataframe <- getAdminregFeature(agency_inputs, basepath, adminreg_feature)
 agency_adminid <- as.character(agency_dataframe$adminid)
 
+startDate <- '01/01/2010'
+endDate<-Sys.Date()
+endDate<-format(as.Date(endDate), "%m/%d/%Y")
 
 #i <- 1048
 #i <- 26951
@@ -148,17 +151,13 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   #-Facility Design Flow in MGD (design_flow)
   
   
-  print("PROCESSING ECHO EFFLUENT DATA")
+  print("PROCESSING OUTFALLS")
   # #echor package has 2 functions for pulling effluent data echoGetEffluent() and downloadDMRs(). However, the url being used to download is not working causing these functions to fail. Manualing pulling from the rest_services url does work. 
   # effluent_data <- echoGetEffluent(p_id = 'VA0089133',  parameter_code = '50050')
   # 
   # df <- tibble::tibble("permit" = c('VA0089133'))
   # df <- downloadDMRs(df, permit)
-
-  startDate <- '01/01/2010'
-  endDate<-Sys.Date()
-  endDate<-format(as.Date(endDate), "%m/%d/%Y")
-  
+  print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
 #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
