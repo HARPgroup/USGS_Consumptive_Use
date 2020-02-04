@@ -122,6 +122,7 @@ agency_adminid <- as.character(agency_dataframe$adminid)
 
 
 #i <- 1048
+#i <- 26951
 ECHO_Facilities <- ECHO_Facilities[1:5,]
 for (i in 1:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
@@ -134,14 +135,18 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   facility <- facility_REST(ECHO_Facilities_i, permit, token)
   print(facility)
   
-  inputs = list(
-    hydroid = as.character(facility$hydroid)
-  );
-  base_url <- basepath
- test <- getFeature(pbody, token, basepath)
   
   # print("PROCESSING FACILITY PROPERTIES")
   # facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
+  
+  #-Waterbody Name (GNIS)
+  #-Combined Sewer System Flag (CWPCsoFlag)
+  #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
+  #-Impairment Class or Category of the Waterbody (impair_cause)
+  #-Date of most recent inspection of the facility (last_inspect)
+  #-Unique ID for Waterbody (reachcode_rad)
+  #-Facility Design Flow in MGD (design_flow)
+  
   
   print("PROCESSING ECHO EFFLUENT DATA")
   # #echor package has 2 functions for pulling effluent data echoGetEffluent() and downloadDMRs(). However, the url being used to download is not working causing these functions to fail. Manualing pulling from the rest_services url does work. 
@@ -158,14 +163,25 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
 #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
   
+  outfall_features <- sqldf("SELECT  
+                            ('echo_' || npdes_id || rightstr('000' || perm_feature_nmbr, 3)) as hydrocode,
+                            ('FROM ' || npdes_id) as name,
+                            'transfer' as bundle,
+                            'outfall' as ftype,
+                            'active' as fstatus
+                            FROM DMR_data
+                            GROUP BY perm_feature_nmbr")
+  outfall_features$dh_link_facility_mps <- as.character(facility$hydroid)
+  outfall_features$geom <- as.character(facility$geom)
   
-  #-Waterbody Name (GNIS)
-  #-Combined Sewer System Flag (CWPCsoFlag)
-  #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
-  #-Impairment Class or Category of the Waterbody (impair_cause)
-  #-Date of most recent inspection of the facility (last_inspect)
-  #-Unique ID for Waterbody (reachcode_rad)
-  #-Facility Design Flow in MGD (design_flow)
+  #currently, fstatus = 'active' for ALL outfalls
+  #currently, outfall location defaults to facility location
+  
+    outfall <- outfall_REST(outfall_features, facility, token)
+  
+
+
+  
 }
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
@@ -419,248 +435,6 @@ ts_flagging<- function(timeseries){
 }
 ts_flagging(timeseries)
 
-##################################################################################################################################
-#############################################1: Import Permits####################################################################
-#Purpose: Extract all NPDES Permits in VA to import into VAHydro. This includes active and inactive. 
-
-#dH Adminreg Feature Mapping
-#bundle, admincode, description, name, ftype, fstatus, startdate, enddate, permit_id, dh_link_admin_reg_issuer
-
-#Under the CWA, all facilities discharging pollutant from a point source must have a NPDES Permit
-#Status is considered Effective, Admin Continued, Expired, Not Needed, Pending, Retured, or Terminated
-
-#important to note that Facility.ID in matrix a is equal to admincode. It becomes hydrocode when word 'echo_' is added before
-#permit ID not to be confused with outfallID which is unique for each outfall
-
-# adminreg_compile<- function(ECHO_Facilities){
-# adminreg<-data.frame(bundle='permit', admincode=ECHO_Facilities$Facility.ID, description=ECHO_Facilities$CWPPermitTypeDesc, name=ECHO_Facilities$CWPName,stringsAsFactors = F)
-# adminreg<-subset(adminreg, subset=adminreg$description=="National Pollutant Discharge Elimination System (NPDES) Permit"|
-#                    adminreg$description=="General Permit Covered Facility")
-# adminreg$ftype<-ifelse(adminreg$description=="General Permit Covered Facility","npdes_gp","npdes_ip")
-# 
-# adminreg$fstatus<-"unknown"
-# ECHO_Facilities$CWPPermitStatusDesc<-toupper(ECHO_Facilities$CWPPermitStatusDesc)
-# for (i in 1:length(adminreg$admincode)){
-#   if (length(grep('EFFECTIVE',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-#       length(grep('COMPLIANCE TRACKING OFF',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-#       length(grep('ADMIN CONTINUED',ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-#       length(grep('EFFFECTIVE; COMPLIANCE TRACKING PARTIALLY OFF',ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-#     adminreg$fstatus[i]<-'active'
-#   }
-#   else if (length(grep('TERMINATED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-#            length(grep('TERMINATED; COMPLIANCE TRACKING OFF', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-#     adminreg$fstatus[i]<-'revoked'
-#   }
-#   else if (length(grep('NOT NEEDED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0|
-#            length(grep('NA', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-#     adminreg$fstatus[i]<-'unknown'
-#   }
-#   else if (length(grep('EXPIRED', ECHO_Facilities$CWPPermitStatusDesc[i]))>0){
-#     adminreg$fstatus[i]<-'expired'
-#   }
-# }
-# 
-# adminreg$startdate<-ECHO_Facilities$CWPEffectiveDate[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
-# 
-# #end date is permit expiration date rather than limit_end_date
-# adminreg$enddate<-ECHO_Facilities$CWPExpirationDate[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
-# adminreg$permit_id<-ECHO_Facilities$Facility.ID[match(adminreg$admincode,ECHO_Facilities$Facility.ID)]
-# adminreg$dh_link_admin_reg_issuer<-'epa'
-# adminreg$startdate<-as.Date(adminreg$startdate,format="%m/%d/%Y")
-# adminreg$enddate<-as.Date(adminreg$enddate,format="%m/%d/%Y")
-# 
-# 
-# assign("adminreg",adminreg,envir = .GlobalEnv)
-# write.table(adminreg,paste0(Outputpath,"/adminreg.txt"),sep="\t",row.names = F)
-# 
-# }
-# adminreg_compile(ECHO_Facilities)
-##################################################################################################################################
-###################################################2 Import Facilities############################################################
-#Purpose: Extract all discharging facilities found in ECHO 
-
-#Facility dH Feature Mapping
-
-#bundle, name, ftype, hydrocode, fstatus, wkt_geom, address1, city, dh_link_admin_location
-
-#This section generates the facility import in VA Hydro. There is a long series of "if" checks
-#that format facility names and search them for any buzz words that might help group them into 
-#a VA Hydro ftype. For instance, "Surry Power Station" contains the word "Power" and is likely a 
-#power plant of some kind
-# 
-# facilities_compile<- function(ECHO_Facilities){
-# facilities<-data.frame(bundle='facility',name=ECHO_Facilities$CWPName,stringsAsFactors = F)
-# facilities$ftype<-'unknown'
-# facilities$hydrocode<-paste0("echo_",ECHO_Facilities$Facility.ID)
-# for (i in 1:length(facilities$hydrocode)){
-#   if (length(grep('\\bWASTE WATER\\b',facilities$name[i]))>0|
-#       length(grep('\\bWWTP\\b',facilities$name[i]))>0|
-#       length(grep('\\bWWTF\\b',facilities$name[i]))>0|
-#       length(grep('\\bWASTEWATER\\b',facilities$name[i]))>0|
-#       length(grep('\\bWASTEWATER Facility\\b',facilities$name[i]))>0|
-#       length(grep('\\bWT PLANT\\b',facilities$name[i]))>0|
-#       length(grep('\\bPOLLUTION CONTROL\\b',facilities$name[i]))>0|
-#       length(grep('\\bPOLLUTION CONTR\\b',facilities$name[i]))>0){
-#     facilities$ftype[i]<-'wwtp'
-#   } else if (length(grep('COMBINED SEW SYSTEM',facilities$CWPName[i]))|
-#              length(grep('\\bMUNICIPAL\\b',facilities$name[i]))>0|
-#              length(grep('\\bSERVICE AREA\\b',facilities$name[i]))>0|
-#              length(grep('\\bSERV AREA\\b',facilities$name[i]))>0|
-#              length(grep('\\bREGIONAL WATER SYSTEM\\b',facilities$name[i]))>0|
-#              length(grep('\\bWWTREAT PLANT\\b',facilities$name[i]))>0|
-#              length(grep('\\bTRICKLING FILTER\\b',facilities$name[i]))>0|
-#              length(grep('\\bFILTRATION PLANT\\b',facilities$name[i]))>0|
-#              length(grep('\\bCENTRAL SYSTEM\\b',facilities$name[i]))>0|
-#              length(grep("\\bMS4\\b",facilities$name[i]))>0| #Municipal Separate Strom Sewer System
-#              length(grep("\\bTRAILER\\b",facilities$name[i]))>0|
-#              length(grep("\\bMOBILE HOME\\b",facilities$name[i]))>0|
-#              length(grep("\\bTRACT\\b",facilities$name[i]))>0|
-#              length(grep("\\bCOMMUNITY\\b",facilities$name[i]))>0|
-#              length(grep("\\bHOMES\\b",facilities$name[i]))>0|
-#              length(grep("\\bAPARTMENTS\\b",facilities$name[i]))>0|
-#              length(grep("\\bSUBDIVISION\\b",facilities$name[i]))>0|
-#              length(grep('\\bPARK WATER SYSTEM\\b',facilities$name[i]))>0|
-#              length(grep('\\bSTP\\b',facilities$name[i]))>0|
-#              length(grep('COMBINED SEWER SYSTEM',facilities$CWPName[i]))>0){
-#     facilities$ftype[i]<-'public water supply'
-#   } else if (length(grep('\\bPOWER\\b',facilities$name[i]))>0|
-#              length(grep('\\bPOWER STATION\\b',facilities$name[i]))>0|
-#              length(grep('\\bELECTRIC\\b',facilities$CWPName[i]))>0){
-#     facilities$ftype[i]<-'fossilpower'
-#     if(length(grep("\\bNUCLEAR\\b",facilities$CWPName[i]>0))){
-#       facilities$ftype[i]<-"nuclearpower"
-#     } else if(length(grep("\\bHYDRO\\b",facilities$CWPName[i]>0))){
-#       facilities$ftype[i]<-"hydropower"
-#     }
-#   } else if(length(grep('\\bNUCLEAR\\b',facilities$CWPName[i]))>0){
-#     facilities$ftype[i]<-'nuclearpower' 
-#   }else if (length(grep("\\bMINE\\b",facilities$CWPName[i]))>0|
-#             length(grep('\\bQUARRY\\b',facilities$name[i]))>0|
-#             length(grep("\\bMINING\\b",facilities$CWPName[i]))>0){
-#     facilities$ftype[i]<-'mining'
-#   } else if(length(grep('\\bFARM\\b',facilities$name[i]))>0|
-#             length(grep('\\bORNAMENTALS\\b',facilities$name[i]))>0|
-#             length(grep('\\bIRRIGATION\\b',facilities$name[i]))>0|
-#             length(grep('\\bPRODUCE\\b',facilities$name[i]))>0|
-#             length(grep('\\bLAWN\\b',facilities$name[i]))>0|
-#             length(grep('\\bCENTER PIVOT\\b',facilities$name[i]))>0|
-#             length(grep('\\bHOG\\b',facilities$name[i]))>0|
-#             length(grep('\\bDAIRY\\b',facilities$name[i]))>0|
-#             length(grep('\\bORCHARD\\b',facilities$name[i]))>0|
-#             length(grep('\\bNURSERY\\b',facilities$name[i]))>0|
-#             length(grep('\\bNURSERIES\\b',facilities$name[i]))>0|
-#             length(grep('\\bVINEYARD\\b',facilities$name[i]))>0|
-#             length(grep("\\bFISHERIES\\b",facilities$name[i]))>0|
-#             length(grep("\\bFISH\\b",facilities$name[i]))>0|
-#             length(grep("\\bHATCHERY\\b",facilities$name[i]))>0|
-#             length(grep("\\bGREENHOUSE\\b",facilities$name[i]))>0){
-#     facilities$ftype[i]<-"agriculture"
-#   }else if(length(grep('\\bAIRPORT\\b',facilities$name[i]))>0|
-#            length(grep("\\bGOLF COURSE\\b",facilities$name[i]))>0|
-#            length(grep("\\bCOUNTRY CLUB\\b",facilities$name[i]))>0|
-#            length(grep("\\bCOUNTRY CLB\\b",facilities$name[i]))>0|
-#            length(grep("\\bCLUB\\b",facilities$name[i]))>0|
-#            length(grep("\\bGOLF\\b",facilities$name[i]))>0|
-#            length(grep("\\bCOURSE\\b",facilities$name[i]))>0|
-#            length(grep("\\bCHURCH\\b",facilities$name[i]))>0|
-#            length(grep("\\bCOMPLEX\\b",facilities$name[i]))>0|
-#            length(grep("\\bSCHOOL\\b",facilities$name[i]))>0|
-#            length(grep("\\bSCHOOLS\\b",facilities$name[i]))>0|
-#            length(grep("\\bRECREATION\\b",facilities$name[i]))>0|
-#            length(grep("\\bLEARNING CENTER\\b",facilities$name[i]))>0|
-#            length(grep("\\bELEMENTARY\\b",facilities$name[i]))>0|
-#            length(grep("\\bINSTITUTE\\b",facilities$name[i]))>0|
-#            length(grep("\\bCOURTHOUSE\\b",facilities$name[i]))>0|
-#            length(grep("\\bNAVAL\\b",facilities$name[i]))>0|
-#            length(grep("\\bSPACE FLIGHT CENTER\\b",facilities$name[i]))>0|
-#            length(grep("\\bEDUCATIONAL\\b",facilities$name[i]))>0|
-#            length(grep("\\bCEMETERY\\b",facilities$name[i]))>0|
-#            length(grep("\\bREST AREA\\b",facilities$name[i]))>0|
-#            length(grep("\\bRENTALS\\b",facilities$name[i]))>0|
-#            length(grep("\\bINN\\b",facilities$name[i]))>0|
-#            length(grep("\\bMUSEUM\\b",facilities$name[i]))>0|
-#            length(grep("\\bBUILDING\\b",facilities$name[i]))>0|
-#            length(grep("\\bUNIVERSITY\\b",facilities$name[i]))>0|
-#            length(grep("\\bHOSPITAL\\b",facilities$name[i]))>0|
-#            length(grep("\\bRESTAURANT\\b",facilities$name[i]))>0|
-#            length(grep("\\bCORRECTION CENTER\\b",facilities$name[i]))>0|
-#            length(grep("\\bTRAINING CENTER\\b",facilities$name[i]))>0|
-#            length(grep("\\bDETENTION CENTER\\b",facilities$name[i]))>0|
-#            length(grep("\\bCORRECTIONAL\\b",facilities$name[i]))>0|
-#            length(grep("\\bREHABILITATION\\b",facilities$name[i]))>0|
-#            length(grep("\\bCAMPGROUND\\b",facilities$name[i]))>0|
-#            length(grep("\\bCORRECTION UNIT\\b",facilities$name[i]))>0|
-#            length(grep("\\bTRAVEL CENTER\\b",facilities$name[i]))>0|
-#            length(grep("\\bSTATE PARK\\b",facilities$name[i]))>0|
-#            length(grep("\\bDEPARTMENT OF LABOR\\b",facilities$name[i]))>0|
-#            length(grep("\\bRESORT\\b",facilities$name[i]))>0|
-#            length(grep("\\bYMCA\\b",facilities$name[i]))>0|
-#            length(grep("\\bCOOPERATIVE\\b",facilities$name[i]))>0|
-#            length(grep("\\bBUSCH GARDENS\\b",facilities$name[i]))>0|
-#            length(grep("\\bRETREAT\\b",facilities$name[i]))>0|
-#            length(grep("\\bCAR WASH\\b",facilities$name[i]))>0){
-#     facilities$ftype[i]<-'commercial'
-#   } else if(length(grep('\\bPAPER\\b',facilities$name[i]))>0|
-#             length(grep('\\bCONCRETE\\b',facilities$name[i]))>0|
-#             length(grep('\\bSAND AND GRAVEL\\b',facilities$name[i]))>0|
-#             length(grep('\\bAMMUNITION\\b',facilities$name[i]))>0|
-#             length(grep('\\bFACILITY\\b',facilities$name[i]))>0|
-#             length(grep('\\bTERMINALS\\b',facilities$name[i]))>0|
-#             length(grep('\\bLUMBER\\b',facilities$name[i]))>0|
-#             length(grep('\\bCONCENTRATOR\\b',facilities$name[i]))>0|
-#             length(grep('\\bCONSTRUCTION\\b',facilities$name[i]))>0|
-#             length(grep('\\bPLT\\b',facilities$name[i]))>0|
-#             length(grep('\\bMOTORS\\b',facilities$name[i]))>0|
-#             length(grep('\\bOVENS\\b',facilities$name[i]))>0|
-#             length(grep('\\bPRODUCTS\\b',facilities$name[i]))>0|
-#             length(grep('\\bTIMBER\\b',facilities$name[i]))>0|
-#             length(grep('\\bCHEMICAL\\b',facilities$name[i]))>0|
-#             length(grep('\\bINDUSTRIES\\b',facilities$name[i]))>0|
-#             length(grep('\\bINDUSTRIAL\\b',facilities$name[i]))>0|
-#             length(grep('\\bINDUSTRIAL PARK\\b',facilities$name[i]))>0|
-#             length(grep('\\bDEVELOPMENT\\b',facilities$name[i]))>0|
-#             length(grep('\\bWAREHOUSE\\b',facilities$name[i]))>0|
-#             length(grep("\\bLANDFILL\\b",facilities$name[i]))>0|
-#             length(grep('\\bBREWERY\\b',facilities$name[i]))>0|
-#             length(grep('\\bPURINA\\b',facilities$name[i]))>0){
-#     facilities$ftype[i]<-'industrial'
-#   }  else if(length(grep('\\bPLANT\\b',facilities$name[i]))>0|
-#              length(grep('\\bMANUFACTURING\\b',facilities$name[i]))>0){ 
-#     facilities$ftype[i]<-'manufacturing'
-#   }
-#   
-  
-  
-  
-#   facilities$fstatus[i]<-'inactive'
-#   if (ECHO_Facilities$CWPPermitStatusDesc[i]=='EFFECTIVE'){ #Check status of permit.
-#     facilities$fstatus[i]<-'active'
-#   }
-#   if(!is.na(ECHO_Facilities$FacLat[i]) & !is.na(ECHO_Facilities$FacLong[i])){
-#     facilities$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility.ID==ECHO_Facilities$Facility.ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility.ID==ECHO_Facilities$Facility.ID[i]],')')
-#   } else {
-#     lat<-VPDES_Outfalls$Latitude[VPDES_Outfalls$Facility.ID==VPDES_Outfalls$Facility.ID[i]]
-#     long<-VPDES_Outfalls$Longitude[VPDES_Outfalls$Facility.ID==VPDES_Outfalls$Facility.ID[i]]
-#     for (i in 1:length(lat)){
-#       if(!is.na(lat[i]) & !is.na(long[i])){
-#         facilities$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
-#         break
-#       } else {
-#         facilities$dh_geofield[i]<-'NULL'
-#       }
-#     }
-#   }
-# }
-# 
-# facilities$address1<-ECHO_Facilities$CWPStreet[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
-# facilities$city<-ECHO_Facilities$CWPCity[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
-# facilities$dh_link_admin_location<-ECHO_Facilities$Facility.ID[match(substring(facilities$hydrocode,6),ECHO_Facilities$Facility.ID)]
-# 
-# assign("facilities",facilities,envir = .GlobalEnv)
-# write.table(facilities,paste0(Outputpath,"/facilities.txt"),sep="\t",row.names = F)
-# 
-# }
-# facilities_compile(ECHO_Facilities)
 
 ##################################################################################################################################
 ###########################################3 Release Point Generation#############################################################
