@@ -137,6 +137,27 @@ return(permit)
 }
 
 
+#fipscode <- 24033
+fips_REST <- function(fipscode,token){
+  print(paste("Retrieving hydroid for fips code:", fipscode), sep=" ")
+  
+  fips_inputs <- data.frame(
+    bundle = 'usafips',
+    hydrocode = fipscode,
+    stringsAsFactors = FALSE
+  ) 
+  
+  fips_hydroid <- getFeature(fips_inputs, token, basepath)
+  
+if(fips_hydroid != FALSE){
+  fips_hydroid <- as.character(fips_hydroid$hydroid)
+} else {
+  fips_hydroid <- ''
+}
+  
+  return(fips_hydroid)
+}
+
 facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   facility_name <- as.character(ECHO_Facilities_i$CWPName)
   print(paste("Processing FTYPE for Facility:", facility_name), sep=" ")
@@ -287,6 +308,8 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   print(paste("FTYPE = ", facility_ftype, sep=""))
   
   
+  fips <- fips_REST(as.character(ECHO_Facilities_i$FacFIPSCode),token)
+  
   facility_inputs <- data.frame(
     bundle = 'facility',
     name = facility_name,
@@ -297,6 +320,7 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
     address1 = ECHO_Facilities_i$CWPStreet,
     city = as.character(ECHO_Facilities_i$CWPCity),
     dh_link_admin_location = as.character(permit$adminid),
+    dh_link_admin_fa_usafips = fips,
     stringsAsFactors = FALSE
   ) 
   
@@ -306,7 +330,7 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
   
   } #END OF FACILITY_REST FUNCTION
 
-ECHO_properties_REST <- function(ECHO_Facilities_i,facility, token, basepath, prop){
+ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop){
   #facility_hydroid <- as.character(facility$hydroid)
   
   
@@ -394,4 +418,44 @@ ECHO_properties_REST <- function(ECHO_Facilities_i,facility, token, basepath, pr
 #   stringsAsFactors = FALSE
 #   )
 #   design_flow_prop <- postProperty(design_flow_input,base_url=basepath)
-}
+} #END OF ECHO_PROPERTIES_REST FUNCTION
+
+
+outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
+  
+  outfall_inputs <- sqldf("SELECT  
+                            ('echo_' || npdes_id || rightstr('000' || perm_feature_nmbr, 3)) as hydrocode,
+                            ('FROM ' || npdes_id) as name,
+                            'transfer' as bundle,
+                            'outfall' as ftype,
+                            'active' as fstatus
+                            FROM DMR_data
+                            GROUP BY perm_feature_nmbr")
+  outfall_inputs$dh_link_facility_mps <- as.character(facility$hydroid)
+  outfall_inputs$dh_geofield <- as.character(facility$geom)
+  
+  outfall <- data.frame(
+    hydroid = character(),
+    bundle = character(),
+    ftype = character(),
+    hydrocode = character(),
+    name = character(),
+    fstatus = character(),
+    dh_link_facility_mps =character(),
+    dh_geofield = character(),
+    stringsAsFactors = FALSE
+              ) 
+  
+  #z <- 1
+  for (z in 1:(length(outfall_inputs[,1]))){
+    outfall_inputs_z <- outfall_inputs[z,]
+    print(paste0('PROCESSING OUTFALL ', z, ' of ', length(outfall_inputs[,1])))
+    
+    #outfall_inputs_z <- outfall_inputs[1,]
+  outfall_z <- postFeature(outfall_inputs_z, basepath)
+  outfall_z <- getFeature(outfall_inputs_z, token, basepath)
+  outfall <- rbind(outfall,outfall_z)
+  }
+ 
+  return(outfall)
+} #END OF OUTFALL_FEATURES_REST FUNCTION
