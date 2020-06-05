@@ -64,11 +64,11 @@ HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 basepath <- "http://deq2.bse.vt.edu/d.alpha"
 
 # #Generate REST token for authentication              
- rest_uname = FALSE
- rest_pw = FALSE
- source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
- source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
- token <-trimws(rest_token(basepath, token, rest_uname, rest_pw))
+rest_uname = FALSE
+rest_pw = FALSE
+source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
+token <-trimws(rest_token(basepath, token, rest_uname, rest_pw))
 
 #Load functions
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
@@ -76,14 +76,28 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
 
 ####################################Inputs##########################################
  #shows a list of all fields and descriptions
- echoWaterGetMeta()
- #using bounding box extent of VA to restrict which facilities are pulled
- start_time <- Sys.time()
- print(paste("Using echoWaterGetFacilityInfo() | (Start time: ",start_time,")",sep=""))
- ECHO_Facilities <- echoWaterGetFacilityInfo(xmin = '-84', ymin = '35', 
-                                xmax = '-75',  ymax = '41', 
-                                output = 'df',
-                                qcolumns="1,2,3,4,5,9,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224")
+ 
+echo_cols <- c(
+  'CWPPermitTypeDesc', 'CWPName', 'CWPCounty', 'FacDerivedHuc', 'FacFIPSCode', 
+  'SourceID', 'StateAuthPretreat', 'StateAuthGen', 'StateAuthBiosolids', 
+  'NPDESDataGroups', 'CWPSICCodes', 'ElectrRptWaiverTypeCode', 'ElectrRptWaiverTypeDesc', 
+  'CWPNAICSCodes', 'E90Pollutants3yr', 'FacLat', 'FacLong', 'CWPTotalDesignFlowNmbr', 
+  'CWPActualAverageFlowNmbr', 'CWPFacilityTypeIndicator', 'CWPStreet', 'CWPCity', 
+  'CWPState', 'IssuingAgency', 'SubmittedDate', 'CWPIssueDate', 'CWPTerminationDate', 
+  'CWPMajorMinorStatusFlag', 'CWPSNCStatus', 'RegistryID', 'CWPComplianceTracking', 
+  'CWPDateLastInspection', 'CWPDateLastInspSt'
+)
+echo_qcolids <- ECHO_column_lookup(echo_cols)
+qcol_list <-  paste(echo_qcolids$ColumnID,collapse = ",","", sep='')
+#using bounding box extent of VA to restrict which facilities are pulled
+start_time <- Sys.time()
+print(paste("Using echoWaterGetFacilityInfo() | (Start time: ",start_time,")",sep=""))
+ECHO_Facilities <- echoWaterGetFacilityInfo(
+  xmin = '-84', ymin = '35', 
+  xmax = '-75',  ymax = '41', 
+  output = 'df',
+  qcolumns=qcol_list
+)
 
  end_time <- Sys.time()
  print(paste("Download Process Complete: ",end_time ,sep=""))
@@ -1040,6 +1054,7 @@ prop_inputs <-data.frame(
   #proptext = rep(NA,length(last_inspect$hydrocode)),
   #propcode = as.character(last_inspect$propcode),
   startdate = as.character(last_inspect$startdate),
+  #startdate = as.PosixCT(as.character(last_inspect$startdate),
   #enddate = rep(NA,length(last_inspect$hydrocode)),
   stringsAsFactors = F
 )

@@ -87,53 +87,53 @@ sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
 
 permit_REST <- function(ECHO_Facilities_i, agency_adminid, permit){
 
-if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
-  permit_ftype <- "npdes_gp"
-} else if (ECHO_Facilities_i$CWPPermitTypeDesc == "NPDES Individual Permit") {
-  permit_ftype <- "npdes_ip"
-}
-
-#CWPPermitStatusDesc = "Pending" and "Denied" set as "unknown" for now but may want to create a new fstatus
-permit_fstatus <- as.character(ECHO_Facilities_i$CWPPermitStatusDesc)
-if (length(grep('Effective',permit_fstatus))>0|
-    length(grep('Admin Continued',permit_fstatus))>0){
-  permit_fstatus <-'active'
-} else if (length(grep('Terminated', permit_fstatus))>0){
-  permit_fstatus <-'revoked'
-} else if (length(grep('Not Needed', permit_fstatus))>0|
-           length(grep('NA', permit_fstatus))>0|
-           length(grep('Denied', permit_fstatus))>0|
-           length(grep('Pending', permit_fstatus))>0){
-  permit_fstatus <-'unknown'
-} else if (length(grep('Expired', permit_fstatus))>0){
-  permit_fstatus <-'expired'
-} 
-print(paste("permit fstatus: ",permit_fstatus))
-
-# prints list of all status type in column CWPPermitStatusDesc
-# is_it_there <- "select distinct CWPPermitStatusDesc
-# from ECHO_Facilities_original"
-# sqldf(is_it_there)
-
-
-permit_inputs <- data.frame(
-  bundle = 'permit',
-  ftype = permit_ftype,
-  admincode = as.character(ECHO_Facilities_i$Facility_ID),
-  name = as.character(ECHO_Facilities_i$CWPName),
-  fstatus = permit_fstatus,
-  description = as.character(ECHO_Facilities_i$CWPPermitTypeDesc),
-  startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPEffectiveDate)))), 
-  enddate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPExpirationDate)))),
-  permit_id = as.character(ECHO_Facilities_i$Facility_ID),
-  dh_link_admin_reg_issuer = agency_adminid,
-  stringsAsFactors = FALSE
-) 
-
-permit <- postAdminregFeature(permit_inputs, basepath)
-permit <- getAdminregFeature(permit_inputs, basepath)
-
-return(permit)
+  if (ECHO_Facilities_i$CWPPermitTypeDesc =="General Permit Covered Facility"){
+    permit_ftype <- "npdes_gp"
+  } else if (ECHO_Facilities_i$CWPPermitTypeDesc == "NPDES Individual Permit") {
+    permit_ftype <- "npdes_ip"
+  }
+  
+  #CWPPermitStatusDesc = "Pending" and "Denied" set as "unknown" for now but may want to create a new fstatus
+  permit_fstatus <- as.character(ECHO_Facilities_i$CWPPermitStatusDesc)
+  if (length(grep('Effective',permit_fstatus))>0|
+      length(grep('Admin Continued',permit_fstatus))>0){
+    permit_fstatus <-'active'
+  } else if (length(grep('Terminated', permit_fstatus))>0){
+    permit_fstatus <-'revoked'
+  } else if (length(grep('Not Needed', permit_fstatus))>0|
+             length(grep('NA', permit_fstatus))>0|
+             length(grep('Denied', permit_fstatus))>0|
+             length(grep('Pending', permit_fstatus))>0){
+    permit_fstatus <-'unknown'
+  } else if (length(grep('Expired', permit_fstatus))>0){
+    permit_fstatus <-'expired'
+  } 
+  print(paste("permit fstatus: ",permit_fstatus))
+  
+  # prints list of all status type in column CWPPermitStatusDesc
+  # is_it_there <- "select distinct CWPPermitStatusDesc
+  # from ECHO_Facilities_original"
+  # sqldf(is_it_there)
+  
+  
+  permit_inputs <- data.frame(
+    bundle = 'permit',
+    ftype = permit_ftype,
+    admincode = as.character(ECHO_Facilities_i$Facility_ID),
+    name = as.character(ECHO_Facilities_i$CWPName),
+    fstatus = permit_fstatus,
+    description = as.character(ECHO_Facilities_i$CWPPermitTypeDesc),
+    startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPEffectiveDate)))), 
+    enddate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPExpirationDate)))),
+    permit_id = as.character(ECHO_Facilities_i$Facility_ID),
+    dh_link_admin_reg_issuer = agency_adminid,
+    stringsAsFactors = FALSE
+  ) 
+  
+  permit <- postAdminregFeature(permit_inputs, basepath)
+  permit <- getAdminregFeature(permit_inputs, basepath)
+  
+  return(permit)
 }
 
 
@@ -459,3 +459,37 @@ outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
  
   return(outfall)
 } #END OF OUTFALL_FEATURES_REST FUNCTION
+
+ECHO_column_lookup <- function(echo_cols, mode='ObjectName', echo_meta = NULL) {
+  if (is.null(echo_meta)) {
+    echo_meta <- echoWaterGetMeta()
+  }
+  if (mode == 'ObjectName') {
+    luargs <- paste(echo_cols,collapse = "','","", sep='')
+    wclause = paste0(
+      "WHERE ObjectName in ('",
+      luargs,
+      "')"
+    )
+    retcol = 'ColumnID'
+  }
+  if (mode == 'ColumnID') {
+    luargs <- paste(echo_cols,collapse = ",","", sep='')
+    wclause = paste0(
+      "WHERE ColumnID in (",
+      luargs,
+      ")"
+    )
+    retcol = 'ObjectName'
+  }
+  retvals = sqldf(
+    paste0(
+      "select ", retcol,
+      " FROM echo_meta ",
+      wclause,
+      " ORDER BY ",
+      retcol
+    )
+  )
+  return( retvals)
+}
