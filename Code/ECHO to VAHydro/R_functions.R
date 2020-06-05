@@ -320,9 +320,12 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
     address1 = ECHO_Facilities_i$CWPStreet,
     city = as.character(ECHO_Facilities_i$CWPCity),
     dh_link_admin_location = as.character(permit$adminid),
-    dh_link_admin_fa_usafips = fips,
     stringsAsFactors = FALSE
   ) 
+  
+  if (length(fips) > 1) {
+    facility_inputs$dh_link_admin_fa_usafips = fips
+  }
   
   facility <- postFeature(facility_inputs, basepath)
   facility <- getFeature(facility_inputs, token, basepath)
