@@ -195,11 +195,16 @@ df_coord_pull<- function(){
   VPDES_IP<-VPDES_IP[!is.na(VPDES_IP$Facility),]
   VPDES_IP$`Design Flow (MGD)`<-as.numeric(VPDES_IP$`Design Flow (MGD)`)
   VPDES_IP<-VPDES_IP[!duplicated(VPDES_IP$`Permit Number`),] #getting rid of duplicates and looking at unique permits
-  VPDES_DesignFlow<-subset(VPDES_IP,select=c(3,15))
-  colnames(VPDES_DesignFlow)<-c("Facility.ID","DesignFlow_mgd")
+  VPDES_DesignFlow<-VPDES_IP[c("Permit Number", "Design Flow (MGD)")]
+  colnames(VPDES_DesignFlow)<-c("Facility_ID","DesignFlow_mgd")
   
-  ECHO_Facilities<-merge(ECHO_Facilities,VPDES_DesignFlow,by="Facility.ID",all.x=T) #put design flow in facility spreadsheet
-  
+   ECHO_Facilities <- sqldf(
+    " select a.*, b.DesignFlow_mgd 
+      from ECHO_Facilities as a 
+      left outer join VPDES_DesignFlow as b 
+      on (a.Facility_ID = b.Facility_ID)
+    "
+  )
   #----------Seperate Design Flow as a Facility Property---------------#
   design_flow<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility.ID), varkey='design_flow', propname='design_flow', 
                           propvalue=ECHO_Facilities$DesignFlow_mgd, propcode=ifelse(ECHO_Facilities$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA), stringsAsFactors = F)
