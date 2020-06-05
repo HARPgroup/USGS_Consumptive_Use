@@ -176,9 +176,9 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
 #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-  
+  if (as.integer(count(DMR_data)) > 0) {
     outfall <- outfall_features_REST(DMR_data, facility, token, basepath)
-  
+  }
 }
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#

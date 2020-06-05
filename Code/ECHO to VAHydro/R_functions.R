@@ -447,7 +447,7 @@ outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
     dh_link_facility_mps =character(),
     dh_geofield = character(),
     stringsAsFactors = FALSE
-              ) 
+  ) 
   
   #z <- 1
   for (z in 1:(length(outfall_inputs[,1]))){
