@@ -85,7 +85,8 @@ echo_cols <- c(
   'CWPActualAverageFlowNmbr', 'CWPFacilityTypeIndicator', 'CWPStreet', 'CWPCity', 
   'CWPState', 'IssuingAgency', 'SubmittedDate', 'CWPIssueDate', 'CWPTerminationDate', 
   'CWPMajorMinorStatusFlag', 'CWPSNCStatus', 'RegistryID', 'CWPComplianceTracking', 
-  'CWPDateLastInspection', 'CWPDateLastInspSt'
+  'CWPDateLastInspection', 'CWPDateLastInspSt','CWPPermitStatusDesc',
+  'CWPEffectiveDate','CWPExpirationDate'
 )
 echo_qcolids <- ECHO_column_lookup(echo_cols)
 qcol_list <-  paste(echo_qcolids$ColumnID,collapse = ",","", sep='')
