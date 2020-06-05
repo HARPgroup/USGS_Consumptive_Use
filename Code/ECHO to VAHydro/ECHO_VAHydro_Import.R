@@ -1053,7 +1053,8 @@ prop_inputs <-data.frame(
   #propvalue = rep(NA,length(last_inspect$hydrocode)),
   #proptext = rep(NA,length(last_inspect$hydrocode)),
   #propcode = as.character(last_inspect$propcode),
-  startdate = as.PosixCT(as.character(last_inspect$startdate),
+  startdate = as.character(last_inspect$startdate),
+  #startdate = as.PosixCT(as.character(last_inspect$startdate),
   #enddate = rep(NA,length(last_inspect$hydrocode)),
   stringsAsFactors = F
 )
