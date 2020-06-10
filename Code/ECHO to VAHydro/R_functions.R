@@ -496,3 +496,156 @@ ECHO_column_lookup <- function(echo_cols, mode='ObjectName', echo_meta = NULL) {
   )
   return( retvals)
 }
+
+vahydro_echo_outfalls <- function(ECHO_Facilities, VPDES_Outfalls, timeseries) {
+  
+  ECHO_Outfalls<-sqldf("select OutfallID, Facility_ID from timeseries group by OutfallID, Facility_ID")
+  ECHO_Outfalls<-sqldf(
+    "select a.*, 
+     CASE 
+       WHEN b.Latitude is NULL THEN c.FacLat
+       ELSE b.Latitude
+     END as Latitude,  
+     CASE 
+       WHEN b.Longitude is NULL THEN c.FacLong
+       ELSE b.Longitude
+     END as Longitude 
+     from ECHO_Outfalls as a 
+     left outer join VPDES_Outfalls as b 
+     on (
+       a.OutfallID = b.OutfallID
+     )
+     left outer join ECHO_Facilities as c 
+     on (
+       a.Facility_ID = c.Facility_ID
+     )
+    "
+  )
+  return(ECHO_Outfalls)
+}
+
+
+outfall_formatted<- function(ECHO_Outfalls){
+  #Outfalls Generation
+  #Reformats 'ECHO_Outfalls' using available VPDES or ECHO geometry data and ECHO attributes
+  outfalls<-sqldf(
+    "select 'transfer' as bundle, 
+       'FROM ' || Facility_ID as name, 
+       'outfall' as ftype,
+       'echo_' || OutfallID as hydrocode,
+       'active' as fstatus,
+       'echo_' || Facility_ID as dh_link_facility_mps,
+       CASE 
+         WHEN (Latitude is not null) and (Longitude is not null) THEN  
+           'POINT (' || Longitude || ' ' || Latitude || ')' 
+         ELSE NULL
+       END as dh_geofield
+     from ECHO_Outfalls
+    "
+  )
+  return(outfalls)
+}
+
+
+release_generation<- function(ECHO_Facilities,ECHO_Outfalls,timeseries){
+  
+  #---------Assign Coordinates to Outfalls that have DMRs from 2010-Present----------#
+  timeseries$OutfallID<-gsub("echo_","",timeseries$hydrocode)
+  
+  
+  releasepoint<-data.frame(bundle=rep('transfer',length(ECHO_Outfalls$OutfallID)),
+                           name=paste0('TO ',ECHO_Outfalls$OutfallID),
+                           ftype=rep('release',length(ECHO_Outfalls$OutfallID)),
+                           hydrocode=paste0('vahydro_',ECHO_Outfalls$OutfallID),
+                           fstatus=ifelse(ECHO_Outfalls$OutfallID%in%gsub("echo_","", as.character(timeseries$hydrocode)),'active','inactive'),
+                           dh_link_facility_mps=paste0('echo_',ECHO_Outfalls$Facility_ID),
+                           stringsAsFactors = F)
+  
+  for (i in 1:length(releasepoint$bundle)){
+    print(paste("Processing Release Point ",i," of ", length(releasepoint$hydrocode)))
+    if(!is.na(ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]]) & !is.na(ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]])){
+      releasepoint$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]],')')
+    } else {
+      lat<-ECHO_Outfalls$Latitude[ECHO_Outfalls$Facility_ID==ECHO_Outfalls$Facility_ID[i]]
+      long<-ECHO_Outfalls$Longitude[ECHO_Outfalls$Facility_ID==ECHO_Outfalls$Facility_ID[i]]
+      for (i in 1:length(lat)){
+        if(!is.na(lat[i]) & !is.na(long[i])){
+          releasepoint$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
+          break
+        } else {
+          releasepoint$dh_geofield[i]<-'NULL'
+        }
+      }
+    }
+  } #bracket for line 628 for loop
+  return(releasepoint)
+} 
+
+
+conveyance_generation<- function(ECHO_Outfalls){
+  
+  conveyance<-data.frame(bundle=rep('conveyance',length(ECHO_Outfalls$OutfallID)),
+                         name=paste0(ECHO_Outfalls$Facility_ID,' TO ',ECHO_Outfalls$OutfallID),
+                         ftype="water_transfer",
+                         hydrocode=paste0('vahydro_',ECHO_Outfalls$Facility_ID,'_',ECHO_Outfalls$OutfallID),
+                         fstatus=ifelse(ECHO_Outfalls$OutfallID%in%gsub("echo_","", as.character(timeseries$hydrocode)),'active','inactive'),
+                         field_dh_from_entity=paste0('vahydro_',ECHO_Outfalls$OutfallID),
+                         field_dh_to_entity=paste0('echo_',ECHO_Outfalls$OutfallID),
+                         stringsAsFactors = F)
+  
+  
+  
+  #Outfalls Generation
+  #Reformats 'ECHO_Outfalls' using available VPDES or ECHO geometry data and ECHO attributes
+  outfalls<-data.frame(bundle=rep('transfer',length(ECHO_Outfalls$OutfallID)),
+                       name=paste0('FROM ',ECHO_Outfalls$Facility_ID),
+                       ftype='outfall',
+                       hydrocode=paste0('echo_',ECHO_Outfalls$OutfallID),
+                       fstatus=ifelse(ECHO_Outfalls$OutfallID%in%gsub("echo_","", as.character(timeseries$hydrocode)),'active','inactive'),
+                       dh_link_facility_mps=paste0('echo_',ECHO_Outfalls$Facility_ID),
+                       stringsAsFactors = F)
+  
+  for (i in 1:length(outfalls$bundle)){
+    print(paste("Processing Outfall ",i," of ", length(outfalls$hydrocode)))
+    if(!is.na(ECHO_Outfalls$Latitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]]) & !is.na(ECHO_Outfalls$Longitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]])){
+      outfalls$dh_geofield[i]<-paste0('POINT (',ECHO_Outfalls$Longitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]],' ',ECHO_Outfalls$Latitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]],')')  
+    } else if (!is.na(ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]]) & !is.na(ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]])) {
+      outfalls$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]])
+    } else {
+      outfalls$dh_geofield[i]<-'NULL'
+    }
+  }
+  
+  return(conveyance)
+}
+
+
+outfall_properties<- function(outfall_types){
+  
+  cooling<-subset(outfall_types,outfall_types$Outfall_Type=="COOL")
+  cooling<-data.frame(hydrocode=paste0("echo_",cooling$OutfallID),varkey="vpdes_outfall_type",
+                      propname="vpdes_outfall_type",propvalue="",
+                      proptext="Power station cooling water outfall",
+                      propcode="cooling",stringsAsFactors = F)
+  
+  stormwater<-subset(outfall_types,outfall_types$Outfall_Type=="STORM")
+  stormwater<-data.frame(hydrocode=paste0("echo_",stormwater$OutfallID),varkey="vpdes_outfall_type",
+                         propname="vpdes_outfall_type",propvalue="",
+                         proptext="Outfall that tracks stormwater discharge through municipal separate storm sewer systems (MS4)",
+                         propcode="stormwater",stringsAsFactors = F)
+  
+  internal<-subset(outfall_types,outfall_types$Outfall_Type=="INO")
+  internal<-data.frame(hydrocode=paste0("echo_",internal$OutfallID),varkey="vpdes_outfall_type",
+                       propname="vpdes_outfall_type",propvalue="",
+                       proptext="Outfall that monitors waste streams within a facility before being discharged.",
+                       propcode="internal",stringsAsFactors = F)
+  
+  internal_sum<-subset(outfall_types,outfall_types$Outfall_Type=="INO_SUM")
+  internal_sum<-data.frame(hydrocode=paste0("echo_",internal_sum$OutfallID),varkey="vpdes_outfall_type",
+                           propname="vpdes_outfall_type",propvalue="",
+                           proptext="Outfall that monitors the cumulative waste streams within a facility before being discharged.",
+                           propcode="internal_sum",stringsAsFactors = F)
+  
+  outfall_props<<-rbind(cooling,stormwater,internal,internal_sum)
+  return(outfall_props)
+}

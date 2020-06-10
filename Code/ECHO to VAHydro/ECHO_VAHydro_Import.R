@@ -434,153 +434,30 @@ ts_flagging(timeseries)
 ##################################################################################################################################
 ###########################################3 Release Point Generation#############################################################
 
+# Generate basic list of outfalls
+ECHO_Outfalls <- vahydro_echo_outfalls(ECHO_Facilities, VPDES_Outfalls, timeseries)
+
 # Generation of the release point imports. In essence, this portion just formats various data from both the facility
 # and the outfall list (VPDES_Outfalls and timeseries) to create the release point attributes and geometry.
-
-release_generation<- function(ECHO_Facilities,timeseries){
-  
-  #---------Assign Coordinates to Outfalls that have DMRs from 2010-Present----------#
-  Facility_Coord<-subset(ECHO_Facilities,select=c(1,11,12)) #Isolate Facility Level Coordinates
-  timeseries$OutfallID<-gsub("echo_","",timeseries$hydrocode)
-  
-  ECHO_Outfalls<-sqldf("select OutfallID, Facility_ID from timeseries group by OutfallID, Facility_ID")
-  ECHO_Outfalls<-sqldf(
-    "select a.*, 
-     CASE 
-       WHEN b.Latitude is NULL THEN c.FacLat
-       ELSE b.Latitude
-     END as Latitude,  
-     CASE 
-       WHEN b.Longitude is NULL THEN c.FacLong
-       ELSE b.Longitude
-     END as Longitude 
-     from ECHO_Outfalls as a 
-     left outer join VPDES_Outfalls as b 
-     on (
-       a.OutfallID = b.OutfallID
-     )
-     left outer join ECHO_Facilities as c 
-     on (
-       Facility_ID = Facility_ID
-     )
-    "
-  )
-  
-  releasepoint<-data.frame(bundle=rep('transfer',length(ECHO_Outfalls$OutfallID)),
-                           name=paste0('TO ',ECHO_Outfalls$OutfallID),
-                           ftype=rep('release',length(ECHO_Outfalls$OutfallID)),
-                           hydrocode=paste0('vahydro_',ECHO_Outfalls$OutfallID),
-                           fstatus=ifelse(ECHO_Outfalls$OutfallID%in%gsub("echo_","", as.character(timeseries$hydrocode)),'active','inactive'),
-                           dh_link_facility_mps=paste0('echo_',ECHO_Outfalls$Facility_ID),
-                           stringsAsFactors = F)
-  
-  for (i in 1:length(releasepoint$bundle)){
-    print(paste("Processing Release Point ",i," of ", length(releasepoint$hydrocode)))
-    if(!is.na(ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]]) & !is.na(ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]])){
-      releasepoint$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]],')')
-    } else {
-      lat<-ECHO_Outfalls$Latitude[ECHO_Outfalls$Facility_ID==ECHO_Outfalls$Facility_ID[i]]
-      long<-ECHO_Outfalls$Longitude[ECHO_Outfalls$Facility_ID==ECHO_Outfalls$Facility_ID[i]]
-      for (i in 1:length(lat)){
-        if(!is.na(lat[i]) & !is.na(long[i])){
-          releasepoint$dh_geofield[i]<-paste0('POINT (',long[i],' ',lat[i],')')
-          break
-        } else {
-          releasepoint$dh_geofield[i]<-'NULL'
-        }
-      }
-    }
-  } #bracket for line 628 for loop
-  
-  assign("releasepoint",releasepoint,envir = .GlobalEnv)
-  assign("ECHO_Outfalls",ECHO_Outfalls,envir = .GlobalEnv)
-  write.table(releasepoint,"releasepoint.txt",sep="\t",row.names = F)
-
-} 
-release_generation(ECHO_Facilities,timeseries)
+releasepoint <- release_generation(ECHO_Facilities,ECHO_Outfalls,timeseries)
+write.table(releasepoint,"releasepoint.txt",sep="\t",row.names = F)
 
 ##################################################################################################################################
-###########################################4 Conveyance and Outfall Generation####################################################
+###########################################4 Conveyance and Outfall Formatting ####################################################
 
 # Generates the conveyance import using the outfall list in 'ECHO_Outfalls' which is dependent on reporting outfalls in timeseries
 # Important to save ECHO_Outfalls from release_generation function
 
-conveyance_generation<- function(ECHO_Outfalls){
+outfalls <- outfall_formatted(ECHO_Outfalls)
+write.table(outfalls,paste0("outfalls.txt"),sep="\t",row.names = F)
+# conveyances connect releae points to outfalls
+conveyance <- conveyance_generation(ECHO_Outfalls)
+write.table(conveyance,paste0("conveyance.txt"),sep="\t",row.names = F)
 
-conveyance<-data.frame(bundle=rep('conveyance',length(ECHO_Outfalls$OutfallID)),
-                       name=paste0(ECHO_Outfalls$Facility_ID,' TO ',ECHO_Outfalls$OutfallID),
-                       ftype="water_transfer",
-                       hydrocode=paste0('vahydro_',ECHO_Outfalls$Facility_ID,'_',ECHO_Outfalls$OutfallID),
-                       fstatus=ifelse(ECHO_Outfalls$OutfallID%in%gsub("echo_","", as.character(timeseries$hydrocode)),'active','inactive'),
-                       field_dh_from_entity=paste0('vahydro_',ECHO_Outfalls$OutfallID),
-                       field_dh_to_entity=paste0('echo_',ECHO_Outfalls$OutfallID),
-                       stringsAsFactors = F)
+# Known Virginia outfall list for isolating only true external outfalls
+outfall_types<-read.table(file="https://raw.githubusercontent.com/HARPgroup/USGS_Consumptive_Use/master/Code/Data%20Cleaning/Outfall_Types.txt", header=T, sep="|")
 
-
-
-#Outfalls Generation
-#Reformats 'ECHO_Outfalls' using available VPDES or ECHO geometry data and ECHO attributes
-outfalls<-data.frame(bundle=rep('transfer',length(ECHO_Outfalls$OutfallID)),
-                     name=paste0('FROM ',ECHO_Outfalls$Facility_ID),
-                     ftype='outfall',
-                     hydrocode=paste0('echo_',ECHO_Outfalls$OutfallID),
-                     fstatus=ifelse(ECHO_Outfalls$OutfallID%in%gsub("echo_","", as.character(timeseries$hydrocode)),'active','inactive'),
-                     dh_link_facility_mps=paste0('echo_',ECHO_Outfalls$Facility_ID),
-                     stringsAsFactors = F)
-
-for (i in 1:length(outfalls$bundle)){
-  print(paste("Processing Outfall ",i," of ", length(outfalls$hydrocode)))
-  if(!is.na(ECHO_Outfalls$Latitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]]) & !is.na(ECHO_Outfalls$Longitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]])){
-    outfalls$dh_geofield[i]<-paste0('POINT (',ECHO_Outfalls$Longitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]],' ',ECHO_Outfalls$Latitude[ECHO_Outfalls$OutfallID==ECHO_Outfalls$OutfallID[i]],')')  
-  } else if (!is.na(ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]]) & !is.na(ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]])) {
-    outfalls$dh_geofield[i]<-paste0('POINT (',ECHO_Facilities$FacLong[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]],' ',ECHO_Facilities$FacLat[ECHO_Facilities$Facility_ID==ECHO_Outfalls$Facility_ID[i]])
-  } else {
-    outfalls$dh_geofield[i]<-'NULL'
-  }
-}
-
-
-assign("conveyance",conveyance,envir = .GlobalEnv)
-assign("outfalls",outfalls,envir = .GlobalEnv)
-write.table(conveyance,paste0(Outputpath,"/conveyance.txt"),sep="\t",row.names = F)
-write.table(outfalls,paste0(Outputpath,"/outfalls.txt"),sep="\t",row.names = F)
-
-}
-conveyance_generation(ECHO_Outfalls)
-
-
-outfall_properties<- function(){
-  outfall_types<-read.table(file="C:/Users/maf95834/Documents/Github/USGS_Consumptive_Use/Code/Data Cleaning/Outfall_Types.txt",header=T,sep="|")
-  
-  
-  cooling<-subset(outfall_types,outfall_types$Outfall_Type=="COOL")
-  cooling<-data.frame(hydrocode=paste0("echo_",cooling$OutfallID),varkey="vpdes_outfall_type",
-                          propname="vpdes_outfall_type",propvalue="",
-                          proptext="Power station cooling water outfall",
-                          propcode="cooling",stringsAsFactors = F)
-  
-  stormwater<-subset(outfall_types,outfall_types$Outfall_Type=="STORM")
-  stormwater<-data.frame(hydrocode=paste0("echo_",stormwater$OutfallID),varkey="vpdes_outfall_type",
-                          propname="vpdes_outfall_type",propvalue="",
-                          proptext="Outfall that tracks stormwater discharge through municipal separate storm sewer systems (MS4)",
-                          propcode="stormwater",stringsAsFactors = F)
-  
-  internal<-subset(outfall_types,outfall_types$Outfall_Type=="INO")
-  internal<-data.frame(hydrocode=paste0("echo_",internal$OutfallID),varkey="vpdes_outfall_type",
-                       propname="vpdes_outfall_type",propvalue="",
-                       proptext="Outfall that monitors waste streams within a facility before being discharged.",
-                       propcode="internal",stringsAsFactors = F)
-  
-  internal_sum<-subset(outfall_types,outfall_types$Outfall_Type=="INO_SUM")
-  internal_sum<-data.frame(hydrocode=paste0("echo_",internal_sum$OutfallID),varkey="vpdes_outfall_type",
-                        propname="vpdes_outfall_type",propvalue="",
-                        proptext="Outfall that monitors the cumulative waste streams within a facility before being discharged.",
-                        propcode="internal_sum",stringsAsFactors = F)
-  
-  outfall_props<<-rbind(cooling,stormwater,internal,internal_sum)
-  assign("outfall_props",outfall_props,envir = .GlobalEnv)
-  }
-outfall_properties()
+outfall_props <- outfall_properties(outfall_types)
 ##################################################################################################################################
 ###########################################5 Facility Properties Generation####################################################
 
@@ -598,36 +475,36 @@ outfall_properties()
     #-Facility Design Flow in MGD (design_flow)
 
 facility_properties<- function(ECHO_Facilities){
-
-last_inspect<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='last_inspect', propname='last_inspect',
-                         propvalue='',proptext='',propcode='',startdate=ECHO_Facilities$CWPDateLastInspection,enddate='',stringsAsFactors = F)
-#write.table(last_inspect,paste0(Outputpath,"/last_inspect.txt"),sep="\t",row.names = F)
-
-css<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='css', propname='css', 
-                propvalue='',proptext='',propcode=ECHO_Facilities$CWPCsoFlag, startdate='',enddate='',stringsAsFactors = F)
-#write.table(css,paste0(Outputpath,"/css.txt"),sep="\t",row.names = F)
-
-cwp_cso_outfalls<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='cwp_cso_outfalls', propname='cwp_cso_outfalls', 
-                             propvalue=ECHO_Facilities$CWPCsoOutfalls,proptext='',propcode='', startdate='',enddate='',stringsAsFactors = F)
-#write.table(cwp_cso_outfalls,paste0(Outputpath,"/cwp_cso_outfalls.txt"),sep="\t",row.names = F)
-
-wb_gnis_name<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='wb_gnis_name', propname='wb_gnis_name', 
-                         propvalue='', proptext='',propcode=ECHO_Facilities$RadGnisName, startdate='',enddate='',stringsAsFactors = F)
-#write.table(wb_gnis_name,paste0(Outputpath,"/wb_gnis_name.txt"),sep="\t",row.names = F)
-
-reachcode_rad<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='reachcode_rad', propname='reachcode_rad', 
-                          propvalue='', proptext='',propcode=ECHO_Facilities$RadReachcode, startdate='',enddate='',stringsAsFactors = F)
-#write.table(reachcode_rad,paste0(Outputpath,"/reachcode_rad.txt"),sep="\t",row.names = F)
-
-impair_cause<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='impair_cause', propname='impair_cause', 
-                         propvalue='', proptext=ECHO_Facilities$AttainsStateCauses,propcode='', startdate='',enddate='',stringsAsFactors = F)
-#write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.names = F)
-
-design_flow<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='design_flow', propname='design_flow', 
-                        propvalue=ECHO_Facilities$DesignFlow_mgd, propcode=ifelse(ECHO_Facilities$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA), stringsAsFactors = F)
-
-
-write.table(design_flow,paste0(Outputpath,"/design_flow.txt"),sep="\t",row.names = F)
+  
+  last_inspect<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='last_inspect', propname='last_inspect',
+                           propvalue='',proptext='',propcode='',startdate=ECHO_Facilities$CWPDateLastInspection,enddate='',stringsAsFactors = F)
+  #write.table(last_inspect,paste0(Outputpath,"/last_inspect.txt"),sep="\t",row.names = F)
+  
+  css<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='css', propname='css', 
+                  propvalue='',proptext='',propcode=ECHO_Facilities$CWPCsoFlag, startdate='',enddate='',stringsAsFactors = F)
+  #write.table(css,paste0(Outputpath,"/css.txt"),sep="\t",row.names = F)
+  
+  cwp_cso_outfalls<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='cwp_cso_outfalls', propname='cwp_cso_outfalls', 
+                               propvalue=ECHO_Facilities$CWPCsoOutfalls,proptext='',propcode='', startdate='',enddate='',stringsAsFactors = F)
+  #write.table(cwp_cso_outfalls,paste0(Outputpath,"/cwp_cso_outfalls.txt"),sep="\t",row.names = F)
+  
+  wb_gnis_name<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='wb_gnis_name', propname='wb_gnis_name', 
+                           propvalue='', proptext='',propcode=ECHO_Facilities$RadGnisName, startdate='',enddate='',stringsAsFactors = F)
+  #write.table(wb_gnis_name,paste0(Outputpath,"/wb_gnis_name.txt"),sep="\t",row.names = F)
+  
+  reachcode_rad<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='reachcode_rad', propname='reachcode_rad', 
+                            propvalue='', proptext='',propcode=ECHO_Facilities$RadReachcode, startdate='',enddate='',stringsAsFactors = F)
+  #write.table(reachcode_rad,paste0(Outputpath,"/reachcode_rad.txt"),sep="\t",row.names = F)
+  
+  impair_cause<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='impair_cause', propname='impair_cause', 
+                           propvalue='', proptext=ECHO_Facilities$AttainsStateCauses,propcode='', startdate='',enddate='',stringsAsFactors = F)
+  #write.table(impair_cause,paste0(Outputpath,"/impair_cause.txt"),sep="\t",row.names = F)
+  
+  design_flow<<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='design_flow', propname='design_flow', 
+                          propvalue=ECHO_Facilities$DesignFlow_mgd, propcode=ifelse(ECHO_Facilities$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA), stringsAsFactors = F)
+  
+  
+  write.table(design_flow,paste0(Outputpath,"/design_flow.txt"),sep="\t",row.names = F)
 
 }
 facility_properties(ECHO_Facilities)
