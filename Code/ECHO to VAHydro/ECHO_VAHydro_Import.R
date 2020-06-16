@@ -135,14 +135,14 @@ agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admin
 agency_dataframe <- getAdminregFeature(agency_inputs, basepath, adminreg_feature)
 agency_adminid <- as.character(agency_dataframe$adminid)
 
-startDate <- '01/01/2010'
-endDate<-Sys.Date()
+startDate <- '01/01/2019'
+endDate <- '12/31/2019'
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
 
 #i <- 1048 
 #i <- 26951
 # Create or retreive the Permit for each facility 
-ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
+#ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
 permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in 1:(length(ECHO_Facilities[,1]))){
@@ -273,8 +273,8 @@ df_coord_pull()
 ################################################Imports###########################################################################
 
 #1 Import Outfall Timeseries Data
-timeseries <- ts_ECHO_pull(ECHO_Facilities,1)
-write.table(timeseries,file="timeseries.txt", sep='\t', row.names = F)
+timeseries <- ts_ECHO_pull(ECHO_Facilities,1, startDate, endDate)
+#write.table(timeseries,file="timeseries.txt", sep='\t', row.names = F)
 
 save.image(file="timeseries_2010_present.RData")
 
@@ -290,9 +290,18 @@ ts_flagging<- function(timeseries){
   df<-subset(design_flow,select=c(1,4))
   colnames(df)<-c("Facility_ID","DesignFlow_mgd")
   df$Facility_ID<-gsub("echo_","", as.character(df$Facility_ID))
-  timeseries<-merge(timeseries,df,by="Facility_ID",all.x=T)
-  timeseries$dmr_flag_desflow<-ifelse(timeseries$tsvalue>timeseries$DesignFlow_mgd & timeseries$DesignFlow_mgd>0,"dmr_flag_desflow",NA)
-  
+  timeseries <- sqldf(
+    " select a.*, b.DesignFlow_mgd,
+        CASE WHEN ( (b.DesignFlow_mgd < a.tsvalue) and (b.DesignFlow_mgd > 0) ) THEN 'dmr_flag_desflow'
+        ELSE NULL
+        END as dmr_flag_desflow
+      from timeseries as a 
+      left outer join df as b 
+      on (
+        a.Facility_ID = b.Facility_ID
+      )
+    "
+  ) 
   #-----------------------------------------------------------------#
   #------Measured Effluents > 100*Median Measured Effluent----------#
   #------Measured Effluents > 100,000*Median Measured Effluent------#
@@ -367,7 +376,7 @@ n_states(timeseries)
 # this function permit_import() has been replaced by permit_ECHO, but I keep it here in case it does something Other than
 # to simply re-retrieve the list of permits for facilities in order to stash in a text file
 #permit_dataframe <- permit_import(ECHO_Facilities,agency_adminid,1)
-write.table(permit_dataframe,"permit_dataframe.txt",sep="\t",row.names = F)
+#write.table(permit_dataframe,"permit_dataframe.txt",sep="\t",row.names = F)
 
 
 #save.image(file="C:/Users/maf95834/Documents/ECHO_VAHydro_Import/ECHO_NPDES/Documentation/Echo_VAHydro_Imports/afterpermitimport_2factest.RData")
@@ -377,44 +386,4 @@ write.table(permit_dataframe,"permit_dataframe.txt",sep="\t",row.names = F)
 ############################################################################################  
 
 timeseries.dataframe <- ts_import(outfalls,timeseries,1)
-write.table(timeseries.dataframe,file="timeseries.dataframe.txt",sep="\t",row.names=F)
-
-############################################################################################
-# CREATE/UPDATE FLAGGING PROPERTIES OF TIMESERIES
-############################################################################################   
-
-tsflag_import<- function(flag_dataframe,iteration){
-  
-  flag.dataframe_ii<-data.frame()
-  
-  for (i in iteration:length(flag_dataframe$featureid)){
-    print(paste("Processing Property ",i," of ", length(flag_dataframe$featureid)))
-    flag.dataframe_i <- getProperty(flag_dataframe[i,], basepath, prop)
-    if(flag.dataframe_i[1]==FALSE){
-      flag.dataframe_ii <- postProperty(flag_dataframe[i,], fxn_locations, basepath, prop)
-      print(flag.dataframe_ii)
-      if(flag.dataframe_ii=="Status 200, Error: Property Not Created Successfully"){
-        break
-      }
-    }else{
-      print("Flag Already Exists")
-    }
-    
-  }
-  
-}
-
-for(i in 1:length(flag_inputs_echo_flag$featureid)){
-  if(flag_inputs_echo_flag$propcode[i]=="E90"){
-    flag_inputs_echo_flag$proptext[i]<-"Effluent Violation"
-  }else if(flag_inputs_echo_flag$propcode[i]=="D90"){
-    flag_inputs_echo_flag$proptext[i]<-"DMR Overdue, with a numeric limit"
-  }else if(flag_inputs_echo_flag$propcode[i]=="D80"){
-    flag_inputs_echo_flag$proptext[i]<-"DMR Overdue, monitoring only required"
-  }
-}
-tsflag_import(flag_inputs_echo_flag,1)
-tsflag_import(flag_inputs_dmr_flag_desflow,1)
-tsflag_import(flag_inputs_dmr_flag_units_100,1)
-tsflag_import(flag_inputs_1000000,1)
-
+#write.table(timeseries.dataframe,file="timeseries.dataframe.txt",sep="\t",row.names=F)
