@@ -554,6 +554,61 @@ ts_import<- function(outfalls,timeseries,iteration){
   return(timeseries.dataframe)
 }
 
+
+#---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
+
+df_coord_pull<- function(ECHO_Facilities){
+  
+  # Individual Permits updated as of October 2018---contains design flow for facilities
+  # Warnings about unknown or uninitiliased columns: previous IP contact sheets named the columns differently. 
+  # It doesn't hinder any processes though. 
+  
+  GET('https://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20Jan%202019.xlsx?ver=2019-01-23-151510-490', 
+      write_disk(temp <- tempfile(fileext = ".xlsx")))
+  VPDES_IP <- read_excel(temp)
+  VPDES_IP<-VPDES_IP[!is.na(VPDES_IP$Facility),]
+  VPDES_IP$`Design Flow (MGD)`<-as.numeric(VPDES_IP$`Design Flow (MGD)`)
+  VPDES_IP<-VPDES_IP[!duplicated(VPDES_IP$`Permit Number`),] #getting rid of duplicates and looking at unique permits
+  VPDES_DesignFlow<-VPDES_IP[c("Permit Number", "Design Flow (MGD)")]
+  colnames(VPDES_DesignFlow)<-c("Facility_ID","DesignFlow_mgd")
+  
+  ECHO_Facilities <- sqldf(
+    " select a.*, b.DesignFlow_mgd 
+      from ECHO_Facilities as a 
+      left outer join VPDES_DesignFlow as b 
+      on (a.Facility_ID = b.Facility_ID)
+    "
+  )
+  #----------Seperate Design Flow as a Facility Property---------------#
+  design_flow<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='design_flow', propname='design_flow', 
+                          propvalue=ECHO_Facilities$DesignFlow_mgd, propcode=ifelse(ECHO_Facilities$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA), stringsAsFactors = F)
+  
+  #----------Retrieve coordinates of outfalls-----------------#
+  #Use Aggregated Flows generated from ECHOInterface Script and list of outfalls for creating release and conveyance points.
+  temp<-tempfile(fileext = ".zip")
+  #Locations and attribute data about active outfalls in the State
+  download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip", destfile = temp)
+  unzip(temp)
+  #Explore what is in VPDES_Geodatabase.gdb
+  ogrListLayers("VPDES_Geodatabase.gdb") #Two layers: VPDES Outfalls and OpenFileGDB
+  VPDES_Outfalls<-as.data.frame(readOGR("VPDES_Geodatabase.gdb",layer="VPDES_OUTFALLS"))
+  names(VPDES_Outfalls)[names(VPDES_Outfalls)=="OUTFALL_ID"]<-'OutfallID'
+  names(VPDES_Outfalls)[names(VPDES_Outfalls)=="VAP_PMT_NO"]<-'Facility_ID'
+  names(ECHO_Facilities)[names(ECHO_Facilities)=="SourceID"]<-"Facility_ID"#Need to rename to give a central columnn name for future joins
+  
+  VPDES_Coordinates<-VPDES_Outfalls[,c(15,16)]
+  VPDES_Coordinates <- proj4::project(VPDES_Coordinates, proj="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs", inverse=TRUE)
+  
+  #Replace coordinates in VPDES_Outfalls data frame
+  VPDES_Outfalls$Longitude<-VPDES_Coordinates$x
+  VPDES_Outfalls$Latitude<-VPDES_Coordinates$y
+  
+  assign("design_flow",design_flow,envir = .GlobalEnv)
+  assign("VPDES_Outfalls",VPDES_Outfalls,envir = .GlobalEnv)
+  return(ECHO_Facilities)
+  
+}
+
 outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
   
   outfall_inputs <- sqldf("SELECT  
@@ -945,6 +1000,55 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
   timeseries$Facility_ID<-substr(timeseries$Facility_ID,1,9)
   timeseries$OutfallID<-gsub("echo_","",timeseries$hydrocode)
   return(timeseries)
+}
+#------------------Timeseries Flags-------------------#
+
+ts_flagging<- function(timeseries){
+  
+  #-----------------------------------------------------------------#
+  #-------ECHO Measured Effluents > VPDES Design flow---------------#
+  
+  #Flag facilities that report measured effluent greater than the design flow 
+  df<-subset(design_flow,select=c(1,4))
+  colnames(df)<-c("Facility_ID","DesignFlow_mgd")
+  df$Facility_ID<-gsub("echo_","", as.character(df$Facility_ID))
+  timeseries <- sqldf(
+    " select a.*, b.DesignFlow_mgd,
+        CASE WHEN ( (b.DesignFlow_mgd < a.tsvalue) and (b.DesignFlow_mgd > 0) ) THEN 'dmr_flag_desflow'
+        ELSE NULL
+        END as dmr_flag_desflow
+      from timeseries as a 
+      left outer join df as b 
+      on (
+        a.Facility_ID = b.Facility_ID
+      )
+    "
+  ) 
+  #-----------------------------------------------------------------#
+  #------Measured Effluents > 100*Median Measured Effluent----------#
+  #------Measured Effluents > 100,000*Median Measured Effluent------#
+  #---------------Potential Unit Conversion Error-------------------#
+  
+  #Summmarize measured effluent values from ECHO by OutfallID--Not by Facility#
+  timeseries_summary<-timeseries%>%
+    dplyr::group_by(hydrocode,Year=substr(tstime,1,4))%>% #important to note that we are summarizing discharge by outfall here 
+    dplyr::summarise(Median_ME=median(tsvalue, na.rm = T))
+  
+  timeseries<-timeseries%>%add_column(Year=substr(timeseries$tstime,1,4), .before="tstime")
+  timeseries<-merge(timeseries,timeseries_summary,by=c("hydrocode","Year"),all.x=T)
+  
+  timeseries$dmr_flag_units_100<-ifelse(timeseries$tsvalue>100*timeseries$Median_ME,"dmr_flag_units_100",NA)
+  
+  # Add flag for Reston Lake AC 
+  timeseries$dmr_flag_units_100[timeseries$hydrocode=="echo_VA0091995"&timeseries$tsendtime=="2017-07-01"]<-"dmr_flag_units_100"
+  timeseries$dmr_flag_units_100[timeseries$hydrocode=="echo_VA0091995"&timeseries$tsendtime=="2017-08-01"]<-"dmr_flag_units_100"
+  timeseries$dmr_flag_units_100[timeseries$hydrocode=="echo_VA0091995"&timeseries$tsendtime=="2017-09-01"]<-"dmr_flag_units_100"
+  
+  timeseries$dmr_flag_units_1000000<-ifelse(timeseries$tsvalue>1000000*timeseries$Median_ME,"dmr_flag_units_1000000",NA)
+  
+  
+  return(timeseries)
+  
 }
 
 permit_import<- function(ECHO_Facilities, agency_adminid,iteration){ 
