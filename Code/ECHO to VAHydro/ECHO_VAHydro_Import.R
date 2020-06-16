@@ -224,24 +224,11 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   }
   # get timeseries
   facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
+  # flag errors
   facts <- ts_flagging(facts)
+  # push to VAHydro
   tsdf <- ts_import(outfalls,facts,1)
 }
-
-
-##################################################################################################################################
-################################################Imports###########################################################################
-
-#1 Import Outfall Timeseries Data
-timeseries <- ts_ECHO_pull(ECHO_Facilities,1, startDate, endDate)
-#write.table(timeseries,file="timeseries.txt", sep='\t', row.names = F)
-
-#save.image(file="timeseries_2010_present.RData")
-
-
-#------------------Timeseries Flags-------------------#
-timeseries <- ts_flagging(timeseries)
-
 
 # Returns number of entries in database assigned to each state
 n_states<- function(database){
@@ -258,13 +245,3 @@ n_states<- function(database){
 
 #n_states(release.dataframe)
 n_states(timeseries)
-
-##################################################################################################################################
-###########################################Pushing DMR timeseries Data to VAHydro#################################################
-
-############################################################################################
-# RETRIEVE/CREATE/UPDATE TIMESERIES
-############################################################################################  
-
-timeseries.dataframe <- ts_import(outfalls,timeseries,1)
-#write.table(timeseries.dataframe,file="timeseries.dataframe.txt",sep="\t",row.names=F)
