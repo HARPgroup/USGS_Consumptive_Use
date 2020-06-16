@@ -138,6 +138,8 @@ agency_adminid <- as.character(agency_dataframe$adminid)
 
 startDate <- '01/01/2019'
 endDate <- '12/31/2019'
+effdate_default <- '1970/01/01'
+expdate_default <- '1970/01/01'
 endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 
 # Get outfall locs from VPDES )(if present)
@@ -157,7 +159,13 @@ permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in 1:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
-  
+  if (is.na(ECHO_Facilities_i$CWPEffectiveDate)) {
+    ECHO_Facilities_i$CWPEffectiveDate <- effdate_default
+  }
+  if (is.na(ECHO_Facilities_i$CWPExpirationDate)) {
+    ECHO_Facilities_i$CWPExpirationDate <- expdate_default
+  }
+  # 
   print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   permit <- permit_REST(ECHO_Facilities_i, agency_adminid)
   if (is.null(permit_dataframe)) {
