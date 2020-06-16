@@ -138,7 +138,7 @@ agency_adminid <- as.character(agency_dataframe$adminid)
 
 startDate <- '01/01/2019'
 endDate <- '12/31/2019'
-endDate<-format(as.Date(endDate), "%m/%d/%Y")
+endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 
 # Get outfall locs from VPDES )(if present)
 VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
