@@ -74,7 +74,7 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
 
 #####################################################################
 argst <- commandArgs(trailingOnly=T)
-if (!is.null(nrow(argst))) {
+if (length(argst) > 0) {
   spoint <- as.integer(argst[1])
 } else {
   spoint = 1
