@@ -221,13 +221,13 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
   if (as.integer(nrow(DMR_data)) > 0) {
     outfalls <- outfall_features_REST(DMR_data, facility, token, basepath)
+    # get timeseries
+    facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
+    # flag errors
+    facts <- ts_flagging(facts)
+    # push to VAHydro
+    tsdf <- ts_import(outfalls,facts,1)
   }
-  # get timeseries
-  facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
-  # flag errors
-  facts <- ts_flagging(facts)
-  # push to VAHydro
-  tsdf <- ts_import(outfalls,facts,1)
 }
 
 # Returns number of entries in database assigned to each state
