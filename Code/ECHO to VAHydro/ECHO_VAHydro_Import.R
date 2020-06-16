@@ -72,6 +72,13 @@ token <-trimws(rest_token(basepath, token, rest_uname, rest_pw))
 #Load functions
 source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
+#####################################################################
+argst <- commandArgs(trailingOnly=T)
+if (!is.null(nrow(argst))) {
+  offset <- as.integer(argst[1])
+}
+
+
 
 ####################################Inputs##########################################
  #shows a list of all fields and descriptions
@@ -150,7 +157,7 @@ VPDES_DesignFlow <- cu_echo_get_VPDES()
 ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
 # get formatted list of design flows for outfalls
 design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
-
+write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
 #i <- 1048 
 #i <- 26951
 # Create or retreive the Permit for each facility 
@@ -159,75 +166,59 @@ permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in 1:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
-  if (is.na(ECHO_Facilities_i$CWPEffectiveDate)) {
-    ECHO_Facilities_i$CWPEffectiveDate <- effdate_default
-  }
-  if (is.na(ECHO_Facilities_i$CWPExpirationDate)) {
-    ECHO_Facilities_i$CWPExpirationDate <- expdate_default
-  }
-  # 
-  print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
-  permit <- permit_REST(ECHO_Facilities_i, agency_adminid)
-  if (is.null(permit_dataframe)) {
-    permit_dataframe <- permit
-  } else {
-    permit_dataframe <- sqldf(
-      "select * from permit_dataframe
-       UNION
-         select * from permit
-    ")
-  }
-  print(permit)
-  
-  print("PROCESSING FACILITY")
-  # check if facility has a known match Facility in vahydro that is NOT of ECHO origin
-  # - If YES, just load the facility, do not push any updates
-  # - If NO, create/update 
-  ECHO_Facilities_i$hydrocode <- as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID))
-  ECHO_Facilities_i <- vahydro_facility_match(ECHO_Facilities_i)
-  if (!is.na(ECHO_Facilities_i$matched_hydroid)) {
-    print(paste0("Found Matched Facility with hydroid = ", ECHO_Facilities_i$matched_hydroid))
-    facility <- getFeature(list(hydroid = ECHO_Facilities_i$matched_hydroid), token, basepath)
-    dh_link_admin_location = as.character(permit$adminid)
-  } else {
-    facility <- facility_REST(ECHO_Facilities_i, permit, token)
-  }
-  
-  if (is.null(facility_dataframe)) {
-    facility_dataframe <- facility
-  } else {
-    facility_dataframe <- sqldf(
-      "select * from facility_dataframe
-       UNION
-         select * from facility
-    ")
-  }
-  print(facility)
-  
-  
-  # print("PROCESSING FACILITY PROPERTIES")
-  # facility_properties <- ECHO_properties_REST(ECHO_Facilities_i,facility,token,basepath)
-  
-  #-Waterbody Name (GNIS)
-  #-Combined Sewer System Flag (CWPCsoFlag)
-  #-Number of Discharge Outfalls Prior to the Treatment Plant (CWP_CSO_Outfalls)
-  #-Impairment Class or Category of the Waterbody (impair_cause)
-  #-Date of most recent inspection of the facility (last_inspect)
-  #-Unique ID for Waterbody (reachcode_rad)
-  #-Facility Design Flow in MGD (design_flow)
-  
-  
-  print("PROCESSING OUTFALLS")
-  # #echor package has 2 functions for pulling effluent data echoGetEffluent() and downloadDMRs(). However, the url being used to download is not working causing these functions to fail. Manualing pulling from the rest_services url does work. 
-  # effluent_data <- echoGetEffluent(p_id = 'VA0089133',  parameter_code = '50050')
-  # 
-  # df <- tibble::tibble("permit" = c('VA0089133'))
-  # df <- downloadDMRs(df, permit)
-  print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+  print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
-#CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+  #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-  if (as.integer(nrow(DMR_data)) > 0) {
+  # We only create facility/permit features if we have actual outfall data to manage
+  if ((as.integer(nrow(DMR_data)) > 0) ) {
+    if (is.na(ECHO_Facilities_i$CWPEffectiveDate)) {
+      ECHO_Facilities_i$CWPEffectiveDate <- effdate_default
+    }
+    if (is.na(ECHO_Facilities_i$CWPExpirationDate)) {
+      ECHO_Facilities_i$CWPExpirationDate <- expdate_default
+    }
+    # 
+    print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+    permit <- permit_REST(ECHO_Facilities_i, agency_adminid)
+    if (is.null(permit_dataframe)) {
+      permit_dataframe <- permit
+    } else {
+      permit_dataframe <- sqldf(
+        "select * from permit_dataframe
+         UNION
+           select * from permit
+      ")
+    }
+    print(permit)
+    
+    print("PROCESSING FACILITY")
+    # check if facility has a known match Facility in vahydro that is NOT of ECHO origin
+    # - If YES, just load the facility, do not push any updates
+    # - If NO, create/update 
+    ECHO_Facilities_i$hydrocode <- as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID))
+    ECHO_Facilities_i <- vahydro_facility_match(ECHO_Facilities_i)
+    if (!is.na(ECHO_Facilities_i$matched_hydroid)) {
+      print(paste0("Found Matched Facility with hydroid = ", ECHO_Facilities_i$matched_hydroid))
+      facility <- getFeature(list(hydroid = ECHO_Facilities_i$matched_hydroid), token, basepath)
+      dh_link_admin_location = as.character(permit$adminid)
+    } else {
+      facility <- facility_REST(ECHO_Facilities_i, permit, token)
+    }
+    
+    if (is.null(facility_dataframe)) {
+      facility_dataframe <- facility
+    } else {
+      facility_dataframe <- sqldf(
+        "select * from facility_dataframe
+         UNION
+           select * from facility
+      ")
+    }
+    print(facility)
+    
+    print("PROCESSING OUTFALLS")
+    print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
     outfalls <- outfall_features_REST(DMR_data, facility, token, basepath)
     # get timeseries
     facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
@@ -235,6 +226,8 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
     facts <- ts_flagging(facts)
     # push to VAHydro
     tsdf <- ts_import(outfalls,facts,1)
+  } else {
+    print(paste0("No DMR data exists for facility ", i, " will not process") )
   }
 }
 
