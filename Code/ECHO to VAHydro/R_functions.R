@@ -463,7 +463,9 @@ ts_import<- function(outfalls,timeseries,iteration){
   ts_inputs$echo_flag[is.na(ts_inputs$echo_flag)]<-""
   ts_inputs$tsvalue[ts_inputs$tsvalue==""]<-NA
   ts_inputs<-subset(ts_inputs,!is.na(ts_inputs$tsvalue))
-  
+  if (length(ts_inputs$featureid) == 0) {
+    return(NULL)
+  }
   for (i in iteration:length(ts_inputs$featureid)){
     print(paste("Processing DMR Entry ",i," of ", length(ts_inputs$featureid)))
     timeseries.dataframe_i <- getTimeseries(ts_inputs[i,1:7], basepath, ts)
