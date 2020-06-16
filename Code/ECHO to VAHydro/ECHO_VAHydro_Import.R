@@ -128,6 +128,7 @@ print(paste("Number of Facilities After Permit Type Description Subset: ",length
 
 #rename SourceID column to Facility_ID 
 colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID"
+
 backup <- ECHO_Facilities
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
@@ -138,6 +139,15 @@ agency_adminid <- as.character(agency_dataframe$adminid)
 startDate <- '01/01/2019'
 endDate <- '12/31/2019'
 endDate<-format(as.Date(endDate), "%m/%d/%Y")
+
+# Get outfall locs from VPDES )(if present)
+VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
+# get design_flow from VPDES (if present)
+VPDES_DesignFlow <- cu_echo_get_VPDES() 
+# Attach design flow to Facilities
+ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
+# get formatted list of design flows for outfalls
+design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
 
 #i <- 1048 
 #i <- 26951
@@ -212,24 +222,13 @@ for (i in 1:(length(ECHO_Facilities[,1]))){
   if (as.integer(nrow(DMR_data)) > 0) {
     outfalls <- outfall_features_REST(DMR_data, facility, token, basepath)
   }
+  # get timeseries
+  facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
+  # flag errors
+  facts <- ts_flagging(facts)
+  # push to VAHydro
+  tsdf <- ts_import(outfalls,facts,1)
 }
-
-#---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
-ECHO_Facilities <- df_coord_pull(ECHO_Facilities)
-
-##################################################################################################################################
-################################################Imports###########################################################################
-
-#1 Import Outfall Timeseries Data
-timeseries <- ts_ECHO_pull(ECHO_Facilities,1, startDate, endDate)
-#write.table(timeseries,file="timeseries.txt", sep='\t', row.names = F)
-
-#save.image(file="timeseries_2010_present.RData")
-
-
-#------------------Timeseries Flags-------------------#
-timeseries <- ts_flagging(timeseries)
-
 
 # Returns number of entries in database assigned to each state
 n_states<- function(database){
@@ -246,13 +245,3 @@ n_states<- function(database){
 
 #n_states(release.dataframe)
 n_states(timeseries)
-
-##################################################################################################################################
-###########################################Pushing DMR timeseries Data to VAHydro#################################################
-
-############################################################################################
-# RETRIEVE/CREATE/UPDATE TIMESERIES
-############################################################################################  
-
-timeseries.dataframe <- ts_import(outfalls,timeseries,1)
-#write.table(timeseries.dataframe,file="timeseries.dataframe.txt",sep="\t",row.names=F)

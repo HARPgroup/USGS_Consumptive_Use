@@ -556,9 +556,7 @@ ts_import<- function(outfalls,timeseries,iteration){
 
 
 #---------Retrieve Design Flows and Outfall Coordinates in VPDES Database---------#
-
-df_coord_pull<- function(ECHO_Facilities){
-  
+cu_echo_get_VPDES <- function() {
   # Individual Permits updated as of October 2018---contains design flow for facilities
   # Warnings about unknown or uninitiliased columns: previous IP contact sheets named the columns differently. 
   # It doesn't hinder any processes though. 
@@ -571,19 +569,12 @@ df_coord_pull<- function(ECHO_Facilities){
   VPDES_IP<-VPDES_IP[!duplicated(VPDES_IP$`Permit Number`),] #getting rid of duplicates and looking at unique permits
   VPDES_DesignFlow<-VPDES_IP[c("Permit Number", "Design Flow (MGD)")]
   colnames(VPDES_DesignFlow)<-c("Facility_ID","DesignFlow_mgd")
+  return(VPDES_DesignFlow)
   
-  ECHO_Facilities <- sqldf(
-    " select a.*, b.DesignFlow_mgd 
-      from ECHO_Facilities as a 
-      left outer join VPDES_DesignFlow as b 
-      on (a.Facility_ID = b.Facility_ID)
-    "
-  )
-  #----------Seperate Design Flow as a Facility Property---------------#
-  design_flow<-data.frame(hydrocode=paste0("echo_",ECHO_Facilities$Facility_ID), varkey='design_flow', propname='design_flow', 
-                          propvalue=ECHO_Facilities$DesignFlow_mgd, propcode=ifelse(ECHO_Facilities$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA), stringsAsFactors = F)
+}
+
+cu_echo_get_VPDES_outfalls <- function() {
   
-  #----------Retrieve coordinates of outfalls-----------------#
   #Use Aggregated Flows generated from ECHOInterface Script and list of outfalls for creating release and conveyance points.
   temp<-tempfile(fileext = ".zip")
   #Locations and attribute data about active outfalls in the State
@@ -592,9 +583,9 @@ df_coord_pull<- function(ECHO_Facilities){
   #Explore what is in VPDES_Geodatabase.gdb
   ogrListLayers("VPDES_Geodatabase.gdb") #Two layers: VPDES Outfalls and OpenFileGDB
   VPDES_Outfalls<-as.data.frame(readOGR("VPDES_Geodatabase.gdb",layer="VPDES_OUTFALLS"))
+  #----------Retrieve coordinates of outfalls-----------------#
   names(VPDES_Outfalls)[names(VPDES_Outfalls)=="OUTFALL_ID"]<-'OutfallID'
   names(VPDES_Outfalls)[names(VPDES_Outfalls)=="VAP_PMT_NO"]<-'Facility_ID'
-  names(ECHO_Facilities)[names(ECHO_Facilities)=="SourceID"]<-"Facility_ID"#Need to rename to give a central columnn name for future joins
   
   VPDES_Coordinates<-VPDES_Outfalls[,c(15,16)]
   VPDES_Coordinates <- proj4::project(VPDES_Coordinates, proj="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs", inverse=TRUE)
@@ -603,8 +594,35 @@ df_coord_pull<- function(ECHO_Facilities){
   VPDES_Outfalls$Longitude<-VPDES_Coordinates$x
   VPDES_Outfalls$Latitude<-VPDES_Coordinates$y
   
-  assign("design_flow",design_flow,envir = .GlobalEnv)
-  assign("VPDES_Outfalls",VPDES_Outfalls,envir = .GlobalEnv)
+  return(VPDES_Outfalls)
+}
+
+
+cu_echo_get_VPDES_design_flow <- function(ECHO_Facilities) {
+  #----------Seperate Design Flow as a Facility Property---------------#
+  design_flow<-data.frame(
+    hydrocode=paste0(
+      "echo_",ECHO_Facilities$Facility_ID
+    ), 
+    varkey='design_flow', 
+    propname='design_flow', 
+    propvalue=ECHO_Facilities$DesignFlow_mgd,
+    propcode=ifelse(ECHO_Facilities$DesignFlow_mgd==0,"fac_flag_zerodesflow",NA), 
+    stringsAsFactors = F
+  )
+  
+  return(design_flow)
+}
+
+df_coord_pull<- function(ECHO_Facilities, VPDES_DesignFlow){
+  
+  ECHO_Facilities <- sqldf(
+    " select a.*, b.DesignFlow_mgd 
+      from ECHO_Facilities as a 
+      left outer join VPDES_DesignFlow as b 
+      on (a.Facility_ID = b.Facility_ID)
+    "
+  )
   return(ECHO_Facilities)
   
 }
