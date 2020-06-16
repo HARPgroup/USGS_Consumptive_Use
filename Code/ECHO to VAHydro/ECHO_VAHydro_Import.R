@@ -74,10 +74,11 @@ source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R"
 
 #####################################################################
 argst <- commandArgs(trailingOnly=T)
-if (!is.null(nrow(argst))) {
-  offset <- as.integer(argst[1])
+if (length(argst) > 0) {
+  spoint <- as.integer(argst[1])
+} else {
+  spoint = 1
 }
-
 
 
 ####################################Inputs##########################################
@@ -164,7 +165,7 @@ write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, 
 #ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
 permit_dataframe <- NULL
 facility_dataframe <- NULL
-for (i in 1:(length(ECHO_Facilities[,1]))){
+for (i in spoint:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
   print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
