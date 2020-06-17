@@ -60,19 +60,10 @@ localpath <-"/usr/local/home/git/"
 HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
-basepath <- "http://deq2.bse.vt.edu/d.alpha"
-
-# #Generate REST token for authentication              
-rest_uname = FALSE
-rest_pw = FALSE
-source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
-source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
-token <-trimws(rest_token(basepath, token, rest_uname, rest_pw))
-
-#Load functions
-source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+base_url <- "http://deq2.bse.vt.edu/d.alpha"
 
 #####################################################################
+# Parse command line arguments
 argst <- commandArgs(trailingOnly=T)
 if (length(argst) > 0) {
   spoint <- as.integer(argst[1])
@@ -84,7 +75,22 @@ if (length(argst) > 1) {
 } else {
   import_mode = 'vahydro'
 }
+if (length(argst) > 2) {
+  base_url <- as.integer(argst[3])
+}
+
 print(paste0("Using Import mode", import_mode))
+print(paste0("Using Base URL", base_url))
+
+# #Generate REST token for authentication              
+rest_uname = FALSE
+rest_pw = FALSE
+source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
+token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
+
+#Load functions
+source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 
 ####################################Inputs##########################################
@@ -147,7 +153,7 @@ backup <- ECHO_Facilities
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
 agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
-agency_dataframe <- getAdminregFeature(agency_inputs, basepath, adminreg_feature)
+agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature)
 agency_adminid <- as.character(agency_dataframe$adminid)
 
 startDate <- '01/01/2019'
@@ -208,7 +214,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     ECHO_Facilities_i <- vahydro_facility_match(ECHO_Facilities_i)
     if (!is.na(ECHO_Facilities_i$matched_hydroid)) {
       print(paste0("Found Matched Facility with hydroid = ", ECHO_Facilities_i$matched_hydroid))
-      facility <- getFeature(list(hydroid = ECHO_Facilities_i$matched_hydroid), token, basepath)
+      facility <- getFeature(list(hydroid = ECHO_Facilities_i$matched_hydroid), token, base_url)
       dh_link_admin_location = as.character(permit$adminid)
     } else {
       facility <- facility_REST(ECHO_Facilities_i, permit, token)
@@ -227,7 +233,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     
     print("PROCESSING OUTFALLS")
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
-    outfalls <- outfall_features_REST(DMR_data, facility, token, basepath)
+    outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
     # get timeseries - this function makes a redundant call to echo for ts data... should replace
     facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
     # flag errors
