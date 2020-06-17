@@ -79,6 +79,12 @@ if (length(argst) > 0) {
 } else {
   spoint = 1
 }
+if (length(argst) > 1) {
+  import_mode <- as.integer(argst[2])
+} else {
+  import_mode = 'vahydro'
+}
+print(paste0("Using Import mode", import_mode))
 
 
 ####################################Inputs##########################################
