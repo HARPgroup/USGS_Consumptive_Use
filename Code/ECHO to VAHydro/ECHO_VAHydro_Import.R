@@ -79,6 +79,12 @@ if (length(argst) > 0) {
 } else {
   spoint = 1
 }
+if (length(argst) > 1) {
+  import_mode <- as.integer(argst[2])
+} else {
+  import_mode = 'vahydro'
+}
+print(paste0("Using Import mode", import_mode))
 
 
 ####################################Inputs##########################################
@@ -222,12 +228,31 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     print("PROCESSING OUTFALLS")
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
     outfalls <- outfall_features_REST(DMR_data, facility, token, basepath)
-    # get timeseries
+    # get timeseries - this function makes a redundant call to echo for ts data... should replace
     facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
     # flag errors
     facts <- ts_flagging(facts)
-    # push to VAHydro
-    tsdf <- ts_import(outfalls,facts,1)
+    if (import_mode == 'vahydro') {
+      # push to VAHydro
+      tsdf <- ts_import(outfalls,facts,1)
+    } else {
+      # export as a file 
+      tsdf <- dh_echo_format_ts(facts, outfalls)
+      if (i == 1) {
+        write.table(
+          tsdf,"ts-export.txt",append = FALSE, 
+          quote = FALSE, sep="\t", row.names = FALSE,
+          col.names = TRUE
+        )
+      } else {
+        write.table(
+          tsdf,"ts-export.txt",append = TRUE, 
+          quote = TRUE, sep="\t", row.names = FALSE,
+          col.names = FALSE
+        )
+      }
+      
+    }
   } else {
     print(paste0("No DMR data exists for facility ", i, " will not process") )
   }
