@@ -130,8 +130,8 @@ permit_REST <- function(ECHO_Facilities_i, agency_adminid, permit){
     stringsAsFactors = FALSE
   ) 
   
-  permit <- postAdminregFeature(permit_inputs, basepath)
-  permit <- getAdminregFeature(permit_inputs, basepath)
+  permit <- postAdminregFeature(permit_inputs, base_url)
+  permit <- getAdminregFeature(permit_inputs, base_url)
   
   return(permit)
 }
@@ -147,7 +147,7 @@ fips_REST <- function(fipscode,token){
     stringsAsFactors = FALSE
   ) 
   
-  fips_hydroid <- getFeature(fips_inputs, token, basepath)
+  fips_hydroid <- getFeature(fips_inputs, token, base_url)
   
   if(fips_hydroid != FALSE){
     fips_hydroid <- as.character(fips_hydroid$hydroid)
@@ -326,13 +326,13 @@ facility_REST <- function(ECHO_Facilities_i, permit, token, facility){
     facility_inputs$dh_link_admin_fa_usafips = fips
   }
   
-  facility <- postFeature(facility_inputs, basepath)
-  facility <- getFeature(facility_inputs, token, basepath)
+  facility <- postFeature(facility_inputs, base_url)
+  facility <- getFeature(facility_inputs, token, base_url)
   return(facility)
   
 } #END OF FACILITY_REST FUNCTION
 
-ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop){
+ECHO_properties_REST <- function(outfall_inputs,facility, token, base_url, prop){
   #facility_hydroid <- as.character(facility$hydroid)
   
   
@@ -346,8 +346,8 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
   #   startdate = as.numeric(as.POSIXlt(anydate(as.character(ECHO_Facilities_i$CWPDateLastInspection)))),
   #   stringsAsFactors = FALSE
   # )
-  # last_inspect_prop <- postProperty(last_inspect_input,base_url=basepath)
-  # last_inspect_prop <- getProperty(last_inspect_input,base_url=basepath)
+  # last_inspect_prop <- postProperty(last_inspect_input,base_url=base_url)
+  # last_inspect_prop <- getProperty(last_inspect_input,base_url=base_url)
   #css (Logical combined sewer system value)
   css_input <- data.frame(
     bundle = 'dh_properties',
@@ -359,8 +359,8 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
     propcode = as.character(ECHO_Facilities_i$CWPCsoFlag),
     stringsAsFactors = FALSE
   )
-  css_prop <- postProperty(css_input,base_url=basepath)
-  css_prop <- getProperty(css_input,base_url=basepath)
+  css_prop <- postProperty(css_input,base_url=base_url)
+  css_prop <- getProperty(css_input,base_url=base_url)
   #cwp_cso_outfalls (number of upstream outfalls)
   cso_outfalls_input <- data.frame(
     bundle = 'dh_properties',
@@ -371,8 +371,8 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
     propvalue = as.character(ECHO_Facilities_i$CWPCsoOutfalls),
     stringsAsFactors = FALSE
   )
-  cso_outfalls_prop <- postProperty(cso_outfalls_input,base_url=basepath)
-  cso_outfalls_prop <- getProperty(cso_outfalls_input,base_url=basepath)
+  cso_outfalls_prop <- postProperty(cso_outfalls_input,base_url=base_url)
+  cso_outfalls_prop <- getProperty(cso_outfalls_input,base_url=base_url)
   #wb_gnis_name (Receiving waterbody USGS name)
   wb_gnis_name_input <- data.frame(
     bundle = 'dh_properties',
@@ -383,8 +383,8 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
     propcode = as.character(ECHO_Facilities_i$RadGnisName),
     stringsAsFactors = FALSE
   )
-  wb_gnis_name_prop <- postProperty(wb_gnis_name_input,base_url=basepath)
-  wb_gnis_name_prop <- getProperty(wb_gnis_name_input,base_url=basepath)
+  wb_gnis_name_prop <- postProperty(wb_gnis_name_input,base_url=base_url)
+  wb_gnis_name_prop <- getProperty(wb_gnis_name_input,base_url=base_url)
   #reachcode_rad (USGS reach code)
   reachcode_rad_input <- data.frame(
     bundle = 'dh_properties',
@@ -395,8 +395,8 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
     propcode = as.character(ECHO_Facilities_i$RadReachcode),
     stringsAsFactors = FALSE
   )
-  reachcode_rad_prop <- postProperty(reachcode_rad_input,base_url=basepath)
-  reachcode_rad_prop <- getProperty(reachcode_rad_input,base_url=basepath)
+  reachcode_rad_prop <- postProperty(reachcode_rad_input,base_url=base_url)
+  reachcode_rad_prop <- getProperty(reachcode_rad_input,base_url=base_url)
   #impair_cause (Stressors that are causing impairment)
   impair_cause_input <- data.frame(
     bundle = 'dh_properties',
@@ -407,8 +407,8 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
     proptext = as.character(ECHO_Facilities_i$AttainsStateCauses),
     stringsAsFactors = FALSE
   )
-  impair_cause_prop <- postProperty(impair_cause_input,base_url=basepath)
-  impair_cause_prop <- getProperty(impair_cause_input,base_url=basepath)
+  impair_cause_prop <- postProperty(impair_cause_input,base_url=base_url)
+  impair_cause_prop <- getProperty(impair_cause_input,base_url=base_url)
   # #design_flow (Design Flow)
   #   design_flow_input <- data.frame(
   #   bundle = 'dh_properties',
@@ -419,7 +419,7 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
   #   propvalue = as.numeric(ECHO_Facilities_i$DesignFlow_mgd),
   #   stringsAsFactors = FALSE
   #   )
-  #   design_flow_prop <- postProperty(design_flow_input,base_url=basepath)
+  #   design_flow_prop <- postProperty(design_flow_input,base_url=base_url)
 } #END OF ECHO_PROPERTIES_REST FUNCTION
 
 dh_echo_format_ts <- function(timeseries, outfalls) {
@@ -476,13 +476,13 @@ ts_import<- function(outfalls,timeseries,iteration){
   }
   for (i in iteration:length(ts_inputs$featureid)){
     print(paste("Processing DMR Entry ",i," of ", length(ts_inputs$featureid)))
-    timeseries.dataframe_i <- getTimeseries(ts_inputs[i,1:7], basepath, ts)
+    timeseries.dataframe_i <- getTimeseries(ts_inputs[i,1:7], base_url, ts)
     
     if(timeseries.dataframe_i[1]==FALSE){
-      timeseries.dataframe_ii <- postTimeseries(ts_inputs[i,1:7],basepath,ts)
+      timeseries.dataframe_ii <- postTimeseries(ts_inputs[i,1:7],base_url,ts)
       print(timeseries.dataframe_ii)
       
-      timeseries.dataframe_i<-getTimeseries(ts_inputs[i,1:7], basepath, ts)
+      timeseries.dataframe_i<-getTimeseries(ts_inputs[i,1:7], base_url, ts)
       
     }else{
       print("This timeseries Feature already exists")
@@ -637,7 +637,7 @@ df_coord_pull<- function(ECHO_Facilities, VPDES_DesignFlow){
   
 }
 
-outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
+outfall_features_REST <- function(DMR_data, facility, token, base_url, outfall){
   
   outfall_inputs <- vahydro_echo_outfalls(DMR_data, facility)
   
@@ -659,8 +659,8 @@ outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
     print(paste0('PROCESSING OUTFALL ', z, ' of ', length(outfall_inputs[,1])))
     
     #outfall_inputs_z <- outfall_inputs[1,]
-  outfall_z <- postFeature(outfall_inputs_z, basepath)
-  outfall_z <- getFeature(outfall_inputs_z, token, basepath)
+  outfall_z <- postFeature(outfall_inputs_z, base_url)
+  outfall_z <- getFeature(outfall_inputs_z, token, base_url)
   outfall <- rbind(outfall,outfall_z)
   }
  
