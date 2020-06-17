@@ -78,9 +78,10 @@ if (length(argst) > 1) {
 if (length(argst) > 2) {
   base_url <- as.integer(argst[3])
 }
+print(argst)
 
-print(paste0("Using Import mode", import_mode))
-print(paste0("Using Base URL", base_url))
+print(paste0("Using Import mode ", import_mode))
+print(paste0("Using Base URL ", base_url))
 
 # #Generate REST token for authentication              
 rest_uname = FALSE
