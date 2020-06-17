@@ -422,19 +422,7 @@ ECHO_properties_REST <- function(outfall_inputs,facility, token, basepath, prop)
   #   design_flow_prop <- postProperty(design_flow_input,base_url=basepath)
 } #END OF ECHO_PROPERTIES_REST FUNCTION
 
-ts_import<- function(outfalls,timeseries,iteration){
-  timeseries.tid<-character()
-  timeseries.dataframe<-data.frame()
-  timeseries.dataframe_i<-data.frame()
-  timeseries.dataframe_ii<-data.frame()
-  featureid_dmr_flag_desflow<-character()
-  featureid_dmr_flag_units_100<-character()
-  featureid_dmr_flag_units_1000000<-character()
-  featureid_echo_flag<-character()
-  flag_inputs_dmr_flag_desflow<-data.frame()
-  flag_inputs_dmr_flag_units_100<-data.frame()
-  flag_inputs_1000000<-data.frame()
-  flag_inputs_echo_flag<-data.frame()
+dh_echo_format_ts <- function(timeseries, outfalls) {
   
   ts_inputs <- sqldf(
     " select a.hydroid as featureid, 
@@ -463,6 +451,26 @@ ts_import<- function(outfalls,timeseries,iteration){
   ts_inputs$echo_flag[is.na(ts_inputs$echo_flag)]<-""
   ts_inputs$tsvalue[ts_inputs$tsvalue==""]<-NA
   ts_inputs<-subset(ts_inputs,!is.na(ts_inputs$tsvalue))
+  
+  return (ts_inputs)
+}
+
+ts_import<- function(outfalls,timeseries,iteration){
+  timeseries.tid<-character()
+  timeseries.dataframe<-data.frame()
+  timeseries.dataframe_i<-data.frame()
+  timeseries.dataframe_ii<-data.frame()
+  featureid_dmr_flag_desflow<-character()
+  featureid_dmr_flag_units_100<-character()
+  featureid_dmr_flag_units_1000000<-character()
+  featureid_echo_flag<-character()
+  flag_inputs_dmr_flag_desflow<-data.frame()
+  flag_inputs_dmr_flag_units_100<-data.frame()
+  flag_inputs_1000000<-data.frame()
+  flag_inputs_echo_flag<-data.frame()
+  
+  ts_inputs <- dh_echo_format_ts(timeseries, outfalls)
+  
   if (length(ts_inputs$featureid) == 0) {
     return(NULL)
   }
@@ -631,16 +639,7 @@ df_coord_pull<- function(ECHO_Facilities, VPDES_DesignFlow){
 
 outfall_features_REST <- function(DMR_data, facility, token, basepath, outfall){
   
-  outfall_inputs <- sqldf("SELECT  
-                            ('echo_' || npdes_id || rightstr('000' || perm_feature_nmbr, 3)) as hydrocode,
-                            ('FROM ' || npdes_id) as name,
-                            'transfer' as bundle,
-                            'outfall' as ftype,
-                            'active' as fstatus
-                            FROM DMR_data
-                            GROUP BY perm_feature_nmbr")
-  outfall_inputs$dh_link_facility_mps <- as.character(facility$hydroid)
-  outfall_inputs$dh_geofield <- as.character(facility$geom)
+  outfall_inputs <- vahydro_echo_outfalls(DMR_data, facility)
   
   outfall <- data.frame(
     hydroid = character(),
@@ -702,34 +701,28 @@ ECHO_column_lookup <- function(echo_cols, mode='ObjectName', echo_meta = NULL) {
   return( retvals)
 }
 
-vahydro_echo_outfalls <- function(ECHO_Facilities, VPDES_Outfalls, timeseries) {
-  
-  ECHO_Outfalls<-sqldf("select OutfallID, Facility_ID from timeseries group by OutfallID, Facility_ID")
-  ECHO_Outfalls<-sqldf(
-    "select a.*, 
-     CASE 
-       WHEN b.Latitude is NULL THEN c.FacLat
-       ELSE b.Latitude
-     END as Latitude,  
-     CASE 
-       WHEN b.Longitude is NULL THEN c.FacLong
-       ELSE b.Longitude
-     END as Longitude 
-     from ECHO_Outfalls as a 
-     left outer join VPDES_Outfalls as b 
-     on (
-       a.OutfallID = b.OutfallID
-     )
-     left outer join ECHO_Facilities as c 
-     on (
-       a.Facility_ID = c.Facility_ID
-     )
+
+vahydro_echo_outfalls <- function(DMR_data, facility){
+  #Outfalls Generation
+  outfalls <- sqldf(
     "
-  )
-  return(ECHO_Outfalls)
+      SELECT  
+      ('echo_' || npdes_id || rightstr('000' || perm_feature_nmbr, 3)) as hydrocode,
+      ('FROM ' || npdes_id) as name,
+      'transfer' as bundle,
+      'outfall' as ftype,
+      'active' as fstatus
+      FROM DMR_data
+    GROUP BY perm_feature_nmbr
+  ")
+  outfalls$dh_link_facility_mps <- as.character(facility$hydroid)
+  outfalls$dh_geofield <- as.character(facility$geom)
+  
+  return(outfalls)
 }
 
 
+# Is this deprecated? Used a different format for hydrocode I think
 outfall_formatted<- function(ECHO_Outfalls){
   #Outfalls Generation
   #Reformats 'ECHO_Outfalls' using available VPDES or ECHO geometry data and ECHO attributes
