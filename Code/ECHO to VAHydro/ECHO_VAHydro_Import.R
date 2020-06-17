@@ -76,7 +76,10 @@ if (length(argst) > 1) {
   import_mode = 'vahydro'
 }
 if (length(argst) > 2) {
-  base_url <- argst[3]
+  one_state <- argst[3]
+}
+if (length(argst) > 3) {
+  base_url <- argst[4]
 }
 print(argst)
 
@@ -141,8 +144,14 @@ ECHO_Facilities <- data.frame(ECHO_Facilities)
 #use sqldf for replacements
 keep_permits <- "SELECT *
                 FROM ECHO_Facilities
-                WHERE CWPPermitTypeDesc = 'NPDES Individual Permit'
-                OR CWPPermitTypeDesc = 'General Permit Covered Facility'"
+                WHERE ( CWPPermitTypeDesc = 'NPDES Individual Permit'
+                OR CWPPermitTypeDesc = 'General Permit Covered Facility' ) "
+#use sqldf for replacements
+if (one_state != '') {
+  keep_permits <- paste0(keep_permits, 
+    "AND SourceID LIKE '", one_state, "%'")
+}
+
 ECHO_Facilities <- sqldf(keep_permits)
 
 print(paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1])))
