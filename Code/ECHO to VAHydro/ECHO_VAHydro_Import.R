@@ -76,7 +76,7 @@ if (length(argst) > 1) {
   import_mode = 'vahydro'
 }
 if (length(argst) > 2) {
-  one_state <- argst[3]
+  id_prefix <- argst[3]
 }
 if (length(argst) > 3) {
   base_url <- argst[4]
@@ -85,6 +85,7 @@ print(argst)
 
 print(paste0("Using Import mode ", import_mode))
 print(paste0("Using Base URL ", base_url))
+print(paste0("Allowed prefix ", id_prefix))
 
 # #Generate REST token for authentication              
 rest_uname = FALSE
@@ -147,9 +148,9 @@ keep_permits <- "SELECT *
                 WHERE ( CWPPermitTypeDesc = 'NPDES Individual Permit'
                 OR CWPPermitTypeDesc = 'General Permit Covered Facility' ) "
 #use sqldf for replacements
-if (one_state != '') {
+if (id_prefix != '') {
   keep_permits <- paste0(keep_permits, 
-    "AND SourceID LIKE '", one_state, "%'")
+    "AND SourceID LIKE '", id_prefix, "%'")
 }
 
 ECHO_Facilities <- sqldf(keep_permits)
