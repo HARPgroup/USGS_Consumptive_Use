@@ -71,12 +71,12 @@ if (length(argst) > 0) {
   spoint = 1
 }
 if (length(argst) > 1) {
-  import_mode <- as.integer(argst[2])
+  import_mode <- argst[2]
 } else {
   import_mode = 'vahydro'
 }
 if (length(argst) > 2) {
-  base_url <- as.integer(argst[3])
+  base_url <- argst[3]
 }
 print(argst)
 
