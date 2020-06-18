@@ -27,11 +27,11 @@ output_filename <- "wd_mgy_export.csv"
 data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ############################################  
-#check to see if there are multiple wd_mgy entries for a single year
+##check to see if there are multiple wd_mgy entries for a single year
 #   a <- sqldf("SELECT a.*
-# FROM data a
+# FROM data_annual a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data
+# FROM data_annual
 # GROUP BY MP_hydroid
 # HAVING count(*) > 2 ) b
 # ON a.MP_hydroid = b.MP_hydroid
