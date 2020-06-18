@@ -20,7 +20,7 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq2.bse.vt.edu/d.alpha"
+datasite <- "http://deq2.bse.vt.edu/d.dh"
 
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
@@ -124,7 +124,7 @@ data <- sqldf("SELECT *
 dis_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
 
 #rename columns
-dis_mgm_export <- sqldf('SELECT MP_hydroid,
+dis_mgm <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
@@ -155,19 +155,19 @@ dis_mgm_export <- sqldf('SELECT MP_hydroid,
 
 ###################
 # #QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
-# dis_mgm_export$ann_sum <- rowSums(dis_mgm_export[12:23],na.rm = FALSE)
+# dis_mgm_export$ann_sum <- rowSums(dis_mgm_export[13:24],na.rm = FALSE)
 # 
-# dis_join_no_match <- sqldf('SELECT a.*, b."Water.Use.MGY" AS MGY
+# dis_join_no_match <- sqldf('SELECT a.*, b.MGY
 #                  FROM dis_mgm_export a
-#                  LEFT OUTER JOIN "data.all" b
+#                  LEFT OUTER JOIN dis_mgy b
 #                  ON a.Year = b.Year
 #                  AND a.MP_hydroid = b.MP_hydroid
-#                  WHERE round(a.ann_sum,3) != round(b."Water.Use.MGY",3)')
+#                  WHERE round(a.ann_sum,3) != round(b.MGY,3)')
 ##################
 
 #add annual MGY value onto monthly export
 dis_join <- sqldf('SELECT a.*, b.MGY
-                 FROM dis_mgm_export a
+                 FROM dis_mgm a
                  LEFT OUTER JOIN dis_mgy b
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
