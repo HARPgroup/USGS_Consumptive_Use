@@ -80,46 +80,68 @@ wd_mgm_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 #####################################################################################
 # #load variables
 # #smonth <- 1
-# syear = 2018
+ syear = 2018
 # #emonth <- 6
-# eyear = 2018
+ eyear = 2019
 # 
 # #set time range
-# startdate <- paste(syear, "-01-01",sep='')
-# enddate <- paste(eyear, "-12-31", sep='')
-# 
-# # startdate <- paste(syear,if (smonth %in% 1:9) {
-# #   paste0(0,smonth)
-# # } else {smonth},"01",sep='-')
-# # 
-# # enddate <- paste(eyear,if (emonth %in% 1:9) {
-# #   paste0(0,emonth)
-# # } else {emonth},"31", sep='-')
-# 
-# #batched export on monthly map export view prevents pull from url 
-# #pull from vahydro
-# localpath <- tempdir()
-# filename <- "data.all.csv"
-# destfile <- paste(localpath,filename,sep="\\")
-# 
-# #has 3 issuing authorities, does not include power
-# download.file(paste("deq2.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")
-# data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+ startdate <- paste(syear, "-01-01",sep='')
+ enddate <- paste(eyear, "-12-31", sep='')
 
+# startdate <- paste(syear,if (smonth %in% 1:9) {
+#   paste0(0,smonth)
+# } else {smonth},"01",sep='-')
+#
+# enddate <- paste(eyear,if (emonth %in% 1:9) {
+#   paste0(0,emonth)
+# } else {emonth},"31", sep='-')
+
+#batched export on monthly map export view prevents pull from url
+#pull from vahydro
+localpath <- tempdir()
+filename <- "data.all.csv"
+destfile <- paste(localpath,filename,sep="\\")
+
+#has 3 issuing authorities, does not include power
+download.file(paste("deq2.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")
+data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+data <- data.all
 #####################################################################################
 
-data.all <- read.csv("C:\\Users\\maf95834\\Documents\\wd-map-exports-monthly-export.csv")
-data <- data.all
+# data.all <- read.csv("C:\\Users\\maf95834\\Documents\\wd-map-exports-monthly-export.csv")
+# data <- data.all
+
+
+
+
+# #LOAD CONFIG FILE
+# source(paste("/var/www/R/config.local.private", sep = ""))
+# localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
+# 
+# #LOAD from_vahydro() FUNCTION
+# source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
+# datasite <- "http://deq2.bse.vt.edu/d.dh"
+# 
+# 
+# # RETRIEVE AND PROCESS FACILITY AND SITE FILES
+# #####################################################################################################
+# # WITHDRAWAL FACILITY FILE
+# export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+# output_filename <- "wd_mgm_export_test.csv"
+# wd_mgm <- from_vahydro(datasite,export_view,localpath,output_filename)
+# 
+
+
 
 #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
-#   a <- sqldf("SELECT a.*
-# FROM data a
-# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data
-# GROUP BY MP_hydroid
-# HAVING count(*) > 24 ) b
-# ON a.MP_hydroid = b.MP_hydroid
-# ORDER BY a.MP_hydroid")
+  a <- sqldf("SELECT a.*
+FROM data a
+JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
+FROM data
+GROUP BY MP_hydroid
+HAVING count(*) > 24 ) b
+ON a.MP_hydroid = b.MP_hydroid
+ORDER BY a.MP_hydroid")
 
 #remove duplicates (keeps one row for each combination of Month and year)
 data <- sqldf("SELECT *
@@ -150,7 +172,7 @@ wd_mgm_export <- sqldf('SELECT MP_hydroid,
 wd_mgm_export <- spread(data = wd_mgm_export, key = Month, value = MGM, sep = "_",)
 
 #rename columns
-wd_mgm_export1 <- sqldf('SELECT MP_hydroid,
+wd_mgm_export <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           Source_Type,
                           MP_Name,
