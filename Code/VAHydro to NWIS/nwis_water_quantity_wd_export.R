@@ -95,29 +95,33 @@ sqldf('SELECT sum(MGY)/365
 #################################################
 
 # RETRIEVE WITHDRAWAL DATA
-export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 output_filename <- "wd_mgm_export.csv"
 data1 <- from_vahydro(datasite,export_view,localpath,output_filename)
 
+#exclude dalecarlia
+data1 <- data1[-which(data1$Facility=='DALECARLIA WTP'),]
+
+sqldf('SELECT sum("Water.Use.MGM")/365
+      FROM data1
+      WHERE "Use.Type" NOT LIKE "%power%"')
+
 ###################
 #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
-#   a <- sqldf("SELECT a.*
-# FROM data1 a
-# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data1
-# GROUP BY MP_hydroid
-# HAVING count(*) > 12 ) b
-# ON a.MP_hydroid = b.MP_hydroid
-# ORDER BY a.MP_hydroid")
+  a <- sqldf("SELECT a.*
+FROM data1 a
+JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
+FROM data1
+GROUP BY MP_hydroid
+HAVING count(*) > 12 ) b
+ON a.MP_hydroid = b.MP_hydroid
+ORDER BY a.MP_hydroid")
 ###################
 
 #remove duplicates (keeps one row for each combination of Month and year)
 data2 <- sqldf("SELECT *
                FROM data1
                GROUP BY MP_hydroid, Month, Year")
-
-#exclude dalecarlia
-#data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
 #transform from long to wide df
 wd_mgm_export <- spread(data = data2, key = Month, value = Water.Use.MGM, sep = "_",)
@@ -171,7 +175,7 @@ wd_join <- sqldf('SELECT a.*, b.MGY
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
 
-sqldf('SELECT sum(MGY)
+sqldf('SELECT sum(MGY)/365
       FROM wd_join
       WHERE Use_type NOT LIKE "%power%" ')
 
