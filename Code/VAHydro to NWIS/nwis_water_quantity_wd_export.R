@@ -55,7 +55,7 @@ wd_mgy_export <- sqldf('SELECT MP_hydroid,
   #place into export data frame
 wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "Year", v.names = "MGY", direction = "wide",sep = "_")
 
-wd_mgm_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
+wd_mgy_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 
 
 
@@ -79,7 +79,9 @@ wd_mgm_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
  enddate <- paste(eyear, "-12-31", sep='')
 
  #####################################################################################
-# #smonth <- 1
+#WIP - goal is to supply irregular length of time (for example, just months 1 through 6)
+ #need to figure out how to rename those columns based on months given
+ # #smonth <- 1
 # #emonth <- 6
 # startdate <- paste(syear,if (smonth %in% 1:9) {
 #   paste0(0,smonth)
@@ -101,7 +103,7 @@ datasite <- "http://deq2.bse.vt.edu/d.dh"
 
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
-output_filename <- "wd_mgm_export_test.csv"
+output_filename <- "wd_mgm_export.csv"
 data <- from_vahydro(datasite,export_view,localpath = tempdir(),output_filename)
 
 #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
@@ -169,3 +171,8 @@ wd_mgm_export <- sqldf('SELECT MP_hydroid,
                        FROM wd_mgm_export
                        ORDER BY MP_hydroid, Year
                        ') 
+
+#append Annual MGY value (from annual export df) to monthly export df
+
+#save file
+write.csv(wd_mgm_export,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
