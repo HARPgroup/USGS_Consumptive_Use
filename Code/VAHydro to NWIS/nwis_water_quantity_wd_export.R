@@ -70,24 +70,17 @@ wd_mgm_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 
 #monthly withdrawal export
 
-#manually download export
-#go to https://deq1.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly?ftype_op=%3D&ftype=&bundle%5B%5D=well&bundle%5B%5D=intake&dh_link_admin_reg_issuer_target_id%5B%5D=65668&dh_link_admin_reg_issuer_target_id%5B%5D=91200&dh_link_admin_reg_issuer_target_id%5B%5D=77498&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=2018-01-01&tstime%5Bmax%5D=2019-12-31
-##filters:
-# bundle = well & intake
-# permit auth = gwp, vwp,vwuds
-# ts time = whole years (jan thru dec, can span multiple years)
-
-#####################################################################################
-# #load variables
-# #smonth <- 1
+#load variables
  syear = 2018
-# #emonth <- 6
  eyear = 2019
-# 
-# #set time range
+
+#set time range
  startdate <- paste(syear, "-01-01",sep='')
  enddate <- paste(eyear, "-12-31", sep='')
 
+ #####################################################################################
+# #smonth <- 1
+# #emonth <- 6
 # startdate <- paste(syear,if (smonth %in% 1:9) {
 #   paste0(0,smonth)
 # } else {smonth},"01",sep='-')
@@ -95,43 +88,21 @@ wd_mgm_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 # enddate <- paste(eyear,if (emonth %in% 1:9) {
 #   paste0(0,emonth)
 # } else {emonth},"31", sep='-')
-
-#batched export on monthly map export view prevents pull from url
-#pull from vahydro
-localpath <- tempdir()
-filename <- "data.all.csv"
-destfile <- paste(localpath,filename,sep="\\")
-
-#has 3 issuing authorities, does not include power
-download.file(paste("deq2.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")
-data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
-data <- data.all
 #####################################################################################
 
-# data.all <- read.csv("C:\\Users\\maf95834\\Documents\\wd-map-exports-monthly-export.csv")
-# data <- data.all
+#LOAD CONFIG FILE
+source(paste("/var/www/R/config.local.private", sep = ""))
+localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
+
+#LOAD from_vahydro() FUNCTION
+source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
+datasite <- "http://deq2.bse.vt.edu/d.dh"
 
 
-
-
-# #LOAD CONFIG FILE
-# source(paste("/var/www/R/config.local.private", sep = ""))
-# localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
-# 
-# #LOAD from_vahydro() FUNCTION
-# source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-# datasite <- "http://deq2.bse.vt.edu/d.dh"
-# 
-# 
-# # RETRIEVE AND PROCESS FACILITY AND SITE FILES
-# #####################################################################################################
-# # WITHDRAWAL FACILITY FILE
-# export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
-# output_filename <- "wd_mgm_export_test.csv"
-# wd_mgm <- from_vahydro(datasite,export_view,localpath,output_filename)
-# 
-
-
+# RETRIEVE WITHDRAWAL DATA
+export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+output_filename <- "wd_mgm_export_test.csv"
+data <- from_vahydro(datasite,export_view,localpath = tempdir(),output_filename)
 
 #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
   a <- sqldf("SELECT a.*
