@@ -133,9 +133,6 @@ wd_mgm_export <- sqldf('SELECT MP_hydroid,
                        ORDER BY MP_hydroid, Year, Month
                        ') 
 #place into export data frame
-wd_mgm_export2 <- reshape(data = wd_mgm_export, idvar = "MP_hydroid", timevar = "Month", v.names = "MGM", direction = "wide",varying = "Year",sep = "_")
-
-
-wd_mgm_export2 <- spread(data = wd_mgm_export, key = Month, value = MGM)
+wd_mgm_export <- spread(data = wd_mgm_export, key = Month, value = MGM)
 
 #end for loop
