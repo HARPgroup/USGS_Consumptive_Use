@@ -14,18 +14,21 @@ eyear = 2019
 startdate <- paste(syear, "-01-01",sep='')
 enddate <- paste(eyear, "-12-31", sep='')
 
-localpath <- tempdir()
-filename <- "data.all.csv"
-destfile <- paste(localpath,filename,sep="\\") 
+#LOAD CONFIG FILE
+source(paste("/var/www/R/config.local.private", sep = ""))
+localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
-#has 3 issuing authorities, includes power
-download.file(paste("http://deq2.bse.vt.edu/d.alpha/ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")  
-data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+#LOAD from_vahydro() FUNCTION
+source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
+datasite <- "http://deq2.bse.vt.edu/d.alpha"
 
-data <- data.all
+# RETRIEVE WITHDRAWAL DATA
+export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+output_filename <- "dis_mgy_export.csv"
+data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ############################################  
-# ##check to see if there are multiple wd_mgy entries for a single year
+# ##check to see if there are multiple dis_mgy entries for a single year
 #   a <- sqldf("SELECT a.*
 # FROM data a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
@@ -38,14 +41,14 @@ data <- data.all
 
 #filter out non ECHO features 
 data <- sqldf('SELECT *
-              FROM data
+              FROM data_annual
               WHERE Hydrocode LIKE "echo_%"')
 
 #remove duplicates (keeps one row for each year)
 data <- distinct(data, MP_hydroid, Year, .keep_all = TRUE)
 
 #rename columns 
-dis_mgy_export <- sqldf('SELECT MP_hydroid,
+dis_mgy <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
@@ -61,8 +64,8 @@ dis_mgy_export <- sqldf('SELECT MP_hydroid,
                        ORDER BY Year
                        ') 
 
-#place into export data frame
-dis_mgy_export <- spread(data = dis_mgy_export, key = Year, value = MGY,sep = "_")
+#transform from long to wide df
+dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 
 #save file
 #write.csv(dis_mgy_export,paste(localpath,"/discharge_annual.csv",sep=""), row.names = FALSE)
@@ -87,22 +90,13 @@ dis_mgy_export <- spread(data = dis_mgy_export, key = Year, value = MGY,sep = "_
 # } else {emonth},"31", sep='-')
 #################################################
 
-#LOAD CONFIG FILE
-source(paste("/var/www/R/config.local.private", sep = ""))
-localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
-
-#LOAD from_vahydro() FUNCTION
-source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq2.bse.vt.edu/d.alpha"
-
-
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
-output_filename <- "wd_mgm_export.csv"
+output_filename <- "dis_mgm_export.csv"
 data <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ###################
-# #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
+# #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
 #   a <- sqldf("SELECT a.*
 # FROM data a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
@@ -172,9 +166,9 @@ dis_mgm_export <- sqldf('SELECT MP_hydroid,
 ##################
 
 #add annual MGY value onto monthly export
-dis_join <- sqldf('SELECT a.*, b."Water.Use.MGY" AS MGY
+dis_join <- sqldf('SELECT a.*, b.MGY
                  FROM dis_mgm_export a
-                 LEFT OUTER JOIN "data.all" b
+                 LEFT OUTER JOIN dis_mgy b
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
 #save file
