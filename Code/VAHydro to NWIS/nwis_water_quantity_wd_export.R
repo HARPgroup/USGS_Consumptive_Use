@@ -125,6 +125,7 @@ data <- data.all
 data <- sqldf("SELECT *
                FROM data
                GROUP BY MP_hydroid, Month, Year")
+
 #exclude dalecarlia
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
