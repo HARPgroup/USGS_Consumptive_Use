@@ -19,7 +19,7 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "https://deq1.bse.vt.edu/d.dh"
+datasite <- "http://deq2.bse.vt.edu/d.dh"
 
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
@@ -149,12 +149,12 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
 # #QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
 # wd_mgm_export$ann_sum <- rowSums(wd_mgm_export[12:23],na.rm = FALSE)
 # 
-# wd_join_no_match <- sqldf('SELECT a.*, b."Water.Use.MGY" AS MGY
-#                  FROM wd_mgm_export a
-#                  LEFT OUTER JOIN "data.all" b
+# wd_join_no_match <- sqldf('SELECT a.*, b.MGY
+#                  FROM wd_mgm a
+#                  LEFT OUTER JOIN wd_mgy b
 #                  ON a.Year = b.Year
 #                  AND a.MP_hydroid = b.MP_hydroid
-#                  WHERE round(a.ann_sum,3) != round(b."Water.Use.MGY",3)')
+#                  WHERE round(a.ann_sum,3) != round(b.MGY,3)')
 ##################
 
 #add annual MGY value onto monthly export
