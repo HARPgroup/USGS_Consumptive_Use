@@ -55,7 +55,7 @@ wd_mgy_export <- sqldf('SELECT MP_hydroid,
   #place into export data frame
 wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "Year", v.names = "MGY", direction = "wide",sep = "_")
 
-
+wd_mgm_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 
 
 
@@ -69,44 +69,57 @@ wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "
 
 
 #monthly withdrawal export
-#load variables
-smonth <- 1
-syear = 2018
-emonth <- 6
-eyear = 2018
 
+#manually download export
+#go to https://deq1.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly?ftype_op=%3D&ftype=&bundle%5B%5D=well&bundle%5B%5D=intake&dh_link_admin_reg_issuer_target_id%5B%5D=65668&dh_link_admin_reg_issuer_target_id%5B%5D=91200&dh_link_admin_reg_issuer_target_id%5B%5D=77498&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=2018-01-01&tstime%5Bmax%5D=2019-12-31
+##filters:
+# bundle = well & intake
+# permit auth = gwp, vwp,vwuds
+# ts time = whole years (jan thru dec, can span multiple years)
 
-#set time range
-startdate <- paste(syear,if (smonth %in% 1:9) {
-  paste0(0,smonth)
-} else {smonth},"01",sep='-')
-
-enddate <- paste(eyear,if (emonth %in% 1:9) {
-  paste0(0,emonth)
-} else {emonth},"31", sep='-')
-
-#batched export on monthly map export view prevents pull from url 
+#####################################################################################
+# #load variables
+# #smonth <- 1
+# syear = 2018
+# #emonth <- 6
+# eyear = 2018
+# 
+# #set time range
+# startdate <- paste(syear, "-01-01",sep='')
+# enddate <- paste(eyear, "-12-31", sep='')
+# 
+# # startdate <- paste(syear,if (smonth %in% 1:9) {
+# #   paste0(0,smonth)
+# # } else {smonth},"01",sep='-')
+# # 
+# # enddate <- paste(eyear,if (emonth %in% 1:9) {
+# #   paste0(0,emonth)
+# # } else {emonth},"31", sep='-')
+# 
+# #batched export on monthly map export view prevents pull from url 
 # #pull from vahydro
 # localpath <- tempdir()
 # filename <- "data.all.csv"
-# destfile <- paste(localpath,filename,sep="\\") 
+# destfile <- paste(localpath,filename,sep="\\")
 # 
 # #has 3 issuing authorities, does not include power
-# download.file(paste("http://deq2.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")  
+# download.file(paste("deq2.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")
 # data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+
+#####################################################################################
 
 data.all <- read.csv("C:\\Users\\maf95834\\Documents\\wd-map-exports-monthly-export.csv")
 data <- data.all
 
-#check to see if there are multiple wd_mgy entries for a single year
-  a <- sqldf("SELECT a.*
-FROM data a
-JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-FROM data
-GROUP BY MP_hydroid
-HAVING count(*) > 10 ) b
-ON a.MP_hydroid = b.MP_hydroid
-ORDER BY a.MP_hydroid")
+#check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
+#   a <- sqldf("SELECT a.*
+# FROM data a
+# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
+# FROM data
+# GROUP BY MP_hydroid
+# HAVING count(*) > 24 ) b
+# ON a.MP_hydroid = b.MP_hydroid
+# ORDER BY a.MP_hydroid")
 
 #remove duplicates (keeps one row for each year)
 data <- sqldf("SELECT *
@@ -126,13 +139,13 @@ wd_mgm_export <- sqldf('SELECT MP_hydroid,
                           "Water.Use.MGM" AS MGM,
                           Latitude,
                           Longitude,
-                          Loaclity AS Locality,
+                          Locality,
                           Month,
-                          Year,
+                          Year
                        FROM data
                        ORDER BY MP_hydroid, Year, Month
                        ') 
 #place into export data frame
-wd_mgm_export <- spread(data = wd_mgm_export, key = Month, value = MGM)
+wd_mgm_export <- spread(data = wd_mgm_export, key = Month, value = MGM, sep = "_",)
 
-#end for loop
+#rename columns
