@@ -53,21 +53,11 @@ wd_mgy_export <- sqldf('SELECT MP_hydroid,
                        ORDER BY Year
                        ') 
   #place into export data frame
-wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "Year", v.names = "MGY", direction = "wide",sep = "_")
+wd_mgy_export2 <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 
-wd_mgy_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
-
-
-
-
-
-
-
-
-
-
-
-
+#####################################################################################
+#####################################################################################
+#####################################################################################
 #monthly withdrawal export
 
 #load variables
