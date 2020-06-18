@@ -65,6 +65,7 @@ wd_mgy_export <- spread(data = wd_mgy_export, key = Year, value = MGY,sep = "_")
 #####################################################################################
 #####################################################################################
 #####################################################################################
+
 #monthly withdrawal export
 
 #load variables
@@ -101,7 +102,7 @@ datasite <- "http://deq2.bse.vt.edu/d.dh"
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "wd_mgm_export.csv"
-data <- from_vahydro(datasite,export_view,localpath = tempdir(),output_filename)
+data <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ###################
 # #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
@@ -123,35 +124,17 @@ data <- sqldf("SELECT *
 #exclude dalecarlia
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
-#rename columns 
-wd_mgm_export <- sqldf('SELECT MP_hydroid,
+#transform from long to wide df
+wd_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
+
+#rename columns
+wd_mgm_export1 <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
                           Facility_hydroid,
                           Facility AS Facility_Name,
                           "USE.Type" AS Use_Type,
-                          "Water.Use.MGM" AS MGM,
-                          Latitude,
-                          Longitude,
-                          Locality,
-                          Month,
-                          Year
-                       FROM data
-                       ORDER BY MP_hydroid, Year, Month
-                       ') 
-
-#transform from long to wide df
-wd_mgm_export <- spread(data = wd_mgm_export, key = Month, value = MGM, sep = "_",)
-
-#rename columns
-wd_mgm_export <- sqldf('SELECT MP_hydroid,
-                          Hydrocode,
-                          Source_Type,
-                          MP_Name,
-                          Facility_hydroid,
-                          Facility_Name,
-                          Use_Type,
                           Latitude,
                           Longitude,
                           Locality,
