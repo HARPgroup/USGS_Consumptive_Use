@@ -2,16 +2,18 @@
 library('httr')
 library('sqldf')
 library('dplyr')
+library('tidyr')
 #load variables
-syear = 2017
+syear = 2018
 eyear = 2019
 
   startdate <- paste(syear, "-01-01",sep='')
   enddate <- paste(eyear, "-12-31", sep='')
   
   localpath <- tempdir()
-  filename <- paste("data.all_",y,".csv",sep="")
+  filename <- "data.all.csv"
   destfile <- paste(localpath,filename,sep="\\") 
+  
   
   #has 3 issuing authorities, does not include power
   download.file(paste("http://deq2.bse.vt.edu/d.dh/ows-awrr-map-export/wd_mgy?ftype_op=not&ftype=power&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498",sep=""), destfile = destfile, method = "libcurl")  
@@ -20,14 +22,14 @@ eyear = 2019
   data <- data.all
   
   #check to see if there are multiple wd_mgy entries for a single year
-  a <- sqldf("SELECT a.*
-FROM data a
-JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-FROM data
-GROUP BY MP_hydroid
-HAVING count(*) > 1 ) b
-ON a.MP_hydroid = b.MP_hydroid
-ORDER BY a.MP_hydroid")
+#   a <- sqldf("SELECT a.*
+# FROM data a
+# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
+# FROM data
+# GROUP BY MP_hydroid
+# HAVING count(*) > 3 ) b
+# ON a.MP_hydroid = b.MP_hydroid
+# ORDER BY a.MP_hydroid")
   
   #remove duplicates (keeps one row for each year)
   data <- distinct(data, MP_hydroid, Year, .keep_all = TRUE)
@@ -48,9 +50,10 @@ wd_mgy_export <- sqldf('SELECT MP_hydroid,
                           Longitude,
                           "FIPS.Code" AS FIPS_code
                        FROM data
+                       ORDER BY Year
                        ') 
   #place into export data frame
-wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "Year", v.names = "MGY", direction = "wide")
+wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "Year", v.names = "MGY", direction = "wide",sep = "_")
 
 
 
@@ -66,16 +69,73 @@ wd_mgy_export <- reshape(data = wd_mgy_export, idvar = "MP_hydroid", timevar = "
 
 
 #monthly withdrawal export
-#start for loop
+#load variables
+smonth <- 1
+syear = 2018
+emonth <- 6
+eyear = 2018
 
-#pull from monthly  map exports view
 
-#remove duplicates caused by permit filter
+#set time range
+startdate <- paste(syear,if (smonth %in% 1:9) {
+  paste0(0,smonth)
+} else {smonth},"01",sep='-')
 
-#transform table from long to wide (move month column into a column for each month)
+enddate <- paste(eyear,if (emonth %in% 1:9) {
+  paste0(0,emonth)
+} else {emonth},"31", sep='-')
 
+#batched export on monthly map export view prevents pull from url 
+# #pull from vahydro
+# localpath <- tempdir()
+# filename <- "data.all.csv"
+# destfile <- paste(localpath,filename,sep="\\") 
+# 
+# #has 3 issuing authorities, does not include power
+# download.file(paste("http://deq2.bse.vt.edu/d.dh/ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,sep=""), destfile = destfile, method = "libcurl")  
+# data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
+
+data.all <- read.csv("C:\\Users\\maf95834\\Documents\\wd-map-exports-monthly-export.csv")
+data <- data.all
+
+#check to see if there are multiple wd_mgy entries for a single year
+  a <- sqldf("SELECT a.*
+FROM data a
+JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
+FROM data
+GROUP BY MP_hydroid
+HAVING count(*) > 10 ) b
+ON a.MP_hydroid = b.MP_hydroid
+ORDER BY a.MP_hydroid")
+
+#remove duplicates (keeps one row for each year)
+data <- sqldf("SELECT *
+               FROM data
+               GROUP BY MP_hydroid, Month, Year")
+#exclude dalecarlia
+#data <- data[-which(data$Facility=='DALECARLIA WTP'),]
+
+#rename columns 
+wd_mgm_export <- sqldf('SELECT MP_hydroid,
+                          Hydrocode,
+                          "Source.Type" AS Source_Type,
+                          "MP.Name" AS MP_Name,
+                          Facility_hydroid,
+                          Facility AS Facility_Name,
+                          "USE.Type" AS Use_Type,
+                          "Water.Use.MGM" AS MGM,
+                          Latitude,
+                          Longitude,
+                          Loaclity AS Locality,
+                          Month,
+                          Year,
+                       FROM data
+                       ORDER BY MP_hydroid, Year, Month
+                       ') 
 #place into export data frame
+wd_mgm_export2 <- reshape(data = wd_mgm_export, idvar = "MP_hydroid", timevar = "Month", v.names = "MGM", direction = "wide",varying = "Year",sep = "_")
 
-#append following iterations to the export data frame (just the year and wd_mgm value)
+
+wd_mgm_export2 <- spread(data = wd_mgm_export, key = Month, value = MGM)
 
 #end for loop
