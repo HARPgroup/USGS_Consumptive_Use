@@ -27,7 +27,7 @@ eyear = 2019
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
 # FROM data
 # GROUP BY MP_hydroid
-# HAVING count(*) > 3 ) b
+# HAVING count(*) > 2 ) b
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
   
@@ -121,7 +121,7 @@ data <- data.all
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
 
-#remove duplicates (keeps one row for each year)
+#remove duplicates (keeps one row for each combination of Month and year)
 data <- sqldf("SELECT *
                FROM data
                GROUP BY MP_hydroid, Month, Year")
@@ -149,3 +149,29 @@ wd_mgm_export <- sqldf('SELECT MP_hydroid,
 wd_mgm_export <- spread(data = wd_mgm_export, key = Month, value = MGM, sep = "_",)
 
 #rename columns
+wd_mgm_export1 <- sqldf('SELECT MP_hydroid,
+                          Hydrocode,
+                          Source_Type,
+                          MP_Name,
+                          Facility_hydroid,
+                          Facility_Name,
+                          Use_Type,
+                          Latitude,
+                          Longitude,
+                          Locality,
+                          Year,
+                          Month_1 AS Jan,
+                          Month_2 AS Feb,
+                          Month_3 AS Mar,
+                          Month_4 AS Apr,
+                          Month_5 AS May,
+                          Month_6 AS Jun,
+                          Month_7 AS Jul,
+                          Month_8 AS Aug,
+                          Month_9 AS Sep,
+                          Month_10 AS Oct,
+                          Month_11 AS Nov,
+                          Month_12 AS Dec
+                       FROM wd_mgm_export
+                       ORDER BY MP_hydroid, Year
+                       ') 
