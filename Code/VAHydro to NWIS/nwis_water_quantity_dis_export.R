@@ -1,10 +1,11 @@
-#WITHDRAWAL
+#DISCHARGE 
 
 #load library
 library('httr')
 library('sqldf')
 library('dplyr')
 library('tidyr')
+options(scipen = 999)
 
 #load variables
 syear = 2018
@@ -19,15 +20,15 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "https://deq1.bse.vt.edu/d.dh"
+datasite <- "http://deq2.bse.vt.edu/d.alpha"
 
 # RETRIEVE WITHDRAWAL DATA
-export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
-output_filename <- "wd_mgy_export.csv"
+export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+output_filename <- "dis_mgy_export.csv"
 data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ############################################  
-#check to see if there are multiple wd_mgy entries for a single year
+# ##check to see if there are multiple dis_mgy entries for a single year
 #   a <- sqldf("SELECT a.*
 # FROM data a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
@@ -37,15 +38,17 @@ data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
 ############################################
-  
-#remove duplicates (keeps one row for each year)
-data <- distinct(data_annual, MP_hydroid, Year, .keep_all = TRUE)
 
-#exclude dalecarlia
-#data <- data[-which(data$Facility=='DALECARLIA WTP'),]
+#filter out non ECHO features 
+data <- sqldf('SELECT *
+              FROM data_annual
+              WHERE Hydrocode LIKE "echo_%"')
+
+#remove duplicates (keeps one row for each year)
+data <- distinct(data, MP_hydroid, Year, .keep_all = TRUE)
 
 #rename columns 
-wd_mgy <- sqldf('SELECT MP_hydroid,
+dis_mgy <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
@@ -61,11 +64,11 @@ wd_mgy <- sqldf('SELECT MP_hydroid,
                        ORDER BY Year
                        ') 
 
-#place into export data frame
-wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
+#transform from long to wide df
+dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 
 #save file
-#write.csv(wd_mgy_export,paste(localpath,"/withdrawal_annual.csv",sep=""), row.names = FALSE)
+#write.csv(dis_mgy_export,paste(localpath,"/discharge_annual.csv",sep=""), row.names = FALSE)
 
 #####################################################################################
 #####################################################################################
@@ -75,8 +78,8 @@ wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
 
 #################################################
 #WIP - goal is to supply irregular length of time (for example, just months 1 through 6)
- #need to figure out how to rename those columns based on months given
- # #smonth <- 1
+#need to figure out how to rename those columns based on months given
+# #smonth <- 1
 # #emonth <- 6
 # startdate <- paste(syear,if (smonth %in% 1:9) {
 #   paste0(0,smonth)
@@ -88,12 +91,12 @@ wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
 #################################################
 
 # RETRIEVE WITHDRAWAL DATA
-export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=77498&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
-output_filename <- "wd_mgm_export.csv"
+export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+output_filename <- "dis_mgm_export.csv"
 data <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ###################
-# #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
+# #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
 #   a <- sqldf("SELECT a.*
 # FROM data a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
@@ -104,6 +107,11 @@ data <- from_vahydro(datasite,export_view,localpath,output_filename)
 # ORDER BY a.MP_hydroid")
 ###################
 
+#filter out non ECHO features 
+data <- sqldf('SELECT *
+              FROM data
+              WHERE Hydrocode LIKE "echo_%"')
+
 #remove duplicates (keeps one row for each combination of Month and year)
 data <- sqldf("SELECT *
                FROM data
@@ -113,10 +121,10 @@ data <- sqldf("SELECT *
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
 #transform from long to wide df
-wd_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
+dis_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
 
 #rename columns
-wd_mgm <- sqldf('SELECT MP_hydroid,
+dis_mgm_export <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
@@ -125,7 +133,7 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
                           "USE.Type" AS Use_Type,
                           Latitude,
                           Longitude,
-                          Locality,
+                          "FIPS.Code" AS FIPS_code,
                           Year,
                           Month_1 AS Jan,
                           Month_2 AS Feb,
@@ -139,18 +147,18 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
                           Month_10 AS Oct,
                           Month_11 AS Nov,
                           Month_12 AS Dec
-                       FROM wd_mgm_export
+                       FROM dis_mgm_export
                        ORDER BY MP_hydroid, Year
                        ') 
 #save file
-#write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
+#write.csv(dis_mgm_export,paste(localpath,"/discharge_monthly.csv",sep=""), row.names = FALSE)
 
 ###################
 # #QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
-# wd_mgm_export$ann_sum <- rowSums(wd_mgm_export[12:23],na.rm = FALSE)
+# dis_mgm_export$ann_sum <- rowSums(dis_mgm_export[12:23],na.rm = FALSE)
 # 
-# wd_join_no_match <- sqldf('SELECT a.*, b."Water.Use.MGY" AS MGY
-#                  FROM wd_mgm_export a
+# dis_join_no_match <- sqldf('SELECT a.*, b."Water.Use.MGY" AS MGY
+#                  FROM dis_mgm_export a
 #                  LEFT OUTER JOIN "data.all" b
 #                  ON a.Year = b.Year
 #                  AND a.MP_hydroid = b.MP_hydroid
@@ -158,10 +166,10 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
 ##################
 
 #add annual MGY value onto monthly export
-wd_join <- sqldf('SELECT a.*, b.MGY
-                 FROM wd_mgm a
-                 LEFT OUTER JOIN wd_mgy b
+dis_join <- sqldf('SELECT a.*, b.MGY
+                 FROM dis_mgm_export a
+                 LEFT OUTER JOIN dis_mgy b
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
 #save file
-write.csv(wd_join, paste(localpath,"/withdrawal_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(dis_join, paste(localpath,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
