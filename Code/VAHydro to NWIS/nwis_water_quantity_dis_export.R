@@ -22,10 +22,11 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
 datasite <- "http://deq2.bse.vt.edu/d.dh"
 
+cached = FALSE
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&ftype=&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgy_export.csv"
-data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
+data_annual <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 
 ############################################  
 # ##check to see if there are multiple dis_mgy entries for a single year
@@ -83,7 +84,7 @@ dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgm_export.csv"
-data_monthly <- from_vahydro(datasite,export_view,localpath,output_filename)
+data_monthly <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 
 ###################
 # #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
@@ -107,11 +108,38 @@ data_mon <- sqldf("SELECT *
                FROM data_mon
                GROUP BY MP_hydroid, Month, Year")
 
+dis_mon_median <- sqldf('select MP_hydroid, median("Water.Use.MGM") as mon_med from data_mon group by MP_Hydroid')
+data_flagged <- sqldf(
+  'SELECT MP_hydroid, max(flag_data_qual) as flag_data_qual 
+   from ( 
+     SELECT a.*, 
+     CASE 
+       WHEN a."Water.Use.MGM" = 0 THEN 0
+       WHEN b.mon_med = 0 THEN 0
+       WHEN a."Water.Use.MGM" >= (100.0 * b.mon_med ) THEN 1
+       ELSE 0
+     END as flag_data_qual
+     FROM data_mon as a 
+     left outer join dis_mon_median as b
+     on (a.MP_hydroid = b.MP_hydroid)
+  ) as foo 
+  group by MP_hydroid
+  '
+)
+
 #exclude dalecarlia
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
 #transform from long to wide df
+
 dis_mgm_export <- spread(data = data_mon, key = Month, value = Water.Use.MGM, sep = "_",)
+dis_mgm_export <- sqldf(
+  "select a.*, b.flag_data_qual 
+   from dis_mgm_export as a 
+   left outer join data_flagged as b 
+   on (a.MP_hydroid = b.MP_hydroid)
+  "
+)
 
 #rename columns
 dis_mgm <- sqldf('SELECT MP_hydroid,
@@ -120,11 +148,12 @@ dis_mgm <- sqldf('SELECT MP_hydroid,
                           "MP.Name" AS MP_Name,
                           Facility_hydroid,
                           Facility AS Facility_Name,
-                          "USE.Type" AS Use_Type,
+                          "Use.Type" AS Use_Type,
                           Latitude,
                           Longitude,
                           "FIPS.Code" AS FIPS_code,
                           Year,
+                          flag_data_qual,
                           Month_1 AS Jan,
                           Month_2 AS Feb,
                           Month_3 AS Mar,

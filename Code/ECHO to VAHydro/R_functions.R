@@ -455,7 +455,7 @@ dh_echo_format_ts <- function(timeseries, outfalls) {
   return (ts_inputs)
 }
 
-ts_import<- function(outfalls,timeseries,iteration){
+ts_import<- function(outfalls,timeseries,iteration, base_url){
   timeseries.tid<-character()
   timeseries.dataframe<-data.frame()
   timeseries.dataframe_i<-data.frame()
@@ -492,7 +492,7 @@ ts_import<- function(outfalls,timeseries,iteration){
     
     if(ts_inputs$dmr_flag_desflow[i]=="dmr_flag_desflow"){
       flag_inputs_dmr_flag_desflow_i <-data.frame(
-        featureid_dmr_flag_desflow = as.character(timeseries.dataframe_i$tid),
+        featureid = as.character(timeseries.dataframe_i$tid),
         varkey = 'dmr_flag_desflow',
         entity_type = 'dh_timeseries',
         propname = 'dmr_flag_desflow',
@@ -509,7 +509,7 @@ ts_import<- function(outfalls,timeseries,iteration){
     
     if(ts_inputs$dmr_flag_units_100[i]=="dmr_flag_units_100"){
       flag_inputs_dmr_flag_units_100_i <-data.frame(
-        featureid_dmr_flag_units_100 = as.character(timeseries.dataframe_i$tid),
+        featureid = as.character(timeseries.dataframe_i$tid),
         varkey = 'dmr_flag_units_100',
         entity_type = 'dh_timeseries',
         propname = 'dmr_flag_units_100',
@@ -526,7 +526,7 @@ ts_import<- function(outfalls,timeseries,iteration){
     
     if(ts_inputs$dmr_flag_units_1000000[i]=="dmr_flag_units_1000000"){
       flag_inputs_1000000_i <-data.frame(
-        featureid_dmr_flag_units_1000000 = as.character(timeseries.dataframe_i$tid),
+        featureid = as.character(timeseries.dataframe_i$tid),
         varkey = 'dmr_flag_units_1000000',
         entity_type = 'dh_timeseries',
         propname = 'dmr_flag_units_1000000',
@@ -541,7 +541,7 @@ ts_import<- function(outfalls,timeseries,iteration){
     
     if(!(ts_inputs$echo_flag[i]=="")){
       flag_inputs_echo_flag_i <-data.frame(
-        featureid_echo_flag = as.character(timeseries.dataframe_i$tid),
+        featureid = as.character(timeseries.dataframe_i$tid),
         varkey = 'echo_flag',
         entity_type = 'dh_timeseries',
         propname = 'echo_flag',
