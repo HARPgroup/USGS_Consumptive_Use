@@ -20,12 +20,13 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq2.bse.vt.edu/d.alpha"
+datasite <- "http://deq2.bse.vt.edu/d.dh"
 
+cached = FALSE
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgy_export.csv"
-data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
+data_annual <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 
 ############################################  
 # ##check to see if there are multiple dis_mgy entries for a single year
@@ -93,7 +94,7 @@ dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgm_export.csv"
-data <- from_vahydro(datasite,export_view,localpath,output_filename)
+data <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 
 ###################
 # #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)

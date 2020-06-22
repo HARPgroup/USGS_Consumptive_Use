@@ -1,10 +1,11 @@
 # FUNCTION FOR RETRIEVING A LARGE VIEW EXPORT FROM VAHYDRO
-from_vahydro <- function (datasite,export_view,localpath = tempdir(),output_filename) {
+from_vahydro <- function (datasite,export_view,localpath = tempdir(),output_filename, cached=FALSE) {
   
   # DOWNLOAD FACILITY FILE
   vahydro_item <- paste(datasite,export_view,sep="/")
   #file downloaded into local directory, as long as file exists it will not be re-downloaded
-  if (file.exists(paste(localpath, output_filename, sep = '/')) == FALSE) {
+  fexist = file.exists(paste(localpath, output_filename, sep = '/'))
+  if ( (fexist & cached) == FALSE) {
     print(paste("DOWNLOADING FILE", sep = ''))
     destfile <- paste(localpath,output_filename,sep="\\")
     start_time <- Sys.time()
