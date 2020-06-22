@@ -173,4 +173,4 @@ dis_join <- sqldf('SELECT a.*, b.MGY
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
 #save file
-write.csv(dis_join, paste(localpath,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(dis_join, paste(export_path,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
