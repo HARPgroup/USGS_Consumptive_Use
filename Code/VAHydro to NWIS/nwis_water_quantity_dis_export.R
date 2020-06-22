@@ -26,7 +26,7 @@ cached = FALSE
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&ftype=&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgy_export.csv"
-data_annual <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
+data_annual <- from_vahydro(datasite,export_view,localpath,output_filename, cached)
 
 ############################################  
 # ##check to see if there are multiple dis_mgy entries for a single year
@@ -84,7 +84,7 @@ dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgm_export.csv"
-data_monthly <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
+data_monthly <- from_vahydro(datasite,export_view,localpath,output_filename, cached)
 
 ###################
 # #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
@@ -209,6 +209,7 @@ dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                           "Mgal/yr" AS Annual_Reporting_Unit_Name,
                           MGY AS Annual_Value,
                           "Mgal/m" AS Monthly_Reporting_Unit_Name,
+                          flag_data_qual,
                           Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
                  FROM dis_join')
 
