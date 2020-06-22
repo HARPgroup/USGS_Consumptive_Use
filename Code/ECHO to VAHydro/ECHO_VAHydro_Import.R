@@ -251,7 +251,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     facts <- ts_flagging(facts)
     if (import_mode == 'vahydro') {
       # push to VAHydro
-      tsdf <- ts_import(outfalls,facts,1)
+      tsdf <- ts_import(outfalls,facts,1, base_url)
     } else {
       # export as a file 
       tsdf <- dh_echo_format_ts(facts, outfalls)
