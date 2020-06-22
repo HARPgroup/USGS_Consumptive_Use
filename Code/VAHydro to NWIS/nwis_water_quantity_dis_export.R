@@ -118,6 +118,25 @@ data <- sqldf("SELECT *
                FROM data
                GROUP BY MP_hydroid, Month, Year")
 
+dis_mon_median <- sqldf('select MP_hydroid, median("Water.Use.MGM") as mon_med from data group by MP_Hydroid')
+data_flagged <- sqldf(
+  'SELECT MP_hydroid, max(flag_data_qual) as flag_data_qual 
+   from ( 
+     SELECT a.*, 
+     CASE 
+       WHEN a."Water.Use.MGM" = 0 THEN 0
+       WHEN b.mon_med = 0 THEN 0
+       WHEN a."Water.Use.MGM" >= (100.0 * b.mon_med ) THEN 1
+       ELSE 0
+     END as flag_data_qual
+     FROM data as a 
+     left outer join dis_mon_median as b
+     on (a.MP_hydroid = b.MP_hydroid)
+  ) as foo 
+  group by MP_hydroid
+  '
+)
+
 #exclude dalecarlia
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
