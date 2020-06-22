@@ -190,5 +190,25 @@ sqldf('SELECT count(MP_hydroid)
       from wd_join
       where Source_type NOT LIKE "Well"')
 
+#rename columns for consistent export to USGS
+wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
+                          MP_hydroid AS Site_ID,
+                          "VA087" AS To_Agency_Code,
+                          Facility_hydroid AS Facility_ID,
+                          Year,
+                          "VA087" AS Data_Source_Code,
+                          "WD" AS Water_Quantity_code,
+                          Source_Type AS Site_Type,
+                          "UNKN" AS Method_Code,
+                          "N" AS Accuracy_Code,
+                          "W" AS Data_Aging_Code,
+                          Use_Type as Facility_Type,
+                          "Y" AS Preferred_Flag,
+                          "Mgal/yr" AS Annual_Reporting_Unit_Name,
+                          MGY AS Annual_Value,
+                          "Mgal/m" AS Monthly_Reporting_Unit_Name,
+                          Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
+                 FROM wd_join')
+
 #save file
-write.csv(wd_join, paste(localpath,"/withdrawal_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(wd_join2, paste(localpath,"/withdrawal_water_quantity.csv",sep=""), row.names = FALSE)
