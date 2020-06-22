@@ -8,7 +8,7 @@ library('tidyr')
 options(scipen = 999)
 
 #load variables
-syear = 2018
+syear = 2019
 eyear = 2019
 
 startdate <- paste(syear, "-01-01",sep='')
@@ -24,7 +24,7 @@ datasite <- "http://deq2.bse.vt.edu/d.dh"
 
 cached = FALSE
 # RETRIEVE WITHDRAWAL DATA
-export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&ftype=&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgy_export.csv"
 data_annual <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 
@@ -35,18 +35,18 @@ data_annual <- from_vahydro(datasite,export_view,export_path,output_filename, ca
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
 # FROM data
 # GROUP BY MP_hydroid
-# HAVING count(*) > 2 ) b
+# HAVING count(*) > 1 ) b
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
 ############################################
 
 #filter out non ECHO features 
-data <- sqldf('SELECT *
+data_ann <- sqldf('SELECT *
               FROM data_annual
               WHERE Hydrocode LIKE "echo_%"')
 
 #remove duplicates (keeps one row for each year)
-data <- distinct(data, MP_hydroid, Year, .keep_all = TRUE)
+data_ann <- distinct(data_ann, MP_hydroid, Year, .keep_all = TRUE)
 
 #rename columns 
 dis_mgy <- sqldf('SELECT MP_hydroid,
@@ -61,9 +61,13 @@ dis_mgy <- sqldf('SELECT MP_hydroid,
                           Latitude,
                           Longitude,
                           "FIPS.Code" AS FIPS_code
-                       FROM data
+                       FROM data_ann
                        ORDER BY Year
                        ') 
+
+sqldf('SELECT sum(MGY)/365
+      FROM dis_mgy 
+      WHERE Use_Type NOT LIKE "%power%"')
 
 #transform from long to wide df
 dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
@@ -77,24 +81,10 @@ dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 
 #monthly withdrawal export
 
-#################################################
-#WIP - goal is to supply irregular length of time (for example, just months 1 through 6)
-#need to figure out how to rename those columns based on months given
-# #smonth <- 1
-# #emonth <- 6
-# startdate <- paste(syear,if (smonth %in% 1:9) {
-#   paste0(0,smonth)
-# } else {smonth},"01",sep='-')
-#
-# enddate <- paste(eyear,if (emonth %in% 1:9) {
-#   paste0(0,emonth)
-# } else {emonth},"31", sep='-')
-#################################################
-
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgm_export.csv"
-data <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
+data_monthly <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 
 ###################
 # #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
@@ -103,22 +93,22 @@ data <- from_vahydro(datasite,export_view,export_path,output_filename, cached)
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
 # FROM data
 # GROUP BY MP_hydroid
-# HAVING count(*) > 24 ) b
+# HAVING count(*) > 12 ) b
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
 ###################
 
 #filter out non ECHO features 
-data <- sqldf('SELECT *
-              FROM data
+data_mon <- sqldf('SELECT *
+              FROM data_monthly
               WHERE Hydrocode LIKE "echo_%"')
 
 #remove duplicates (keeps one row for each combination of Month and year)
-data <- sqldf("SELECT *
-               FROM data
+data_mon <- sqldf("SELECT *
+               FROM data_mon
                GROUP BY MP_hydroid, Month, Year")
 
-dis_mon_median <- sqldf('select MP_hydroid, median("Water.Use.MGM") as mon_med from data group by MP_Hydroid')
+dis_mon_median <- sqldf('select MP_hydroid, median("Water.Use.MGM") as mon_med from data_mon group by MP_Hydroid')
 data_flagged <- sqldf(
   'SELECT MP_hydroid, max(flag_data_qual) as flag_data_qual 
    from ( 
@@ -129,7 +119,7 @@ data_flagged <- sqldf(
        WHEN a."Water.Use.MGM" >= (100.0 * b.mon_med ) THEN 1
        ELSE 0
      END as flag_data_qual
-     FROM data as a 
+     FROM data_mon as a 
      left outer join dis_mon_median as b
      on (a.MP_hydroid = b.MP_hydroid)
   ) as foo 
@@ -141,7 +131,8 @@ data_flagged <- sqldf(
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
 #transform from long to wide df
-dis_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
+
+dis_mgm_export <- spread(data = data_mon, key = Month, value = Water.Use.MGM, sep = "_",)
 dis_mgm_export <- sqldf(
   "select a.*, b.flag_data_qual 
    from dis_mgm_export as a 
@@ -151,13 +142,13 @@ dis_mgm_export <- sqldf(
 )
 
 #rename columns
-dis_mgm_export <- sqldf('SELECT MP_hydroid,
+dis_mgm <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
                           Facility_hydroid,
                           Facility AS Facility_Name,
-                          "USE.Type" AS Use_Type,
+                          "Use.Type" AS Use_Type,
                           Latitude,
                           Longitude,
                           "FIPS.Code" AS FIPS_code,
@@ -183,21 +174,51 @@ dis_mgm_export <- sqldf('SELECT MP_hydroid,
 
 ###################
 # #QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
-# dis_mgm_export$ann_sum <- rowSums(dis_mgm_export[12:23],na.rm = FALSE)
+# dis_mgm_export$ann_sum <- rowSums(dis_mgm_export[13:24],na.rm = FALSE)
 # 
-# dis_join_no_match <- sqldf('SELECT a.*, b."Water.Use.MGY" AS MGY
+# dis_join_no_match <- sqldf('SELECT a.*, b.MGY
 #                  FROM dis_mgm_export a
-#                  LEFT OUTER JOIN "data.all" b
+#                  LEFT OUTER JOIN dis_mgy b
 #                  ON a.Year = b.Year
 #                  AND a.MP_hydroid = b.MP_hydroid
-#                  WHERE round(a.ann_sum,3) != round(b."Water.Use.MGY",3)')
+#                  WHERE round(a.ann_sum,3) != round(b.MGY,3)')
 ##################
 
 #add annual MGY value onto monthly export
 dis_join <- sqldf('SELECT a.*, b.MGY
-                 FROM dis_mgm_export a
+                 FROM dis_mgm a
                  LEFT OUTER JOIN dis_mgy b
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
+
+#rename columns for consistent export to USGS
+dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
+                          MP_hydroid AS Site_ID,
+                          "USEPA" AS To_Agency_Code,
+                          Facility_hydroid AS Facility_ID,
+                          Year,
+                          "USEPA" AS Data_Source_Code,
+                          "RT" AS Water_Quantity_code,
+                          Source_Type AS Site_Type,
+                          "UNKN" AS Method_Code,
+                          "N" AS Accuracy_Code,
+                          "W" AS Data_Aging_Code,
+                          Use_Type as Facility_Type,
+                          "Y" AS Preferred_Flag,
+                          "Mgal/yr" AS Annual_Reporting_Unit_Name,
+                          MGY AS Annual_Value,
+                          "Mgal/m" AS Monthly_Reporting_Unit_Name,
+                          Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
+                 FROM dis_join')
+
+#with power
+sqldf('SELECT sum(Annual_Value)/365 AS total_MGD
+      FROM dis_join2')
+
+#without power
+sqldf('SELECT sum(Annual_Value)/365 AS total_MGD
+      FROM dis_join2
+      WHERE Facility_Type NOT LIKE "%power%"')
+
 #save file
-write.csv(dis_join, paste(export_path,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(dis_join2, paste("U:/OWS/foundation_datasets/nwis/discharge_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
