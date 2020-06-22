@@ -27,11 +27,11 @@ datasite <- "http://deq2.bse.vt.edu/d.dh"
 export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 #without power
 #export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=not&ftype=power&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
-# output_filename <- "wd_mgy_export.csv"
+output_filename <- "wd_mgy_export.csv"
 data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ############################################  
-##check to see if there are multiple wd_mgy entries for a single year
+# #check to see if there are multiple wd_mgy entries for a single year
 #   a <- sqldf("SELECT a.*
 # FROM data_annual a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
@@ -108,20 +108,26 @@ sqldf('SELECT sum("Water.Use.MGM")/365
 
 ###################
 #check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
-  a <- sqldf("SELECT a.*
-FROM data1 a
-JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-FROM data1
-GROUP BY MP_hydroid
-HAVING count(*) > 12 ) b
-ON a.MP_hydroid = b.MP_hydroid
-ORDER BY a.MP_hydroid")
+#   a <- sqldf("SELECT a.*
+# FROM data1 a
+# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
+# FROM data1
+# GROUP BY MP_hydroid
+# HAVING count(*) > 12 ) b
+# ON a.MP_hydroid = b.MP_hydroid
+# ORDER BY a.MP_hydroid")
+# sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
+#       from a')
 ###################
 
 #remove duplicates (keeps one row for each combination of Month and year)
 data2 <- sqldf("SELECT *
                FROM data1
                GROUP BY MP_hydroid, Month, Year")
+
+sqldf('SELECT sum("Water.Use.MGM")/365
+      FROM data2
+      WHERE "Use.Type" NOT LIKE "%power%"')
 
 #transform from long to wide df
 wd_mgm_export <- spread(data = data2, key = Month, value = Water.Use.MGM, sep = "_",)
@@ -153,6 +159,7 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
                        FROM wd_mgm_export
                        ORDER BY MP_hydroid, Year
                        ') 
+
 #save file
 #write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
 
@@ -178,6 +185,10 @@ wd_join <- sqldf('SELECT a.*, b.MGY
 sqldf('SELECT sum(MGY)/365
       FROM wd_join
       WHERE Use_type NOT LIKE "%power%" ')
+
+sqldf('SELECT count(MP_hydroid)
+      from wd_join
+      where Source_type NOT LIKE "Well"')
 
 #save file
 write.csv(wd_join, paste(localpath,"/withdrawal_water_quantity.csv",sep=""), row.names = FALSE)
