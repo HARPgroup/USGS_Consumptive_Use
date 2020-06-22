@@ -80,20 +80,6 @@ dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 
 #monthly withdrawal export
 
-#################################################
-#WIP - goal is to supply irregular length of time (for example, just months 1 through 6)
-#need to figure out how to rename those columns based on months given
-# #smonth <- 1
-# #emonth <- 6
-# startdate <- paste(syear,if (smonth %in% 1:9) {
-#   paste0(0,smonth)
-# } else {smonth},"01",sep='-')
-#
-# enddate <- paste(eyear,if (emonth %in% 1:9) {
-#   paste0(0,emonth)
-# } else {emonth},"31", sep='-')
-#################################################
-
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgm_export.csv"
@@ -175,6 +161,7 @@ dis_join <- sqldf('SELECT a.*, b.MGY
                  LEFT OUTER JOIN dis_mgy b
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
+
 #rename columns for consistent export to USGS
 dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                           MP_hydroid AS Site_ID,
@@ -198,10 +185,11 @@ dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
 #with power
 sqldf('SELECT sum(Annual_Value)/365 AS total_MGD
       FROM dis_join2')
+
 #without power
 sqldf('SELECT sum(Annual_Value)/365 AS total_MGD
       FROM dis_join2
       WHERE Facility_Type NOT LIKE "%power%"')
 
 #save file
-write.csv(dis_join2, paste(localpath,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(dis_join2, paste("U:/OWS/foundation_datasets/nwis/discharge_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)

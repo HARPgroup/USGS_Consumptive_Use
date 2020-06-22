@@ -189,7 +189,7 @@ sqldf('SELECT sum(MGY)/365
 
 sqldf('SELECT count(MP_hydroid)
       from wd_join
-      where Source_type NOT LIKE "Well"')
+      where Source_type LIKE "Well"')
 
 #rename columns for consistent export to USGS
 wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
@@ -212,4 +212,4 @@ wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                  FROM wd_join')
 
 #save file
-write.csv(wd_join2, paste(localpath,"/withdrawal_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(wd_join2, paste("U:/OWS/foundation_datasets/nwis/withdrawal_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
