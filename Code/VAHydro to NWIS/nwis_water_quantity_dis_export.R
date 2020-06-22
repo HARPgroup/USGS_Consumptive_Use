@@ -142,6 +142,13 @@ data_flagged <- sqldf(
 
 #transform from long to wide df
 dis_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
+dis_mgm_export <- sqldf(
+  "select a.*, b.flag_data_qual 
+   from dis_mgm_export as a 
+   left outer join data_flagged as b 
+   on (a.MP_hydroid = b.MP_hydroid)
+  "
+)
 
 #rename columns
 dis_mgm_export <- sqldf('SELECT MP_hydroid,
@@ -155,6 +162,7 @@ dis_mgm_export <- sqldf('SELECT MP_hydroid,
                           Longitude,
                           "FIPS.Code" AS FIPS_code,
                           Year,
+                          flag_data_qual,
                           Month_1 AS Jan,
                           Month_2 AS Feb,
                           Month_3 AS Mar,
