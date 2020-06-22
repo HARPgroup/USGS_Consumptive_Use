@@ -8,7 +8,7 @@ library('tidyr')
 options(scipen = 999)
 
 #load variables
-syear = 2018
+syear = 2019
 eyear = 2019
 
 startdate <- paste(syear, "-01-01",sep='')
@@ -23,7 +23,7 @@ source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
 datasite <- "http://deq2.bse.vt.edu/d.dh"
 
 # RETRIEVE WITHDRAWAL DATA
-export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
+export_view <- paste0("ows-awrr-map-export/dmr_ann_mgy?ftype_op=%3D&ftype=&bundle%5B1%5D=transfer&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgy_export.csv"
 data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
@@ -34,18 +34,18 @@ data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
 # FROM data
 # GROUP BY MP_hydroid
-# HAVING count(*) > 2 ) b
+# HAVING count(*) > 1 ) b
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
 ############################################
 
 #filter out non ECHO features 
-data <- sqldf('SELECT *
+data_ann <- sqldf('SELECT *
               FROM data_annual
               WHERE Hydrocode LIKE "echo_%"')
 
 #remove duplicates (keeps one row for each year)
-data <- distinct(data, MP_hydroid, Year, .keep_all = TRUE)
+data_ann <- distinct(data_ann, MP_hydroid, Year, .keep_all = TRUE)
 
 #rename columns 
 dis_mgy <- sqldf('SELECT MP_hydroid,
@@ -60,9 +60,13 @@ dis_mgy <- sqldf('SELECT MP_hydroid,
                           Latitude,
                           Longitude,
                           "FIPS.Code" AS FIPS_code
-                       FROM data
+                       FROM data_ann
                        ORDER BY Year
                        ') 
+
+sqldf('SELECT sum(MGY)/365
+      FROM dis_mgy 
+      WHERE Use_Type NOT LIKE "%power%"')
 
 #transform from long to wide df
 dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
@@ -93,7 +97,7 @@ dis_mgy_export <- spread(data = dis_mgy, key = Year, value = MGY,sep = "_")
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/dmr_mon_mgm?ftype_op=%3D&ftype=&bundle%5B0%5D=transfer&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate)
 output_filename <- "dis_mgm_export.csv"
-data <- from_vahydro(datasite,export_view,localpath,output_filename)
+data_monthly <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ###################
 # #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
@@ -102,26 +106,26 @@ data <- from_vahydro(datasite,export_view,localpath,output_filename)
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
 # FROM data
 # GROUP BY MP_hydroid
-# HAVING count(*) > 24 ) b
+# HAVING count(*) > 12 ) b
 # ON a.MP_hydroid = b.MP_hydroid
 # ORDER BY a.MP_hydroid")
 ###################
 
 #filter out non ECHO features 
-data <- sqldf('SELECT *
-              FROM data
+data_mon <- sqldf('SELECT *
+              FROM data_monthly
               WHERE Hydrocode LIKE "echo_%"')
 
 #remove duplicates (keeps one row for each combination of Month and year)
-data <- sqldf("SELECT *
-               FROM data
+data_mon <- sqldf("SELECT *
+               FROM data_mon
                GROUP BY MP_hydroid, Month, Year")
 
 #exclude dalecarlia
 #data <- data[-which(data$Facility=='DALECARLIA WTP'),]
 
 #transform from long to wide df
-dis_mgm_export <- spread(data = data, key = Month, value = Water.Use.MGM, sep = "_",)
+dis_mgm_export <- spread(data = data_mon, key = Month, value = Water.Use.MGM, sep = "_",)
 
 #rename columns
 dis_mgm <- sqldf('SELECT MP_hydroid,
