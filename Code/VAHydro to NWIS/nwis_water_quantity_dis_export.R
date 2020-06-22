@@ -175,5 +175,33 @@ dis_join <- sqldf('SELECT a.*, b.MGY
                  LEFT OUTER JOIN dis_mgy b
                  ON a.Year = b.Year
                  AND a.MP_hydroid = b.MP_hydroid')
+#rename columns for consistent export to USGS
+dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
+                          MP_hydroid AS Site_ID,
+                          "USEPA" AS To_Agency_Code,
+                          Facility_hydroid AS Facility_ID,
+                          Year,
+                          "USEPA" AS Data_Source_Code,
+                          "RT" AS Water_Quantity_code,
+                          Source_Type AS Site_Type,
+                          "UNKN" AS Method_Code,
+                          "N" AS Accuracy_Code,
+                          "W" AS Data_Aging_Code,
+                          Use_Type as Facility_Type,
+                          "Y" AS Preferred_Flag,
+                          "Mgal/yr" AS Annual_Reporting_Unit_Name,
+                          MGY AS Annual_Value,
+                          "Mgal/m" AS Monthly_Reporting_Unit_Name,
+                          Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
+                 FROM dis_join')
+
+#with power
+sqldf('SELECT sum(Annual_Value)/365 AS total_MGD
+      FROM dis_join2')
+#without power
+sqldf('SELECT sum(Annual_Value)/365 AS total_MGD
+      FROM dis_join2
+      WHERE Facility_Type NOT LIKE "%power%"')
+
 #save file
-write.csv(dis_join, paste(localpath,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
+write.csv(dis_join2, paste(localpath,"/discharge_water_quantity.csv",sep=""), row.names = FALSE)
