@@ -28,7 +28,7 @@ export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=
 #without power
 #export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=not&ftype=power&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 output_filename <- "wd_mgy_export.csv"
-data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
+wd_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ############################################  
 # #check to see if there are multiple wd_mgy entries for a single year
@@ -43,10 +43,10 @@ data_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 ############################################
   
 #remove duplicates (keeps one row for each year)
-data <- distinct(data_annual, MP_hydroid, Year, .keep_all = TRUE)
+wd_ann <- distinct(wd_annual, MP_hydroid, Year, .keep_all = TRUE)
 
 #exclude dalecarlia
-data <- data[-which(data$Facility=='DALECARLIA WTP'),]
+wd_ann <- wd_ann[-which(wd_ann$Facility=='DALECARLIA WTP'),]
 
 #rename columns 
 wd_mgy <- sqldf('SELECT MP_hydroid,
@@ -61,16 +61,17 @@ wd_mgy <- sqldf('SELECT MP_hydroid,
                           Latitude,
                           Longitude,
                           "FIPS.Code" AS FIPS_code
-                       FROM data
+                       FROM wd_ann
                        ORDER BY Year
                        ') 
-
-#place into export data frame
-wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
 
 sqldf('SELECT sum(MGY)/365
       FROM wd_mgy 
       WHERE Use_Type NOT LIKE "%power%"')
+
+#place into export data frame
+wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
+
 #save file
 #write.csv(wd_mgy_export,paste(localpath,"/withdrawal_annual.csv",sep=""), row.names = FALSE)
 
@@ -97,13 +98,13 @@ sqldf('SELECT sum(MGY)/365
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 output_filename <- "wd_mgm_export.csv"
-data1 <- from_vahydro(datasite,export_view,localpath,output_filename)
+wd_monthly <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 #exclude dalecarlia
-data1 <- data1[-which(data1$Facility=='DALECARLIA WTP'),]
+wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
 
 sqldf('SELECT sum("Water.Use.MGM")/365
-      FROM data1
+      FROM wd_mon
       WHERE "Use.Type" NOT LIKE "%power%"')
 
 ###################
@@ -121,16 +122,16 @@ sqldf('SELECT sum("Water.Use.MGM")/365
 ###################
 
 #remove duplicates (keeps one row for each combination of Month and year)
-data2 <- sqldf("SELECT *
-               FROM data1
+wd_mon <- sqldf("SELECT *
+               FROM wd_mon
                GROUP BY MP_hydroid, Month, Year")
 
 sqldf('SELECT sum("Water.Use.MGM")/365
-      FROM data2
+      FROM wd_mon
       WHERE "Use.Type" NOT LIKE "%power%"')
 
 #transform from long to wide df
-wd_mgm_export <- spread(data = data2, key = Month, value = Water.Use.MGM, sep = "_",)
+wd_mgm_export <- spread(data = wd_mon, key = Month, value = Water.Use.MGM, sep = "_",)
 
 #rename columns
 wd_mgm <- sqldf('SELECT MP_hydroid,
