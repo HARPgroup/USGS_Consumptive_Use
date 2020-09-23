@@ -12,6 +12,9 @@ Assembled: 10/10/2017
 ## Objectives
 This project has two objectives. The first is to develop a set of data retrieval and export tools to supply updated NPDES DMR data to the VAHydro data system, and to then export withdrawl, discharge, and consumptive use data from VAHydro in a machine-readable format consistent with NWIS requirements. The second objective is to leverage this DMR data to estimate consumptive use across different user categories, assess trends in consumptive use through time, and develop statistical methods for estimating non-reported consumptive use.  
 
+## Navigation and Directions
+This project includes multiple scripts that can be used to extract NPDES point-source discharge data from the US EPA Enforcement Compliance History Online (ECHO) database and combine these records with withdrawal data to estimate water consumption. The figure below (visual mapping of scripts) presents a flow diagram describing the different R scripts contained in this repository and how they relate to each other to generate consumption calculations. 
+
 ## Contributors
 
 ##### Robert Burgholzer
