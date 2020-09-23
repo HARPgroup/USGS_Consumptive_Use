@@ -1,14 +1,26 @@
 # Estimating water consumption across multiple users by leveraging monthly withdrawal and discharge records 
-## Supporting code for manuscript (currently under review at Journal of Water Resources Planning and Management
+## Supporting code for manuscript (currently under review at Journal of Water Resources Planning and Management)
 
 ## Description
-This repository is intended to hold code, documentation, and tutorials for the USGS Consumptive Use Project run through Dr. Julie Shortridge and Dr. Durelle Scott of Virginia Tech as well as Robert Burgholzer and Joseph Kleiner of the Virginia Department of Environmental Quality.
+This repository is intended to hold code associated with the manuscript "Estimating water consumption across multiple users by levering monthly withdrawal and discharge records" by Morgan McCarthy, Connor Brogan, Julie Shortridge, Robert Burgholzer, Joseph Kleiner, and Durelle Scott. 
 
 ## Sponsorship and Disclaimer
-
 This material is based upon work supported by the U.S. Geological Survey under Cooperative Agreement No. G17AC00322. The views and conclusions contained in this document are those of the authors and should not be interpreted as representing the opinions or policies of the U.S. Geological Survey. Mention of trade names or commercial products does not constitute their endorsement by the U.S. Geological Survey.
 
-Assembled: 10/10/2017
+## Navigation and Description
+This repository includes several R scripts that can be modified to replicate the data analysis described in the manuscript. A brief description of each is provided below: 
 
-## Objectives
-This project has two objectives. The first is to develop a set of data retrieval and export tools to supply updated NPDES DMR data to the VAHydro data system, and to then export withdrawl, discharge, and consumptive use data from VAHydro in a machine-readable format consistent with NWIS requirements. The second objective is to leverage this DMR data to estimate consumptive use across different user categories, assess trends in consumptive use through time, and develop statistical methods for estimating non-reported consumptive use.  
+00_ECHO_Timeseries.R: Query and download discharge records from the EPA Enforcement Compliance History Online (ECHO) database. Output is a dataframe with time series of DMR entries. 
+01_ECHO_QAQC.R: Classify unknown facility water use types, identify external outfalls, flag anomalous data. 
+02_VWUDS_QAQC.R: Process monthly withdrawal data and classify unknown facility water use types.
+03_Facility_Matching.R: Identify facilities present in both withdrawal and discharge datasets based on geographic coordinates and name similarity. 
+04_Facility_Analysis.R: Calculate water consumption across facilities in the matched dataset generated in 03_Facility_Matching.R
+05_VA_HUC10_Consumptive_Use.R: Calculates spatially aggregated consumptive use estimates for 2016 at the HUC-10 watershed scale.
+05_VA_HUC6_Consumptive_Use.R: Same as above, but for HUC-6
+05_VA_HUC8_Consumptive_Use.R: Same as above, but for HUC-8
+05_VA_Statewide_Consumptive_Use.R: Calculates monthly spatially aggregated consumptive use estimates for the state of Virginia through time. 
+
+Assembled: 9/23/2020
+
+## Contact
+For questions about the code contained in this repository, please contact Julie Shortridge (jshortridge at vt.edu)
