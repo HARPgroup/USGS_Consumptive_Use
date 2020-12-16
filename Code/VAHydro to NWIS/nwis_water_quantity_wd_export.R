@@ -131,6 +131,7 @@ wd_mon <- sqldf('SELECT *
                FROM wd_mon
                GROUP BY MP_hydroid, Month, Year
                 ORDER BY "Water.Use.MGM" DESC ')
+#### #NOTE: LAL, THE WD_MON DATAFRAME IS PROBABLY BETTER SUITED FOR METEORLOGICAL DATA #####
 
 sqldf('SELECT sum("Water.Use.MGM")/365
       FROM wd_mon
