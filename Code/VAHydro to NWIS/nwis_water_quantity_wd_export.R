@@ -171,15 +171,15 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
 #write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
 
 ###################
-#QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
-# wd_mgm_export$ann_sum <- rowSums(wd_mgm_export[13:24],na.rm = FALSE)
-# 
-# wd_join_no_match <- sqldf('SELECT a.*, b.MGY
-#                  FROM wd_mgm_export a
-#                  LEFT OUTER JOIN wd_mgy b
-#                  ON a.Year = b.Year
-#                  AND a.MP_hydroid = b.MP_hydroid
-#                  WHERE round(a.ann_sum,3) != round(b.MGY,3)')
+###QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
+wd_mgm_export$ann_sum <- rowSums(wd_mgm_export[13:24],na.rm = FALSE)
+
+wd_join_no_match <- sqldf('SELECT a.*, b.MGY
+                 FROM wd_mgm_export a
+                 LEFT OUTER JOIN wd_mgy b
+                 ON a.Year = b.Year
+                 AND a.MP_hydroid = b.MP_hydroid
+                 WHERE round(a.ann_sum,3) != round(b.MGY,3)')
 ##################
 
 #add annual MGY value onto monthly export
