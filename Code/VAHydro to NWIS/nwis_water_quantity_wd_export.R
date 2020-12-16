@@ -31,15 +31,16 @@ output_filename <- "wd_mgy_export.csv"
 wd_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 ############################################  
-# #check to see if there are multiple wd_mgy entries for a single year
-#   a <- sqldf("SELECT a.*
-# FROM data_annual a
-# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data_annual
-# GROUP BY MP_hydroid
-# HAVING count(*) > 2 ) b
-# ON a.MP_hydroid = b.MP_hydroid
-# ORDER BY a.MP_hydroid")
+#check to see if there are multiple wd_mgy entries for a single year
+  wd_mgy_entries <- ((eyear - syear) +1)
+  a <- sqldf(paste('SELECT a.*
+FROM wd_annual a
+JOIN (SELECT MP_hydroid, Facility_hydroid, "Water.Use.MGY" as mgy, COUNT(*)
+FROM wd_annual
+GROUP BY MP_hydroid
+HAVING count(*) > ',wd_mgy_entries,' ) b
+ON a.MP_hydroid = b.MP_hydroid
+ORDER BY a.MP_hydroid'))
 ############################################
   
 #remove duplicates (keeps one row for each year)
@@ -108,23 +109,28 @@ sqldf('SELECT sum("Water.Use.MGM")/365
       WHERE "Use.Type" NOT LIKE "%power%"')
 
 ###################
-#check to see if there are multiple wd_mgy entries for a single year (should be multiples of 12)
-#   a <- sqldf("SELECT a.*
-# FROM data1 a
-# JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data1
-# GROUP BY MP_hydroid
-# HAVING count(*) > 12 ) b
-# ON a.MP_hydroid = b.MP_hydroid
-# ORDER BY a.MP_hydroid")
-# sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
-#       from a')
+##check to see if there are multiple wd_mgm entries for a single year (should be multiples of 12)
+  wd_mgm_entries <- ((eyear - syear) +1)*12
+  a <- sqldf(paste('SELECT a.*
+FROM wd_mon a
+JOIN (SELECT MP_hydroid, Facility_hydroid, "Water.Use.MGM" as mgm, COUNT(*)
+FROM wd_mon
+GROUP BY MP_hydroid
+HAVING count(*) >',wd_mgm_entries,') b
+ON a.MP_hydroid = b.MP_hydroid
+ORDER BY a.MP_hydroid'))
+sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
+      from a')
 ###################
 
 #remove duplicates (keeps one row for each combination of Month and year)
-wd_mon <- sqldf("SELECT *
+wd_mon <- sqldf('SELECT *
                FROM wd_mon
-               GROUP BY MP_hydroid, Month, Year")
+                ORDER BY "Water.Use.MGM" DESC ')
+wd_mon <- sqldf('SELECT *
+               FROM wd_mon
+               GROUP BY MP_hydroid, Month, Year
+                ORDER BY "Water.Use.MGM" DESC ')
 
 sqldf('SELECT sum("Water.Use.MGM")/365
       FROM wd_mon
@@ -165,15 +171,15 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
 #write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
 
 ###################
-#QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
-# wd_mgm_export$ann_sum <- rowSums(wd_mgm_export[13:24],na.rm = FALSE)
-# 
-# wd_join_no_match <- sqldf('SELECT a.*, b.MGY
-#                  FROM wd_mgm_export a
-#                  LEFT OUTER JOIN wd_mgy b
-#                  ON a.Year = b.Year
-#                  AND a.MP_hydroid = b.MP_hydroid
-#                  WHERE round(a.ann_sum,3) != round(b.MGY,3)')
+###QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
+wd_mgm_export$ann_sum <- rowSums(wd_mgm_export[13:24],na.rm = FALSE)
+
+wd_join_no_match <- sqldf('SELECT a.*, b.MGY
+                 FROM wd_mgm_export a
+                 LEFT OUTER JOIN wd_mgy b
+                 ON a.Year = b.Year
+                 AND a.MP_hydroid = b.MP_hydroid
+                 WHERE round(a.ann_sum,3) != round(b.MGY,3)')
 ##################
 
 #add annual MGY value onto monthly export
