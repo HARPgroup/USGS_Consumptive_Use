@@ -7,7 +7,7 @@ library('dplyr')
 library('tidyr')
 
 #load variables
-syear = 2019
+syear = 2010
 eyear = 2019
 
 startdate <- paste(syear, "-01-01",sep='')
@@ -95,12 +95,28 @@ wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
 #   paste0(0,emonth)
 # } else {emonth},"31", sep='-')
 #################################################
+wd_monthly_data <- list()
+
+year_range <- c(2014,2013,2012,2011,2010,2009,2008,2007,2006,2005,2004,2003,2002,2001,2000)
+## year range
+year_range <- format(seq(as.Date("1982/1/1"), as.Date("2009/1/1"), "years"), format="%Y")
+
+for (y in year_range) {
+  print(paste0("PROCESSING YEAR: ", y))
+  startdate <- paste(y, "-01-01",sep='')
+  enddate <- paste(y, "-12-31", sep='')
 
 # RETRIEVE WITHDRAWAL DATA
 export_view <- paste0("ows-annual-report-map-exports-monthly-export/wd_mgm?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 output_filename <- "wd_mgm_export.csv"
 wd_monthly <- from_vahydro(datasite,export_view,localpath,output_filename)
 
+wd_monthly_data <- rbind(wd_monthly_data, wd_monthly)
+}
+
+all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
+
+write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_annual_ALL.csv",sep=""), row.names = FALSE)
 #exclude dalecarlia
 wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
 
@@ -217,6 +233,10 @@ wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                           "Mgal/m" AS Monthly_Reporting_Unit_Name,
                           Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
                  FROM wd_join')
+# 
+# #save file
+# write.csv(wd_join2, paste("U:/OWS/foundation_datasets/nwis/withdrawal_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
+
 
 #save file
-write.csv(wd_join2, paste("U:/OWS/foundation_datasets/nwis/withdrawal_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
+write.csv(wd_join2, paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_",syear,"-",eyear,"_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
