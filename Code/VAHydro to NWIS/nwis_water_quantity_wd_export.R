@@ -7,11 +7,8 @@ library('dplyr')
 library('tidyr')
 
 #load variables
-syear = 2010
-eyear = 2019
-
-startdate <- paste(syear, "-01-01",sep='')
-enddate <- paste(eyear, "-12-31", sep='')
+syear = 1982
+eyear = 2020
 
 ##########################################################################
 #LOAD CONFIG FILE
@@ -20,9 +17,19 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq2.bse.vt.edu/d.dh"
+datasite <- "http://deq1.bse.vt.edu/d.dh"
 
 # RETRIEVE WITHDRAWAL DATA
+wd_annual_data <- list()
+
+## year range
+year_range <- format(seq(as.Date(paste0(syear,"/1/1")), as.Date(paste0(eyear,"/1/1")), "years"), format="%Y")
+
+for (y in year_range) {
+  print(paste0("PROCESSING YEAR: ", y))
+  startdate <- paste(y, "-01-01",sep='')
+  enddate <- paste(y, "-12-31", sep='')
+
 #with power
 export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 #without power
@@ -30,25 +37,31 @@ export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=
 output_filename <- "wd_mgy_export.csv"
 wd_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
+wd_annual_data <- rbind(wd_annual_data, wd_annual)
+}
 ############################################  
-#check to see if there are multiple wd_mgy entries for a single year
-  wd_mgy_entries <- ((eyear - syear) +1)
-  a <- sqldf(paste('SELECT a.*
-FROM wd_annual a
-JOIN (SELECT MP_hydroid, Facility_hydroid, "Water.Use.MGY" as mgy, COUNT(*)
-FROM wd_annual
-GROUP BY MP_hydroid
-HAVING count(*) > ',wd_mgy_entries,' ) b
-ON a.MP_hydroid = b.MP_hydroid
-ORDER BY a.MP_hydroid'))
+# #check to see if there are multiple wd_mgy entries for a single year
+#   wd_mgy_entries <- ((eyear - syear) +1)
+#   a <- sqldf(paste('SELECT a.*
+# FROM wd_annual a
+# JOIN (SELECT MP_hydroid, Facility_hydroid, "Water.Use.MGY" as mgy, COUNT(*)
+# FROM wd_annual
+# GROUP BY MP_hydroid
+# HAVING count(*) > ',wd_mgy_entries,' ) b
+# ON a.MP_hydroid = b.MP_hydroid
+# ORDER BY a.MP_hydroid'))
 ############################################
+  sqldf('SELECT sum("Water.Use.MGY")/365
+      FROM wd_annual_data 
+      WHERE "Use.Type" NOT LIKE "%power%"')
   
-#remove duplicates (keeps one row for each year)
-wd_ann <- distinct(wd_annual, MP_hydroid, Year, .keep_all = TRUE)
-
-#exclude dalecarlia
-wd_ann <- wd_ann[-which(wd_ann$Facility=='DALECARLIA WTP'),]
-
+  #remove duplicates - GROUP BY USING MAX
+  wd_ann <- sqldf('SELECT "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Year",max("Water.Use.MGY") AS "Water.Use.MGY","Latitude","Longitude","Locality","FIPS.Code" 
+               FROM wd_annual_data
+               WHERE Facility != "DALECARLIA WTP"
+               GROUP BY "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Year","Latitude","Longitude","Locality","FIPS.Code"
+                ORDER BY "Water.Use.MGY" DESC ')
+  
 #rename columns 
 wd_mgy <- sqldf('SELECT MP_hydroid,
                           Hydrocode,
@@ -82,24 +95,10 @@ wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
 
 #monthly withdrawal export
 
-#################################################
-#WIP - goal is to supply irregular length of time (for example, just months 1 through 6)
- #need to figure out how to rename those columns based on months given
- # #smonth <- 1
-# #emonth <- 6
-# startdate <- paste(syear,if (smonth %in% 1:9) {
-#   paste0(0,smonth)
-# } else {smonth},"01",sep='-')
-#
-# enddate <- paste(eyear,if (emonth %in% 1:9) {
-#   paste0(0,emonth)
-# } else {emonth},"31", sep='-')
-#################################################
 wd_monthly_data <- list()
 
-year_range <- c(2014,2013,2012,2011,2010,2009,2008,2007,2006,2005,2004,2003,2002,2001,2000)
 ## year range
-year_range <- format(seq(as.Date("1982/1/1"), as.Date("2009/1/1"), "years"), format="%Y")
+year_range <- format(seq(as.Date(paste0(syear,"/1/1")), as.Date(paste0(eyear,"/1/1")), "years"), format="%Y")
 
 for (y in year_range) {
   print(paste0("PROCESSING YEAR: ", y))
@@ -139,13 +138,15 @@ sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
       from a')
 ###################
 
-#remove duplicates (keeps one row for each combination of Month and year)
-wd_mon <- sqldf('SELECT *
+sqldf('SELECT sum(MGY)/365
+      FROM wd_mon 
+      WHERE Use_Type NOT LIKE "%power%"')
+
+#remove duplicates - GROUP BY USING MAX
+wd_mon <- sqldf('SELECT "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Year","Month",max("Water.Use.MGM") AS "Water.Use.MGM","Latitude","Longitude","Locality","FIPS.Code" 
                FROM wd_mon
-                ORDER BY "Water.Use.MGM" DESC ')
-wd_mon <- sqldf('SELECT *
-               FROM wd_mon
-               GROUP BY MP_hydroid, Month, Year
+               WHERE Facility != "DALECARLIA WTP"
+               GROUP BY "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Month","Year","Latitude","Longitude","Locality","FIPS.Code"
                 ORDER BY "Water.Use.MGM" DESC ')
 #### #NOTE: LAL, THE WD_MON DATAFRAME IS PROBABLY BETTER SUITED FOR METEORLOGICAL DATA #####
 
