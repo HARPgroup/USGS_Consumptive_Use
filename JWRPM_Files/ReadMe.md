@@ -1,8 +1,8 @@
-# Estimating water consumption across multiple users by leveraging monthly withdrawal and discharge records 
+# Estimating water consumption of commercial, industrial, municipal, and thermoelectric users from monthly withdrawal and discharge 
 ## Supporting Code 
 
 ## Description
-This repository is intended to hold code associated with the manuscript "Estimating water consumption across multiple users by levering monthly withdrawal and discharge records" by Morgan McCarthy, Connor Brogan, Julie Shortridge, Robert Burgholzer, Joseph Kleiner, and Durelle Scott. This manuscript is currently under review at Journal of Water Resources Planning and Management. 
+This repository is intended to hold code associated with the manuscript "Estimating water consumption of commercial, industrial, municipal, and thermoelectric users from monthly withdrawal and discharge" by Morgan McCarthy, Connor Brogan, Julie Shortridge, Robert Burgholzer, Joseph Kleiner, and Durelle Scott. This manuscript is currently under review at Journal of the American Water Resources Association. 
 
 ## Sponsorship and Disclaimer
 This material is based upon work supported by the U.S. Geological Survey under Cooperative Agreement No. G17AC00322. The views and conclusions contained in this document are those of the authors and should not be interpreted as representing the opinions or policies of the U.S. Geological Survey. Mention of trade names or commercial products does not constitute their endorsement by the U.S. Geological Survey.
