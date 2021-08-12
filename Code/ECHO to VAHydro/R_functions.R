@@ -571,9 +571,11 @@ cu_echo_get_VPDES <- function() {
   # Warnings about unknown or uninitiliased columns: previous IP contact sheets named the columns differently. 
   # It doesn't hinder any processes though. 
   
-  GET('https://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20Jan%202019.xlsx?ver=2019-01-23-151510-490', 
+  # GET('https://www.deq.virginia.gov/Portals/0/DEQ/Water/PollutionDischargeElimination/VPDES%20Spreadsheets/VPDES%20IP%20Contact%20Flow%20for%20WEB%20Jan%202019.xlsx?ver=2019-01-23-151510-490', 
+  #     write_disk(temp <- tempfile(fileext = ".xlsx"))) #DEPRECATED LINK DUE TO NEW DEQ WEBSITE Dec 2019 
+  GET('https://www.deq.virginia.gov/home/showpublisheddocument/4443/637636878863170000', 
       write_disk(temp <- tempfile(fileext = ".xlsx")))
-  VPDES_IP <- read_excel(temp)
+  VPDES_IP <- read_excel(temp, skip = 5)
   VPDES_IP<-VPDES_IP[!is.na(VPDES_IP$Facility),]
   VPDES_IP$`Design Flow (MGD)`<-as.numeric(VPDES_IP$`Design Flow (MGD)`)
   VPDES_IP<-VPDES_IP[!duplicated(VPDES_IP$`Permit Number`),] #getting rid of duplicates and looking at unique permits
