@@ -17,7 +17,7 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq1.bse.vt.edu/d.dh"
+datasite <- "http://deq1.bse.vt.edu:81/d.dh"
 
 # RETRIEVE WITHDRAWAL DATA
 wd_annual_data <- list()
@@ -39,17 +39,18 @@ wd_annual <- from_vahydro(datasite,export_view,localpath,output_filename)
 
 wd_annual_data <- rbind(wd_annual_data, wd_annual)
 }
+
 ############################################  
-# #check to see if there are multiple wd_mgy entries for a single year
-#   wd_mgy_entries <- ((eyear - syear) +1)
-#   a <- sqldf(paste('SELECT a.*
-# FROM wd_annual a
-# JOIN (SELECT MP_hydroid, Facility_hydroid, "Water.Use.MGY" as mgy, COUNT(*)
-# FROM wd_annual
-# GROUP BY MP_hydroid
-# HAVING count(*) > ',wd_mgy_entries,' ) b
-# ON a.MP_hydroid = b.MP_hydroid
-# ORDER BY a.MP_hydroid'))
+#check to see if there are multiple wd_mgy entries for a single year
+  wd_mgy_entries <- ((eyear - syear) +1)
+  a <- sqldf(paste('SELECT a.*
+FROM wd_annual_data a
+JOIN (SELECT MP_hydroid, Facility_hydroid, "Water.Use.MGY" as mgy, COUNT(*)
+FROM wd_annual_data
+GROUP BY MP_hydroid
+HAVING count(*) > ',wd_mgy_entries,' ) b
+ON a.MP_hydroid = b.MP_hydroid
+ORDER BY a.MP_hydroid'))
 ############################################
   sqldf('SELECT sum("Water.Use.MGY")/365
       FROM wd_annual_data 
@@ -70,11 +71,13 @@ wd_mgy <- sqldf('SELECT MP_hydroid,
                           Facility_hydroid,
                           Facility AS Facility_Name,
                           "USE.Type" AS Use_Type,
+                          "MGY" AS Unit,
                           Year,
                           "Water.Use.MGY" AS MGY,
                           Latitude,
                           Longitude,
-                          "FIPS.Code" AS FIPS_code
+                          "FIPS.Code" AS FIPS_code,
+                          Locality
                        FROM wd_ann
                        ORDER BY Year
                        ') 
@@ -88,7 +91,6 @@ wd_mgy_export <- spread(data = wd_mgy, key = Year, value = MGY,sep = "_")
 
 #save file
 #write.csv(wd_mgy_export,paste(localpath,"/withdrawal_annual.csv",sep=""), row.names = FALSE)
-
 #####################################################################################
 #####################################################################################
 #####################################################################################
@@ -115,7 +117,7 @@ wd_monthly_data <- rbind(wd_monthly_data, wd_monthly)
 
 all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
 
-write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_annual_ALL.csv",sep=""), row.names = FALSE)
+write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_annual_",syear,"-",eyear,".csv",sep=""), row.names = FALSE)
 #exclude dalecarlia
 wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
 
@@ -137,10 +139,7 @@ ORDER BY a.MP_hydroid'))
 sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
       from a')
 ###################
-
-sqldf('SELECT sum(MGY)/365
-      FROM wd_mon 
-      WHERE Use_Type NOT LIKE "%power%"')
+#wd_mon <- read.csv( "C:/Users/maf95834/Downloads/ows-annual-report-map-exports-monthly-export.csv")
 
 #remove duplicates - GROUP BY USING MAX
 wd_mon <- sqldf('SELECT "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Year","Month",max("Water.Use.MGM") AS "Water.Use.MGM","Latitude","Longitude","Locality","FIPS.Code" 
@@ -158,11 +157,11 @@ sqldf('SELECT sum("Water.Use.MGM")/365
 wd_mgm_export <- spread(data = wd_mon, key = Month, value = Water.Use.MGM, sep = "_",)
 
 #rename columns
-wd_mgm <- sqldf('SELECT MP_hydroid,
+wd_mgm <- sqldf('SELECT MP_hydroid AS MP_HydroID,
                           Hydrocode,
                           "Source.Type" AS Source_Type,
                           "MP.Name" AS MP_Name,
-                          Facility_hydroid,
+                          Facility_hydroid AS Facility_HydroID,
                           Facility AS Facility_Name,
                           "USE.Type" AS Use_Type,
                           Latitude,
@@ -186,7 +185,8 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
                        ') 
 
 #save file
-#write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
+write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
+#write.csv(wd_mgm,"C:/Users/maf95834/Downloads/8-23-2021_ESGWMA_monthly_reported_use.csv", row.names = FALSE)
 
 ###################
 ###QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
@@ -236,7 +236,7 @@ wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                  FROM wd_join')
 # 
 # #save file
-# write.csv(wd_join2, paste("U:/OWS/foundation_datasets/nwis/withdrawal_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
+#write.csv(wd_join2, paste("U:/OWS/foundation_datasets/nwis/withdrawal_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
 
 
 #save file
