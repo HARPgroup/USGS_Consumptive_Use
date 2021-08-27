@@ -180,7 +180,7 @@ effdate_default <- '1970/01/01'
 expdate_default <- '1970/01/01'
 endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 
-# Get outfall locs from VPDES )(if present) #JM: NOT SURE THIS IS NEEDED 
+# Get outfall locs from VPDES )(if present) #JM: NOT SURE THIS IS NEEDED BUT I DID FIND THE REST JSON for this
 #VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
 # get design_flow from VPDES (if present)
 VPDES_DesignFlow <- cu_echo_get_VPDES() 
@@ -255,6 +255,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     
     print("PROCESSING OUTFALLS")
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+    #outfall_features_REST() is posting outfall features to VAHydro with the Facility geometries - the solution is to fix the data source in line 184 cu_echo_get_VPDES_outfalls()
     outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
     # get timeseries - this function makes a redundant call to echo for ts data... should replace
     facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
