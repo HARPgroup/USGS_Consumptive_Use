@@ -7,7 +7,7 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq2.bse.vt.edu/d.dh"
+datasite <- "http://deq1.bse.vt.edu:81/d.dh"
 
 
 # RETRIEVE AND PROCESS FACILITY AND SITE FILES
