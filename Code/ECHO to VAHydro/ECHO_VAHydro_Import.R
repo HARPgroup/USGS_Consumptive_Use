@@ -56,12 +56,15 @@ library(sqldf) #used for subsetting and filtering
 library(anytime) #required for date formatting (may change later)
 library(echor) #used to pull ECHO data
 
-localpath <-"/usr/local/home/git/"
-HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
+#localpath <-"/usr/local/home/git/"
+
+HUC6_path <- "/HARParchive/GIS_layers/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
-base_url <- "http://deq2.bse.vt.edu/d.alpha"
+base_url <- "http://deq1.bse.vt.edu:81/d.alpha/"
 
+source(paste("/var/www/R/config.local.private", sep = ""))
+localpath <- github_location
 #####################################################################
 # Parse command line arguments
 argst <- commandArgs(trailingOnly=T)
@@ -85,17 +88,21 @@ print(argst)
 
 print(paste0("Using Import mode ", import_mode))
 print(paste0("Using Base URL ", base_url))
+id_prefix <- "VA"
 print(paste0("Allowed prefix ", id_prefix))
 
-# #Generate REST token for authentication              
+#Generate REST token for authentication
 rest_uname = FALSE
 rest_pw = FALSE
-source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
-source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
+#source(paste(localpath,"/hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+source(paste(hydro_tools_location,"/VAHydro-2.0/rest_functions.R", sep = ""))
 token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
 
-#Load functions
-source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+# ds1 <- RomDataSource$new(base_url, "restws_admin")
+# ds1$get_token()
+# 
+# #Load functions
+source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 
 ####################################Inputs##########################################
@@ -129,7 +136,7 @@ ECHO_Facilities <- echoWaterGetFacilityInfo(
  print(paste("Download Process Complete: ",end_time ,sep=""))
  print(paste("Time elapsed: ",end_time-start_time,sep=""))
  
- print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
+ print(paste("Number of Facilities Before Spatial Containment:", nrow(ECHO_Facilities)))
  
  coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
  ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
@@ -137,7 +144,7 @@ ECHO_Facilities <- echoWaterGetFacilityInfo(
  #ECHO_Facilities_original <- ECHO_Facilities 
  ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
  #think about adding a visual check like plotting on a map
- print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
+ print(paste("Number of Facilities After Spatial Containment:", nrow(ECHO_Facilities)))
  
 
 ECHO_Facilities <- data.frame(ECHO_Facilities)
@@ -167,14 +174,14 @@ agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admin
 agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature)
 agency_adminid <- as.character(agency_dataframe$adminid)
 
-startDate <- '01/01/2019'
-endDate <- '12/31/2019'
+startDate <- '01/01/2020'
+endDate <- '12/31/2020'
 effdate_default <- '1970/01/01'
 expdate_default <- '1970/01/01'
 endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 
-# Get outfall locs from VPDES )(if present)
-VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
+# Get outfall locs from VPDES )(if present) #JM: NOT SURE THIS IS NEEDED 
+#VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
 # get design_flow from VPDES (if present)
 VPDES_DesignFlow <- cu_echo_get_VPDES() 
 # Attach design flow to Facilities
@@ -184,6 +191,8 @@ design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
 write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
 #i <- 1048 
 #i <- 26951
+#backup <- ECHO_Facilities
+#ECHO_Facilities <- backup
 # Create or retreive the Permit for each facility 
 #ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
 permit_dataframe <- NULL
@@ -191,10 +200,12 @@ facility_dataframe <- NULL
 for (i in spoint:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
   print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+  #OPTION 1 TO PULL DMR DATA - DIRECT FROM URL
   DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
   #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
-  #DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-  DMR_data<-echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
+  DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  #OPTION 2 TO PULL DMR DATA - USE echor PACKAGE
+  #DMR_data<-echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
   # We only create facility/permit features if we have actual outfall data to manage
   if ((as.integer(nrow(DMR_data)) > 0) ) {
     if (is.na(ECHO_Facilities_i$CWPEffectiveDate)) {
