@@ -149,10 +149,13 @@ fips_REST <- function(fipscode,token){
   
   fips_hydroid <- getFeature(fips_inputs, token, base_url)
   
-  if(fips_hydroid != FALSE){
-    fips_hydroid <- as.character(fips_hydroid$hydroid)
-  } else {
+  if(is.na(fips_hydroid[1])){
+    
     fips_hydroid <- ''
+    
+  } else {
+    
+    fips_hydroid <- as.character(fips_hydroid$hydroid)
   }
   
   return(fips_hydroid)
@@ -943,6 +946,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
         }
       }
       for(k in 1:length(outfall_ID)){ #Now we go through the DMR attached to each unique individual outfall and extract the information we would like
+        #JM QUESTION: ARE WE LOOKING ONLY FOR Monthly Average ("MK") or 30-Day Average ("3c") TYPE OF DISCHARGE DATA? THEN WE SHOULD USE UNIQUE STAT CODES TO 
         outfall<-as.character(outfall_ID[k])
         outfall_DMR<-DMR_data[DMR_data$perm_feature_nmbr==outfall_nmbr[k],]#specifies that we want to go through each unique outfall
         unique_stat_codes<-unique(outfall_DMR$statistical_base_code)#collects the unique statistical codes reported for this specific outfall
@@ -955,8 +959,10 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
         violation_i<-character()
         violation_severity_i<-numeric()
         
-        for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average.
-          if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
+        for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average - Monthly Average ("MK") or 30-Day Average ("3c").
+          if((!is.na(outfall_DMR$statistical_base_code[l]))=="MK"){ #JM: Previously written code evaluates to TRUE when the statistical_base_code is NOT MK 
+            #ideally, we want a monthly average, which is indicated by the code "MK"
+          #if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ 
             tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
             tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
             tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
@@ -966,7 +972,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
             violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
             violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
             
-          }else if(!is.na(outfall_DMR$statistical_base_code[l]=="3C")){ #30 day average
+          }else if((!is.na(outfall_DMR$statistical_base_code[l]))=="3C"){ #30 day average
             tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="3C"])[l] 
             tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="3C"][l] #character class
             tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="3C"])[l]
@@ -975,6 +981,15 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
             nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="3C"][l] 
             violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="3C"][l]
             violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="3C"][l]
+          }else{ #if DMR data is not either Monthly Average ("MK") or 30-Day Average ("3c"), set variables to NA
+            tsvalue_i<- NA
+            tsendtime_i<-NA
+            tscode_i<-NA
+            tstime_i<-NA
+            varkey_i<-NA
+            nodi_i<-NA
+            violation_i<-NA
+            violation_severity_i<-NA
           }
           
         }
@@ -991,6 +1006,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
         outfallID<-c(outfallID,paste0(Facility_ID,rep(outfall,length((tsvalue_i)))))
         hydrocode<-paste0('echo_',outfallID)
       }
+      
     }else{ #if the DMR contains no data, set variables to NA
       hydrocode<-c(hydrocode,NA)
       outfallID<-c(outfallID,NA)
