@@ -117,7 +117,7 @@ wd_monthly_data <- rbind(wd_monthly_data, wd_monthly)
 
 all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
 
-write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_annual_",syear,"-",eyear,".csv",sep=""), row.names = FALSE)
+write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_monthly_",syear,"-",eyear,".csv",sep=""), row.names = FALSE)
 #exclude dalecarlia
 wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
 

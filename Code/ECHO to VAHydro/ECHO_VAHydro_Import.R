@@ -193,8 +193,8 @@ write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, 
 #i <- 26951
 #backup <- ECHO_Facilities
 #ECHO_Facilities <- backup
-# Create or retreive the Permit for each facility 
-#ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
+# Create or retrieve the Permit for each facility 
+#ECHO_Facilities <- ECHO_Facilities[1:200,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
 permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in spoint:(length(ECHO_Facilities[,1]))){
@@ -206,8 +206,10 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
   #OPTION 2 TO PULL DMR DATA - USE echor PACKAGE
   #DMR_data<-echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
-  # We only create facility/permit features if we have actual outfall data to manage
-  if ((as.integer(nrow(DMR_data)) > 0) ) {
+  # We only create facility/permit features if we have actual outfall Monthly Average ("MK") or 30-Day Average ("3C") data to manage
+  if (((as.integer(nrow(DMR_data)) > 0 ))&&(any(unique(DMR_data$statistical_base_code) %in% c('MK','3C'))) ) {
+    
+    
     if (is.na(ECHO_Facilities_i$CWPEffectiveDate)) {
       ECHO_Facilities_i$CWPEffectiveDate <- effdate_default
     }
@@ -283,7 +285,9 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
       
     }
   } else {
-    print(paste0("No DMR data exists for facility ", i, " will not process") )
+    
+    print(paste0("DMR data returned the following Statistical Base Type(s): ",(unique(DMR_data$statistical_base_short_desc))))
+    print(paste0("No DMR data exists for facility ", i, ": WILL NOT PROCESS") )
   }
 }
 
