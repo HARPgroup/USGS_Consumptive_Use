@@ -3,7 +3,7 @@
 
 
 #Use link below to see all available data columns from echo webservice
-#paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=",paste(1:305,collapse=","),"&passthrough=Y&qid=","QID")
+#paste0("https://echodata.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=",paste(1:305,collapse=","),"&passthrough=Y&qid=","QID")
 
 ECHO_state_pull<- function(state,QID){
   
@@ -12,7 +12,7 @@ ECHO_state_pull<- function(state,QID){
   print(paste("Downloading ECHO data to ",localpath,"(Start time: ",start_time,")",sep=""))
   filename <- paste("echo_fac_",state,".csv",sep="")
   destfile <- paste(localpath,filename,sep="\\")  
-  download.file(paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
+  download.file(paste0("https://echodata.epa.gov/echo/cwa_rest_services.get_download?output=CSV&qcolumns=1,2,3,4,5,10,14,15,21,22,23,24,25,26,27,61,62,64,66,68,85,92,96,98,205,206,207,208,210,211,224&passthrough=Y&qid=",QID), destfile = destfile, method = "libcurl")  
   data.all <- read.csv(file=paste(localpath , filename,sep="\\"), header=TRUE, sep=",")
   print(head(data.all))
   
@@ -28,7 +28,7 @@ QID <- function(state){
   start_time <- Sys.time()
   print(paste("Retrieving QID for ",state," (Start time: ",start_time,")",sep=""))
   
-  Req_URL<-paste0("https://ofmpub.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1&passthrough=Y&p_st=",state)
+  Req_URL<-paste0("https://echodata.epa.gov/echo/cwa_rest_services.get_facilities?output=XML&qcolumns=1&passthrough=Y&p_st=",state)
   print(paste("Using URL: ",Req_URL,sep=""))
   URL_Download<-getURL(Req_URL) #Download URL from above
   URL_Parse<-xmlParse(URL_Download)#parses the downloaded XML of facilities and generates an R structure that represents the XML/HTML tree-main goal is to retrieve query ID or QID
@@ -898,7 +898,7 @@ facility_properties<- function(ECHO_Facilities){
 #12-annual 
 
 #DMR data can be found from the following base URL query: 
-#https://ofmpub.epa.gov/echo/eff_rest_services.get_effluent_chart?
+#https://echodata.epa.gov/echo/eff_rest_services.get_effluent_chart?
 
 ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDate=NULL){
   #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
@@ -929,7 +929,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
     Facility_ID<-ECHO_Facilities$Facility_ID[i]
     print(paste("Processing Facility ID: ", Facility_ID, "(",i," of ",length(ECHO_Facilities$Facility_ID),")", sep=""))
     
-    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+    DMR_data<-paste0("https://echodata.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
     DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
     
     DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
