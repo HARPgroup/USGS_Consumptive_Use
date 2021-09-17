@@ -7,7 +7,7 @@ library('dplyr')
 library('tidyr')
 
 #load variables
-syear = 1982
+syear = 2000
 eyear = 2020
 
 ##########################################################################
@@ -143,6 +143,7 @@ sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
 # JASON POPE USGS DATA DELIVERY - ESGWMA MODEL DATA
 #wd_mon <- read.csv( "C:/Users/maf95834/Downloads/ows-annual-report-map-exports-monthly-export.csv")
 #wd_mon <- read.csv("C:/Users/maf95834/Downloads/ows-annual-report-map-exports-monthly-export (1).csv", stringsAsFactors = F)
+wd_mon <- read.csv("C:/Users/maf95834/Downloads/ows-annual-report-map-exports-monthly-export (3).csv", stringsAsFactors = F)
 
 #remove duplicates - GROUP BY USING MAX
 wd_mon <- sqldf('SELECT "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Year","Month",max("Water.Use.MGM") AS "Water.Use.MGM","Latitude","Longitude","Locality","FIPS.Code" 
@@ -188,8 +189,9 @@ wd_mgm <- sqldf('SELECT MP_hydroid AS MP_HydroID,
                        ') 
 
 #save file
-write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
+#write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
 #write.csv(wd_mgm,"C:/Users/maf95834/Downloads/9-3-2021_ESGWMA_monthly_reported_use.csv", row.names = FALSE)
+write.csv(wd_mgm,"C:/Users/maf95834/Downloads/9-16-2021_VirginiaBeach_2000-2020_monthly_reported_use.csv", row.names = FALSE)
 
 ###################
 ###QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
