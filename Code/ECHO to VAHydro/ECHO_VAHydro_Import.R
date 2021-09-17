@@ -190,18 +190,18 @@ ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
 design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
 write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
 #i <- 1048 
-#i <- 26951
+#i <- 4986
 #backup <- ECHO_Facilities
 #ECHO_Facilities <- backup
 # Create or retrieve the Permit for each facility 
-#ECHO_Facilities <- ECHO_Facilities[1:200,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
+#ECHO_Facilities <- ECHO_Facilities[5771,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
 permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in spoint:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
   print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   #OPTION 1 TO PULL DMR DATA - DIRECT FROM URL
-  DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
+  DMR_data<-paste0("https://echodata.epa.gov/echo//eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
   #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
   #OPTION 2 TO PULL DMR DATA - USE echor PACKAGE

@@ -119,7 +119,8 @@ all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
 
 write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_monthly_",syear,"-",eyear,".csv",sep=""), row.names = FALSE)
 #exclude dalecarlia
-wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
+
+wd_mon <- all_monthly_data[-which(all_monthly_data$Facility=='DALECARLIA WTP'),]
 
 sqldf('SELECT sum("Water.Use.MGM")/365
       FROM wd_mon
@@ -139,7 +140,9 @@ ORDER BY a.MP_hydroid'))
 sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
       from a')
 ###################
+# JASON POPE USGS DATA DELIVERY - ESGWMA MODEL DATA
 #wd_mon <- read.csv( "C:/Users/maf95834/Downloads/ows-annual-report-map-exports-monthly-export.csv")
+#wd_mon <- read.csv("C:/Users/maf95834/Downloads/ows-annual-report-map-exports-monthly-export (1).csv", stringsAsFactors = F)
 
 #remove duplicates - GROUP BY USING MAX
 wd_mon <- sqldf('SELECT "MP_hydroid","Hydrocode","Source.Type","MP.Name","Facility_hydroid","Facility","Use.Type","Year","Month",max("Water.Use.MGM") AS "Water.Use.MGM","Latitude","Longitude","Locality","FIPS.Code" 
@@ -186,7 +189,7 @@ wd_mgm <- sqldf('SELECT MP_hydroid AS MP_HydroID,
 
 #save file
 write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
-#write.csv(wd_mgm,"C:/Users/maf95834/Downloads/8-23-2021_ESGWMA_monthly_reported_use.csv", row.names = FALSE)
+#write.csv(wd_mgm,"C:/Users/maf95834/Downloads/9-3-2021_ESGWMA_monthly_reported_use.csv", row.names = FALSE)
 
 ###################
 ###QA check to see that the MGY from Annual Map Export matches the sum of all 12 months from Monthly Map Export
