@@ -96,14 +96,19 @@ rest_uname = FALSE
 rest_pw = FALSE
 #source(paste(localpath,"/hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
 source(paste(hydro_tools_location,"/VAHydro-2.0/rest_functions.R", sep = ""))
-token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
+#token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
+basepath='/var/www/R'
+source('/var/www/R/config.R')
+base_url <- "http://deq1.bse.vt.edu:81/d.alpha/"
 
-# ds1 <- RomDataSource$new(base_url, "restws_admin")
-# ds1$get_token()
-# 
 # #Load functions
 source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
+#use auth_read to get any views that we are pulling
+# Build info URI
+uri <- paste0(site,"/usgs-mllr-sept10-gages-all")
+message(paste("Searching for MLLR gages at", uri))
+gages <- as.data.frame(ds$auth_read(uri, "text/csv", "\t"))
 
 ####################################Inputs##########################################
  #shows a list of all fields and descriptions
@@ -170,9 +175,16 @@ colnames(ECHO_Facilities)[colnames(ECHO_Facilities)=="SourceID"] <- "Facility_ID
 backup <- ECHO_Facilities
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
-agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
-agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature)
-agency_adminid <- as.character(agency_dataframe$adminid)
+# agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
+# agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature)
+# agency_adminid <- as.character(agency_dataframe$adminid)
+#need to format the dha variable (something about nested lists - to just extract the $adminid like in line 172)
+dha <- ds$get(
+  'dh_adminreg_feature', 
+  'adminid', 
+  list(ftype = 'federal_enviro_agency', admincode = 'epa')
+)
+agency_adminid <- as.integer(as.character(dha[1,]$adminid))
 
 startDate <- '01/01/2020'
 endDate <- '12/31/2020'
@@ -195,6 +207,11 @@ write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, 
 #ECHO_Facilities <- backup
 # Create or retrieve the Permit for each facility 
 #ECHO_Facilities <- ECHO_Facilities[5771,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
+#EXTRACT ONLY DOMINION FACILITIES
+a <- sqldf('SELECT *
+                         FROM ECHO_Facilities
+                         WHERE "CWPName" LIKE "%Dominion%"
+                         ')
 permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in spoint:(length(ECHO_Facilities[,1]))){
