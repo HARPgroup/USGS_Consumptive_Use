@@ -206,12 +206,14 @@ design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
 #VAG640011
 #BIG STONE GAP WATER TREATMENT PLANT
 #OR Facility_ID = "',test_Facility_ID,'"
-test_CWPName <- "BIG STONE GAP WATER TREATMENT PLANT"
+test_CWPName <- "88 STRIP"
 test_Facility_ID <- "VAG640011"
 ECHO_Facilities_subset <- sqldf(paste0('SELECT *
                          FROM ECHO_Facilities
                          WHERE CWPName LIKE "',test_CWPName,'%"
                          '))
+
+ECHO_Facilities_subset <- ECHO_Facilities[1:100,]
 
 permit_dataframe <- NULL
 facility_dataframe <- NULL

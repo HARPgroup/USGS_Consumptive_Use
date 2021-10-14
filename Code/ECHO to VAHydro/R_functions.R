@@ -648,6 +648,7 @@ df_coord_pull<- function(ECHO_Facilities, VPDES_DesignFlow){
 outfall_features_REST <- function(DMR_data, facility, token, base_url, outfall){
   
   outfall_inputs <- vahydro_echo_outfalls(DMR_data, facility)
+  print(outfall_inputs)
   
   outfall <- data.frame(
     hydroid = character(),
