@@ -593,6 +593,9 @@ cu_echo_get_VPDES_outfalls <- function() {
   #Use Aggregated Flows generated from ECHOInterface Script and list of outfalls for creating release and conveyance points.
   temp<-tempfile(fileext = ".zip")
   #Locations and attribute data about active outfalls in the State
+  #NEW DEQ VPDES OUTFALL DATASET - REST ENDPOINT JSON
+  #https://gis.deq.virginia.gov/arcgis/rest/services/staff/DEQInternalDataViewer/MapServer/24/query?where=1%3D1&text=&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&relationParam=&outFields=&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&having=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&historicMoment=&returnDistinctValues=false&resultOffset=&resultRecordCount=&queryByDistance=&returnExtentOnly=false&datumTransformation=&parameterValues=&rangeValues=&quantizationParameters=&featureEncoding=esriDefault&f=pjson
+  #OLD FILE LOCATION/DATASET - NO LONGER WORKS
   download.file("http://www.deq.virginia.gov/mapper_ext/GIS_Datasets/VPDES_Geodatabase.zip", destfile = temp)
   unzip(temp)
   #Explore what is in VPDES_Geodatabase.gdb
@@ -900,7 +903,9 @@ facility_properties<- function(ECHO_Facilities){
 #DMR data can be found from the following base URL query: 
 #https://echodata.epa.gov/echo/eff_rest_services.get_effluent_chart?
 
-ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDate=NULL){
+ts_DMR_format<- function(ECHO_Facilities_i, DMR_data, startDate="01/01/2010",endDate=NULL){
+  Facility_ID <- ECHO_Facilities_i$Facility_ID
+  
   #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
   if (is.null(endDate)) {
     endDate<-Sys.Date()
@@ -921,22 +926,28 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
   violation<-character() #Code identifying if a Violation has occurred  (e.g., D80 = Required Monitoring DMR Value Non-Receipt, E90 = Effluent Violation, C20 = Schedule Event Achieved Late).
   violation_severity<-numeric() #Severity of any alleged violation caused by the reported value: 5 = significant noncompliance; 3 = reportable noncompliance; 2 = effluent violation, i.e., discharge in excess of permitted limit; 1 = monitoring or reporting violation; 0 = no violation.
   
+  
+  
   #This loop goes through each CWA regulated facility one by one to extract reported discharges 
   #from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
   #outfall located in VA. 
-  for (i in iteration:length(ECHO_Facilities$Facility_ID)){
+  #for (i in iteration:length(ECHO_Facilities$Facility_ID)){
     
-    Facility_ID<-ECHO_Facilities$Facility_ID[i]
-    print(paste("Processing Facility ID: ", Facility_ID, "(",i," of ",length(ECHO_Facilities$Facility_ID),")", sep=""))
+    #Facility_ID<-ECHO_Facilities$Facility_ID[i]
+    #print(paste("Processing Facility ID: ", Facility_ID, "(",i," of ",length(ECHO_Facilities$Facility_ID),")", sep=""))
     
-    DMR_data<-paste0("https://echodata.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
-    DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+    #DMR_data<-paste0("https://echodata.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+    #DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
     
+  
+  
+  
     DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
     data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
     if(data_length>0){ #if the value is NOT NA, enter loop
       outfall_nmbr<-as.character(unique(DMR_data$perm_feature_nmbr)) #Stores Outfalls which are called permanent features in the DMR
       outfall_ID<-unique(DMR_data$perm_feature_nmbr) #perm_feature_nmbr is a three-character code in ICIS-NPDES that identifies the point of discharge
+      
       for(j in 1:length(outfall_ID)){ #If the code is less than three characters in the .CSV, append zeros to the beginning of the number (e.g., 1 is equivalent to 001)
         if(nchar(as.character(outfall_ID[j]), type="chars")<3){
           leadingzeros<-paste(rep(0,3-nchar(outfall_ID[j])),collapse= '')
@@ -960,9 +971,9 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
         violation_severity_i<-numeric()
         
         for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average - Monthly Average ("MK") or 30-Day Average ("3c").
-          if((!is.na(outfall_DMR$statistical_base_code[l]))=="MK"){ #JM: Previously written code evaluates to TRUE when the statistical_base_code is NOT MK 
+          #if((!is.na(outfall_DMR$statistical_base_code[l]))=="MK"){ #JM: Previously written code evaluates to TRUE when the statistical_base_code is NOT MK 
             #ideally, we want a monthly average, which is indicated by the code "MK"
-          #if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ 
+          if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ 
             tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
             tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
             tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
@@ -1019,7 +1030,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
       violation<-c(violation,NA)
       violation_severity<-c(violation_severity,NA)
     }
-  }
+  #}
   
   
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode,nodi=nodi,violation=violation,violation_severity=violation_severity)

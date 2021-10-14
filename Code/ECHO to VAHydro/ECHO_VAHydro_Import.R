@@ -183,7 +183,7 @@ dha <- ds$get(
 )
 agency_adminid <- as.integer(as.character(dha[1,]$adminid))
 
-# Get outfall locs from VPDES (if present) #JM: NOT SURE THIS IS NEEDED BUT I DID FIND THE REST JSON for this
+# Get outfall locs from VPDES (if present) #JM: NOT SURE THIS IS NEEDED BUT I DID FIND THE REST JSON for this - potentially used in line 281
 #VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
 
 # get design_flow from VPDES (if present)
@@ -208,23 +208,25 @@ design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
 #OR Facility_ID = "',test_Facility_ID,'"
 test_CWPName <- "BIG STONE GAP WATER TREATMENT PLANT"
 test_Facility_ID <- "VAG640011"
-ECHO_Facilities <- sqldf(paste0('SELECT *
+ECHO_Facilities_subset <- sqldf(paste0('SELECT *
                          FROM ECHO_Facilities
                          WHERE CWPName LIKE "',test_CWPName,'%"
                          '))
 
-
 permit_dataframe <- NULL
 facility_dataframe <- NULL
-for (i in spoint:(length(ECHO_Facilities[,1]))){
-  ECHO_Facilities_i <- ECHO_Facilities[i,]
-  print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+for (i in spoint:(length(ECHO_Facilities_subset[,1]))){
+  #ECHO_Facilities_i <- ECHO_Facilities[i,]
+  ECHO_Facilities_i <- ECHO_Facilities_subset[i,]
+  print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities_subset[,1]),sep=""))
+  
   #OPTION 1 TO PULL DMR DATA - DIRECT FROM URL
-  DMR_data<-paste0("https://echodata.epa.gov/echo//eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
+  #DMR_data<-paste0("https://echodata.epa.gov/echo//eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
   #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
-  DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  #DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+  
   #OPTION 2 TO PULL DMR DATA - USE echor PACKAGE
-  #DMR_data<-echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
+  DMR_data<-echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
   # We only create facility/permit features if we have actual outfall Monthly Average ("MK") or 30-Day Average ("3C") data to manage
   if (((as.integer(nrow(DMR_data)) > 0 ))&&(any(unique(DMR_data$statistical_base_code) %in% c('MK','3C'))) ) {
     
@@ -236,7 +238,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
       ECHO_Facilities_i$CWPExpirationDate <- expdate_default
     }
     # 
-    print(paste("PROCESSING PERMIT ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+    print(paste("PROCESSING PERMIT: ",ECHO_Facilities_i$CWPName, " - ",ECHO_Facilities_i$Facility_ID ,sep=""))
     permit <- permit_REST(ECHO_Facilities_i, agency_adminid)
     if (is.null(permit_dataframe)) {
       permit_dataframe <- permit
@@ -249,7 +251,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     }
     print(permit)
     
-    print("PROCESSING FACILITY")
+    print(paste0("PROCESSING FACILITY: ",ECHO_Facilities_i$CWPName, " - ",ECHO_Facilities_i$Facility_ID ,sep=""))
     # check if facility has a known match Facility in vahydro that is NOT of ECHO origin
     # - If YES, just load the facility, do not push any updates
     # - If NO, create/update 
@@ -274,20 +276,22 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     }
     print(facility)
     
-    print("PROCESSING OUTFALLS")
-    print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
+    print(paste0("PROCESSING OUTFALLS: ",ECHO_Facilities_i$CWPName, " - ",ECHO_Facilities_i$Facility_ID ,sep=""))
     #outfall_features_REST() is posting outfall features to VAHydro with the Facility geometries - the solution is to fix the data source in line 184 cu_echo_get_VPDES_outfalls()
+    # Get outfall locs from VPDES (if present) #JM: NOT SURE THIS IS NEEDED BUT I DID FIND THE REST JSON for this
     outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
-    # get timeseries - this function makes a redundant call to echo for ts data... should replace
-    facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
-    # flag errors
-    facts <- ts_flagging(facts)
+    print(paste0("PROCESSING TIMESERIES DATA: ",outfalls$name ,sep=""))
+    
+    #Format the already retrieved outfall DMR data for Timeseries import 
+    ts_DMR <- ts_DMR_format(ECHO_Facilities_i, DMR_data, startDate, endDate)
+    # add flag errors as columns to formatted Timeseries DMR df (ts_DMR)
+    ts_DMR <- ts_flagging(ts_DMR)
     if (import_mode == 'vahydro') {
       # push to VAHydro
-      tsdf <- ts_import(outfalls,facts,1, base_url)
+      tsdf <- ts_import(outfalls,ts_DMR,1, base_url)
     } else {
       # export as a file 
-      tsdf <- dh_echo_format_ts(facts, outfalls)
+      tsdf <- dh_echo_format_ts(ts_DMR, outfalls)
       if (i == 1) {
         write.table(
           tsdf,"ts-export.txt",append = FALSE, 
