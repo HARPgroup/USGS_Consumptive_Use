@@ -69,6 +69,12 @@ source(paste(github_location,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_funct
 HUC6_path <- "/HARParchive/GIS_layers/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
+startDate <- '01/01/2020'
+endDate <- '12/31/2020'
+effdate_default <- '1970/01/01'
+expdate_default <- '1970/01/01'
+#endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
+
 #####################################################################
 # Parse command line arguments
 argst <- commandArgs(trailingOnly=T)
@@ -177,32 +183,37 @@ dha <- ds$get(
 )
 agency_adminid <- as.integer(as.character(dha[1,]$adminid))
 
-startDate <- '01/01/2020'
-endDate <- '12/31/2020'
-effdate_default <- '1970/01/01'
-expdate_default <- '1970/01/01'
-endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
-
-# Get outfall locs from VPDES )(if present) #JM: NOT SURE THIS IS NEEDED BUT I DID FIND THE REST JSON for this
+# Get outfall locs from VPDES (if present) #JM: NOT SURE THIS IS NEEDED BUT I DID FIND THE REST JSON for this
 #VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
+
 # get design_flow from VPDES (if present)
 VPDES_DesignFlow <- cu_echo_get_VPDES() 
+
 # Attach design flow to Facilities
 ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
-# get formatted list of design flows for outfalls
+
+# get formatted list of design flows for Facilities
 design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
-write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
+#write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
+
 #i <- 1048 
 #i <- 4986
 #backup <- ECHO_Facilities
 #ECHO_Facilities <- backup
 # Create or retrieve the Permit for each facility 
 #ECHO_Facilities <- ECHO_Facilities[5771,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
-#EXTRACT ONLY DOMINION FACILITIES
-a <- sqldf('SELECT *
+
+#VAG640011
+#BIG STONE GAP WATER TREATMENT PLANT
+#OR Facility_ID = "',test_Facility_ID,'"
+test_CWPName <- "BIG STONE GAP WATER TREATMENT PLANT"
+test_Facility_ID <- "VAG640011"
+ECHO_Facilities <- sqldf(paste0('SELECT *
                          FROM ECHO_Facilities
-                         WHERE "CWPName" LIKE "%Dominion%"
-                         ')
+                         WHERE CWPName LIKE "',test_CWPName,'%"
+                         '))
+
+
 permit_dataframe <- NULL
 facility_dataframe <- NULL
 for (i in spoint:(length(ECHO_Facilities[,1]))){
