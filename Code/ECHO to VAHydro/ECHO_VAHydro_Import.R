@@ -58,13 +58,27 @@ library(echor) #used to pull ECHO data
 
 #localpath <-"/usr/local/home/git/"
 
+#base_url <- "http://deq1.bse.vt.edu:81/d.alpha/"
+
+#source(paste("/var/www/R/config.local.private", sep = ""))
+#localpath <- github_location
+
+#Generate REST token for authentication
+rest_uname = FALSE
+rest_pw = FALSE
+#source(paste(localpath,"/hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+#source(paste(hydro_tools_location,"/VAHydro-2.0/rest_functions.R", sep = ""))
+#token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
+basepath ='/var/www/R'
+source(paste0(basepath,'/config.R'))
+#base_url <- "http://deq1.bse.vt.edu:81/d.alpha/"
+
+# #Load functions
+source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+
 HUC6_path <- "/HARParchive/GIS_layers/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
-base_url <- "http://deq1.bse.vt.edu:81/d.alpha/"
-
-source(paste("/var/www/R/config.local.private", sep = ""))
-localpath <- github_location
 #####################################################################
 # Parse command line arguments
 argst <- commandArgs(trailingOnly=T)
@@ -91,18 +105,7 @@ print(paste0("Using Base URL ", base_url))
 id_prefix <- "VA"
 print(paste0("Allowed prefix ", id_prefix))
 
-#Generate REST token for authentication
-rest_uname = FALSE
-rest_pw = FALSE
-#source(paste(localpath,"/hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
-source(paste(hydro_tools_location,"/VAHydro-2.0/rest_functions.R", sep = ""))
-#token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
-basepath='/var/www/R'
-source('/var/www/R/config.R')
-base_url <- "http://deq1.bse.vt.edu:81/d.alpha/"
 
-# #Load functions
-source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 #use auth_read to get any views that we are pulling
 # Build info URI
