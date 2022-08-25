@@ -7,8 +7,8 @@ library('dplyr')
 library('tidyr')
 
 #load variables
-syear = 1982
-eyear = 2020
+syear = 2020
+eyear = 2021
 
 ##########################################################################
 #LOAD CONFIG FILE
@@ -113,9 +113,9 @@ wd_monthly <- from_vahydro(datasite,export_view,localpath,output_filename)
 wd_monthly_data <- rbind(wd_monthly_data, wd_monthly)
 }
 
-all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
+#all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
 
-write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_annual_ALL.csv",sep=""), row.names = FALSE)
+write.csv(wd_monthly_data,paste(export_path,"/withdrawal_annual_ALL.csv",sep=""), row.names = FALSE)
 #exclude dalecarlia
 wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
 
@@ -139,7 +139,7 @@ sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
 ###################
 
 sqldf('SELECT sum(MGY)/365
-      FROM wd_mon 
+      FROM wd_mgy 
       WHERE Use_Type NOT LIKE "%power%"')
 
 #remove duplicates - GROUP BY USING MAX
@@ -240,4 +240,4 @@ wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
 
 
 #save file
-write.csv(wd_join2, paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_",syear,"-",eyear,"_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
+write.csv(wd_join2, paste(export_path,"/withdrawal_",syear,"-",eyear,"_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
