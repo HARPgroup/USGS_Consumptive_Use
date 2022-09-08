@@ -87,7 +87,7 @@ output_filename <- "dis_mgm_export.csv"
 data_monthly <- from_vahydro(datasite,export_view,localpath,output_filename, cached)
 
 ###################
-#check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
+# #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
 #   b <- sqldf("SELECT a.*
 # FROM data_monthly a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
