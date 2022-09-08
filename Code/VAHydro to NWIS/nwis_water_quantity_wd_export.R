@@ -7,8 +7,8 @@ library('dplyr')
 library('tidyr')
 
 #load variables
-syear = 1982
-eyear = 2020
+syear = 2020
+eyear = 2021
 
 ##########################################################################
 #LOAD CONFIG FILE
@@ -32,6 +32,7 @@ for (y in year_range) {
 
 #with power
 export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=%3D&ftype=&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
+#Issuing Authority = VWUDS, VWP, and GWP registrations
 #without power
 #export_view <- paste0("ows-awrr-map-export/wd_mgy?ftype_op=not&ftype=power&tstime_op=between&tstime%5Bvalue%5D=&tstime%5Bmin%5D=",startdate,"&tstime%5Bmax%5D=",enddate,"&bundle%5B0%5D=well&bundle%5B1%5D=intake&dh_link_admin_reg_issuer_target_id%5B0%5D=65668&dh_link_admin_reg_issuer_target_id%5B1%5D=91200&dh_link_admin_reg_issuer_target_id%5B2%5D=77498")
 output_filename <- "wd_mgy_export.csv"
@@ -100,6 +101,10 @@ wd_monthly_data <- list()
 ## year range
 year_range <- format(seq(as.Date(paste0(syear,"/1/1")), as.Date(paste0(eyear,"/1/1")), "years"), format="%Y")
 
+#increase time to pull from URL
+getOption('timeout')
+options(timeout = 300)
+
 for (y in year_range) {
   print(paste0("PROCESSING YEAR: ", y))
   startdate <- paste(y, "-01-01",sep='')
@@ -113,11 +118,11 @@ wd_monthly <- from_vahydro(datasite,export_view,localpath,output_filename)
 wd_monthly_data <- rbind(wd_monthly_data, wd_monthly)
 }
 
-all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
+#all_monthly_data <- rbind(all_monthly_data, wd_monthly_data)
 
-write.csv(all_monthly_data,paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_annual_ALL.csv",sep=""), row.names = FALSE)
+write.csv(wd_monthly_data,paste(export_path,"/withdrawal_annual_ALL.csv",sep=""), row.names = FALSE)
 #exclude dalecarlia
-wd_mon <- wd_monthly[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
+wd_mon <- wd_monthly_data[-which(wd_monthly$Facility=='DALECARLIA WTP'),]
 
 sqldf('SELECT sum("Water.Use.MGM")/365
       FROM wd_mon
@@ -139,7 +144,7 @@ sqldf('SELECT sum("Water.Use.MGM")/365 AS dupe_MGD_total
 ###################
 
 sqldf('SELECT sum(MGY)/365
-      FROM wd_mon 
+      FROM wd_mgy 
       WHERE Use_Type NOT LIKE "%power%"')
 
 #remove duplicates - GROUP BY USING MAX
@@ -183,7 +188,7 @@ wd_mgm <- sqldf('SELECT MP_hydroid,
                           Month_12 AS Dec
                        FROM wd_mgm_export
                        ORDER BY MP_hydroid, Year
-                       ') 
+                       ')
 
 #save file
 #write.csv(wd_mgm,paste(localpath,"/withdrawal_monthly.csv",sep=""), row.names = FALSE)
@@ -240,4 +245,4 @@ wd_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
 
 
 #save file
-write.csv(wd_join2, paste("C:/Users/maf95834/Documents/wsp2020/withdrawal_",syear,"-",eyear,"_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)
+write.csv(wd_join2, paste(export_path,"/withdrawal_",syear,"-",eyear,"_water_quantity_",format(Sys.time(), "%H-%M-%OS_%a_%b_%d_%Y"),".csv",sep=""), row.names = FALSE)

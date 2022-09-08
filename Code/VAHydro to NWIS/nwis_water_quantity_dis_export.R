@@ -8,8 +8,8 @@ library('tidyr')
 options(scipen = 999)
 
 #load variables
-syear = 2019
-eyear = 2019
+syear = 2020
+eyear = 2021
 
 startdate <- paste(syear, "-01-01",sep='')
 enddate <- paste(eyear, "-12-31", sep='')
@@ -20,7 +20,7 @@ localpath <- paste(github_location,"/USGS_Consumptive_Use", sep = "")
 
 #LOAD from_vahydro() FUNCTION
 source(paste(localpath,"/Code/VAHydro to NWIS/from_vahydro.R", sep = ""))
-datasite <- "http://deq2.bse.vt.edu/d.dh"
+datasite <- "http://deq1.bse.vt.edu/d.dh"
 
 cached = FALSE
 # RETRIEVE WITHDRAWAL DATA
@@ -31,9 +31,9 @@ data_annual <- from_vahydro(datasite,export_view,localpath,output_filename, cach
 ############################################  
 # ##check to see if there are multiple dis_mgy entries for a single year
 #   a <- sqldf("SELECT a.*
-# FROM data a
+# FROM data_annual a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data
+# FROM data_annual
 # GROUP BY MP_hydroid
 # HAVING count(*) > 1 ) b
 # ON a.MP_hydroid = b.MP_hydroid
@@ -88,10 +88,10 @@ data_monthly <- from_vahydro(datasite,export_view,localpath,output_filename, cac
 
 ###################
 # #check to see if there are multiple dis_mgy entries for a single year (should be multiples of 12)
-#   a <- sqldf("SELECT a.*
-# FROM data a
+#   b <- sqldf("SELECT a.*
+# FROM data_monthly a
 # JOIN (SELECT MP_hydroid, Facility_hydroid, 'Water.Use.MGY' as mgy, COUNT(*)
-# FROM data
+# FROM data_monthly
 # GROUP BY MP_hydroid
 # HAVING count(*) > 12 ) b
 # ON a.MP_hydroid = b.MP_hydroid
@@ -209,7 +209,7 @@ dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                           "Mgal/yr" AS Annual_Reporting_Unit_Name,
                           MGY AS Annual_Value,
                           "Mgal/m" AS Monthly_Reporting_Unit_Name,
-                          flag_data_qual,
+                          flag_data_qual as flag_data_qual_2,
                           Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
                  FROM dis_join')
 
