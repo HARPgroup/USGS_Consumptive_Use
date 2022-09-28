@@ -56,11 +56,17 @@ library(sqldf) #used for subsetting and filtering
 library(anytime) #required for date formatting (may change later)
 library(echor) #used to pull ECHO data
 
-localpath <-"/usr/local/home/git/"
+basepath ='/var/www/R'
+source(paste0(basepath,'/config.R'))
+#localpath <-"/usr/local/home/git/"
 HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
 base_url <- "http://deq2.bse.vt.edu/d.alpha"
+
+#set timeframe
+startDate <- '01/01/2020'
+endDate <- '12/31/2020'
 
 #####################################################################
 # Parse command line arguments
@@ -83,19 +89,22 @@ if (length(argst) > 3) {
 }
 print(argst)
 
+#id_prefix is used for filtering out specific permit IDs
+id_prefix <- NA
+
 print(paste0("Using Import mode ", import_mode))
 print(paste0("Using Base URL ", base_url))
 print(paste0("Allowed prefix ", id_prefix))
 
 # #Generate REST token for authentication              
-rest_uname = FALSE
-rest_pw = FALSE
-source(paste(localpath,"hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
-source(paste(localpath,"hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
+#rest_uname = FALSE
+#rest_pw = FALSE
+#source(paste(localpath,"/hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
+#source(paste(localpath,"/hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
 token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
 
 #Load functions
-source(paste(localpath,"USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 
 
 ####################################Inputs##########################################
@@ -167,8 +176,7 @@ agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admin
 agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature)
 agency_adminid <- as.character(agency_dataframe$adminid)
 
-startDate <- '01/01/2019'
-endDate <- '12/31/2019'
+
 effdate_default <- '1970/01/01'
 expdate_default <- '1970/01/01'
 endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")

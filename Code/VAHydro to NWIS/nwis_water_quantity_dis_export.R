@@ -209,7 +209,6 @@ dis_join2 <- sqldf('SELECT "VA087" AS From_Agency_Code,
                           "Mgal/yr" AS Annual_Reporting_Unit_Name,
                           MGY AS Annual_Value,
                           "Mgal/m" AS Monthly_Reporting_Unit_Name,
-                          flag_data_qual as flag_data_qual_2,
                           Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
                  FROM dis_join')
 
