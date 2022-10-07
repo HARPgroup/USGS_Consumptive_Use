@@ -55,11 +55,13 @@ library(rgeos) #over() used in R_functions.R for spatial containment function
 library(sqldf) #used for subsetting and filtering 
 library(anytime) #required for date formatting (may change later)
 library(echor) #used to pull ECHO data
+library(readr) #used to view problems() errors
+library(rgdal)
 
 basepath ='/var/www/R'
 source(paste0(basepath,'/config.R'))
 #localpath <-"/usr/local/home/git/"
-HUC6_path <- "hydro-tools/GIS_LAYERS/HUC.gdb" #Location of HUC .gdb
+HUC6_path <- paste0(github_location,"/HARParchive/GIS_LAYERS/HUC.gdb") #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 
 base_url <- "http://deq2.bse.vt.edu/d.alpha"
@@ -133,6 +135,9 @@ ECHO_Facilities <- echoWaterGetFacilityInfo(
   output = 'df',
   qcolumns=qcol_list
 )
+#stash ECHO_facilities because ECHO is not always online to pull at the time of running the code
+write.csv(ECHO_Facilities,file=paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
+ECHO_Facilities <- read.csv(paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
 
  end_time <- Sys.time()
  print(paste("Download Process Complete: ",end_time ,sep=""))
