@@ -53,11 +53,20 @@ QID <- function(state){
 # Function returns a Large SpatialPointsDataFrame
 sp_contain <- function(poly_path,poly_layer_name,point_df,epsg_code = "4326"){
 
+  # this function should likely be replaced with the function found here: https://github.com/HARPgroup/hydro-tools/blob/36021bd7810fcc2053133b58f35c41369301032b/GIS_functions/GIS_functions.R
+  ####################################
+  # Testing 10/11/22
+  # poly_path = HUC6_path
+  # poly_layer_name = HUC6_layer_name
+  # point_df = ECHO_Facilities
+  ####################################
+  
   start_time <- Sys.time()
   print(paste("Start time: ",start_time,sep=""))
   
   # read in polygons
-  poly_layer_load <- readOGR(paste(localpath,poly_path,sep=""),layer=poly_layer_name)
+  # poly_layer_load <- readOGR(paste(localpath,poly_path,sep=""),layer=poly_layer_name)
+  poly_layer_load <- readOGR(poly_path,layer=poly_layer_name)
   poly_layer <-spTransform(poly_layer_load, CRS(paste("+init=epsg:",epsg_code,sep="")))
 
   # tell R that point_df coordinates are in the same lat/lon reference system
