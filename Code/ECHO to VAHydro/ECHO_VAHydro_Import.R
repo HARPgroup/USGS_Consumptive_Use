@@ -63,8 +63,14 @@ source(paste0(basepath,'/config.R'))
 #localpath <-"/usr/local/home/git/"
 HUC6_path <- paste0(github_location,"/HARParchive/GIS_LAYERS/HUC.gdb") #Location of HUC .gdb
 HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
+source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+source("https://raw.githubusercontent.com/HARPgroup/hydro-tools/master/GIS_functions/GIS_functions.R")
 
-base_url <- "http://deq2.bse.vt.edu/d.alpha"
+base_url <- "http://deq1.bse.vt.edu/d.alpha"
+
+# Generate REST token for authentication              
+token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
+
 
 #set timeframe
 startDate <- '01/01/2020'
@@ -98,16 +104,6 @@ print(paste0("Using Import mode ", import_mode))
 print(paste0("Using Base URL ", base_url))
 print(paste0("Allowed prefix ", id_prefix))
 
-# #Generate REST token for authentication              
-#rest_uname = FALSE
-#rest_pw = FALSE
-#source(paste(localpath,"/hydro-tools/auth.private", sep = "")); #load rest username and password, contained in auth.private file
-#source(paste(localpath,"/hydro-tools/VAHydro-2.0/rest_functions.R", sep = ""))
-token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
-
-#Load functions
-source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
-
 
 ####################################Inputs##########################################
  #shows a list of all fields and descriptions
@@ -137,7 +133,7 @@ ECHO_Facilities <- echoWaterGetFacilityInfo(
 )
 #stash ECHO_facilities because ECHO is not always online to pull at the time of running the code
 write.csv(ECHO_Facilities,file=paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
-ECHO_Facilities <- read.csv(paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
+# ECHO_Facilities <- read.csv(paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
 
  end_time <- Sys.time()
  print(paste("Download Process Complete: ",end_time ,sep=""))
