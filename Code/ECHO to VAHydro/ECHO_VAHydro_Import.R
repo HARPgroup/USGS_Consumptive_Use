@@ -91,6 +91,8 @@ if (length(argst) > 1) {
 }
 if (length(argst) > 2) {
   id_prefix <- argst[3]
+} else {
+  id_prefix <- ''
 }
 if (length(argst) > 3) {
   base_url <- argst[4]
@@ -98,7 +100,6 @@ if (length(argst) > 3) {
 print(argst)
 
 #id_prefix is used for filtering out specific permit IDs
-id_prefix <- NA
 
 print(paste0("Using Import mode ", import_mode))
 print(paste0("Using Base URL ", base_url))
@@ -157,13 +158,14 @@ keep_permits <- "SELECT *
                 FROM ECHO_Facilities
                 WHERE ( CWPPermitTypeDesc = 'NPDES Individual Permit'
                 OR CWPPermitTypeDesc = 'General Permit Covered Facility' ) "
-#use sqldf for replacements
-if (id_prefix != '') {
-  keep_permits <- paste0(keep_permits, 
-    "AND SourceID LIKE '", id_prefix, "%'")
-}
+# #use sqldf for replacements
+# if (id_prefix != '') {
+#   keep_permits <- paste0(keep_permits, 
+#     "AND SourceID LIKE '", id_prefix, "%'")
+# }
 
 ECHO_Facilities <- sqldf(keep_permits)
+
 
 print(paste("Number of Facilities After Permit Type Description Subset: ",length(ECHO_Facilities[,1])))
 
