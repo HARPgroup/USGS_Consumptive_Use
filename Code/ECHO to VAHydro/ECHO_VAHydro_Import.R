@@ -133,8 +133,8 @@ ECHO_Facilities <- echoWaterGetFacilityInfo(
   qcolumns=qcol_list
 )
 #stash ECHO_facilities because ECHO is not always online to pull at the time of running the code
-write.csv(ECHO_Facilities,file=paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
-# ECHO_Facilities <- read.csv(paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
+#write.csv(ECHO_Facilities,file=paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
+ ECHO_Facilities <- read.csv(paste0(github_location,"/USGS_Consumptive_Use/ECHO_Facilities.csv"))
 
  end_time <- Sys.time()
  print(paste("Download Process Complete: ",end_time ,sep=""))
@@ -259,7 +259,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     # get timeseries - this function makes a redundant call to echo for ts data... should replace
     facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
     # flag errors
-    facts <- ts_flagging(facts)
+    facts <- permit(facts)
     if (import_mode == 'vahydro') {
       # push to VAHydro
       tsdf <- ts_import(outfalls,facts,1, base_url)
