@@ -257,7 +257,8 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
     outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
     # get timeseries - this function makes a redundant call to echo for ts data... should replace
-    facts <- ts_ECHO_pull(ECHO_Facilities_i,1, startDate, endDate)
+    source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
+    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, startDate, endDate) #GM FLAG ERROR IN PROGRESS 
     # flag errors
     facts <- permit(facts)
     if (import_mode == 'vahydro') {

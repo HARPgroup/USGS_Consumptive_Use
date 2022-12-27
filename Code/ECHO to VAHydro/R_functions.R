@@ -900,7 +900,7 @@ facility_properties<- function(ECHO_Facilities){
 #DMR data can be found from the following base URL query: 
 #https://ofmpub.epa.gov/echo/eff_rest_services.get_effluent_chart?
 
-ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDate=NULL){
+ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/2010",endDate=NULL){
   #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
   if (is.null(endDate)) {
     endDate<-Sys.Date()
@@ -929,9 +929,9 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
     Facility_ID<-ECHO_Facilities$Facility_ID[i]
     print(paste("Processing Facility ID: ", Facility_ID, "(",i," of ",length(ECHO_Facilities$Facility_ID),")", sep=""))
     
-    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
-    DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-    
+#GM#    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
+#GM#   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
+#GM input DMR_data using echoGetEffluent instead of this method above    
     DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
     data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
     if(data_length>0){ #if the value is NOT NA, enter loop
@@ -960,7 +960,11 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
         
         for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average.
           if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
-            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
+            #GM FLAG we entering this IF bc ==MK is false, and the ! makes the IF statement return TRUE, which may or may not be fine. 
+            #GM cont, but then the values definitions here are false due to some faulty logic or the outfall_DMR tibble structure
+            print("Entering if MK")
+            tsvalue_i[l]<-3 #GM remove this when done and uncomment tsvalue_i]]<-as.number....
+            #tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
             tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
             tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
             tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
@@ -978,20 +982,34 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
             nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="3C"][l] 
             violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="3C"][l]
             violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="3C"][l]
-          }
+          }        
+          
           
         }
-        #Now we store the values we get from each outfall in each facility[i] in a larger matrix
-        #We do this so that results are not over written after each iteration
-        tsvalue<-c(tsvalue,tsvalue_i) 
-        tsendtime<-c(tsendtime,tsendtime_i)
-        tscode<-c(tscode,tscode_i)
-        tstime<-c(tstime,tstime_i)
-        varkey<-c(varkey,varkey_i)
-        nodi<-c(nodi,nodi_i)
-        violation<-c(violation,violation_i)
-        violation_severity<-c(violation_severity,violation_severity_i)
-        outfallID<-c(outfallID,paste0(Facility_ID,rep(outfall,length((tsvalue_i)))))
+        # #Now we store the values we get from each outfall in each facility[i] in a larger matrix
+        # #We do this so that results are not over written after each iteration
+        # tsvalue<-c(tsvalue,tsvalue_i)
+        # tsendtime<-c(tsendtime,tsendtime_i)
+        # tscode<-c(tscode,tscode_i)
+        # tstime<-c(tstime,tstime_i)
+        # varkey<-c(varkey,varkey_i)
+        # nodi<-c(nodi,nodi_i)
+        # violation<-c(violation,violation_i)
+        # violation_severity<-c(violation_severity,violation_severity_i)
+        # outfallID<-c(outfallID,paste0(Facility_ID,rep(outfall,length((tsvalue_i)))))
+        # hydrocode<-paste0('echo_',outfallID)
+        #GM comment out block above and replace with block below, should repeat for the 'else'
+        #Now we store the values we get from each outfall in each facility[i] directly because ts_ECHO_pull is only fed one DMR_data line, so there is only one iteration anyway
+        tsvalue<-tsvalue_i
+        print(paste0("Entering tsvalue = ",tsvalue)) #GM remove print line when done fixing function
+        tsendtime<-tsendtime_i
+        tscode<-tscode_i
+        tstime<-tstime_i
+        varkey<-varkey_i
+        nodi<-nodi_i
+        violation<-violation_i
+        violation_severity<-violation_severity_i
+        outfallID<-paste0(Facility_ID,rep(outfall,length((tsvalue_i))))
         hydrocode<-paste0('echo_',outfallID)
       }
     }else{ #if the DMR contains no data, set variables to NA
@@ -1011,7 +1029,8 @@ ts_ECHO_pull<- function(ECHO_Facilities,iteration, startDate="01/01/2010",endDat
   
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode,nodi=nodi,violation=violation,violation_severity=violation_severity)
   
-  timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
+  #GM once the function is fixed, uncomment out this line below
+  #timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
   timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
   
   timeseries$Facility_ID<-gsub("echo_","", as.character(timeseries$hydrocode))
