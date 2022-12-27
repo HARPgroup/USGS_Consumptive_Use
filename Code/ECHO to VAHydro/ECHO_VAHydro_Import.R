@@ -185,15 +185,15 @@ expdate_default <- '1970/01/01'
 endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 
 # Get outfall locs from VPDES )(if present)
-VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
+VPDES_Outfalls <- cu_echo_get_VPDES_outfalls() #SKIP THESE IN R, RUN ON COMMAND LINE WHEN THERE ARE ID_PREFIX
 # get design_flow from VPDES (if present)
 VPDES_DesignFlow <- cu_echo_get_VPDES() 
 # Attach design flow to Facilities
 ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
 # get formatted list of design flows for outfalls
 design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
-write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
-#i <- 1048 
+write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t") # SKIP THROUGH THIS LINE
+#i <- 1048
 #i <- 26951
 # Create or retreive the Permit for each facility 
 #ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
