@@ -961,17 +961,26 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
         for(l in 1:length(outfall_DMR$perm_feature_nmbr)){ #extracts discharge quantity from each outfall by examining the statistical code associated with it. In this case, we want an average.
           if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
             #GM FLAG we entering this IF bc ==MK is false, and the ! makes the IF statement return TRUE, which may or may not be fine. 
-            #GM cont, but then the values definitions here are false due to some faulty logic or the outfall_DMR tibble structure
+            #GM cont, but then the values definitions here are false due to some logic or the outfall_DMR tibble structure
             print("Entering if MK")
-            tsvalue_i[l]<-3 #GM remove this when done and uncomment tsvalue_i]]<-as.number....
-            #tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
-            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
-            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
+            #tsvalue_i[l]<-3 #GM remove this when done
+            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr)[l] 
+            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[l] #character class
+            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission)[l]
             tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
             varkey_i[l]<-"dmr_period_mgd"
-            nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l] 
-            violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
-            violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
+            nodi_i[l]<-outfall_DMR$nodi_desc[l] 
+            violation_i[l]<-outfall_DMR$violation_code[l]
+            violation_severity_i[l]<-outfall_DMR$violation_severity[l]
+            #GM replace below with above, because ==MK is false and function is only being fed one row
+            # tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
+            # tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
+            # tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
+            # tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
+            # varkey_i[l]<-"dmr_period_mgd"
+            # nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l] 
+            # violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
+            # violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
             
           }else if(!is.na(outfall_DMR$statistical_base_code[l]=="3C")){ #30 day average
             tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="3C"])[l] 
@@ -1029,8 +1038,8 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
   
   timeseries<-data.frame(hydrocode=hydrocode,varkey=varkey,tsvalue=tsvalue,tstime=tstime,tsendtime=tsendtime,tscode=tscode,nodi=nodi,violation=violation,violation_severity=violation_severity)
   
-  #GM once the function is fixed, uncomment out this line below
-  #timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
+  #GM once the function is fixed, uncomment out timeseries<-timeseries line below
+  timeseries<-timeseries[!(is.na(timeseries$tsendtime)),]#returns outfalls that have data
   timeseries$tsendtime<-format(mdy(timeseries$tsendtime))
   
   timeseries$Facility_ID<-gsub("echo_","", as.character(timeseries$hydrocode))
