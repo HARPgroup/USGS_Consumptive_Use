@@ -176,7 +176,7 @@ backup <- ECHO_Facilities
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
 agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
-agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature)
+agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature) #GM FLAG adminreg feature does not exist. adminreg_feature is defined in the fn so try setting input adminreg_feature <- NULL
 agency_adminid <- as.character(agency_dataframe$adminid)
 
 
@@ -257,8 +257,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
     outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
     # get timeseries - this function makes a redundant call to echo for ts data... should replace
-    source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
-    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, startDate, endDate) #GM FLAG ERROR IN PROGRESS 
+    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, startDate, endDate) #GM FLAG ERROR IN PROGRESS.   edit and reload->  source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
     # flag errors
     facts <- permit(facts)
     if (import_mode == 'vahydro') {
