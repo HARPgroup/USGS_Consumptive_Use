@@ -176,7 +176,7 @@ backup <- ECHO_Facilities
 
 #GET EPA ADMINREG FEATURE FROM VAHYDRO
 agency_inputs <- list(bundle = 'authority',ftype = 'federal_enviro_agency',admincode = 'epa',stringsAsFactors = FALSE) 
-agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature) #GM FLAG adminreg feature does not exist. adminreg_feature is defined in the fn so try setting input adminreg_feature <- NULL
+agency_dataframe <- getAdminregFeature(agency_inputs, base_url, adminreg_feature=NULL) #GM FLAG adminreg feature does not exist. adminreg_feature is defined in the fn so try setting input adminreg_feature=NULL and it will return a redefined adminreg_feature. But, function is returning the else of "This Adminreg Feature does not exist" because agency_inputs doesnt include an 'adminid' column, so troubleshoot GET() line827 and content() line833
 agency_adminid <- as.character(agency_dataframe$adminid)
 
 
