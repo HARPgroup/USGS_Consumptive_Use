@@ -100,6 +100,7 @@ if (length(argst) > 3) {
 print(argst)
 
 #id_prefix is used for filtering out specific permit IDs
+id_prefix <- "" #set id_prefix so R script works, maybe different in command line
 
 print(paste0("Using Import mode ", import_mode))
 print(paste0("Using Base URL ", base_url))
@@ -126,7 +127,7 @@ qcol_list <-  paste(echo_qcolids$ColumnID,collapse = ",","", sep='')
 #using bounding box extent of VA to restrict which facilities are pulled
 start_time <- Sys.time()
 print(paste("Using echoWaterGetFacilityInfo() | (Start time: ",start_time,")",sep=""))
-ECHO_Facilities <- echoWaterGetFacilityInfo(
+ECHO_Facilities <- echor::echoWaterGetFacilityInfo(
   xmin = '-84', ymin = '35', 
   xmax = '-75',  ymax = '41', 
   output = 'df',
@@ -184,28 +185,32 @@ effdate_default <- '1970/01/01'
 expdate_default <- '1970/01/01'
 endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 
-# Get outfall locs from VPDES )(if present)
-VPDES_Outfalls <- cu_echo_get_VPDES_outfalls() #SKIP THESE IN R, RUN ON COMMAND LINE WHEN THERE ARE ID_PREFIX
-# get design_flow from VPDES (if present)
-VPDES_DesignFlow <- cu_echo_get_VPDES() 
-# Attach design flow to Facilities
-ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
-# get formatted list of design flows for outfalls
-design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
-write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t") # SKIP THROUGH THIS LINE
+# commented out on 1/25/23 because VPDES source no longer available, VPDES_Outfalls and DesignFlow not used
+# # Get outfall locs from VPDES )(if present)
+# VPDES_Outfalls <- cu_echo_get_VPDES_outfalls()
+# # get design_flow from VPDES (if present)
+# VPDES_DesignFlow <- cu_echo_get_VPDES() 
+# # Attach design flow to Facilities
+# ECHO_Facilities <- df_coord_pull(ECHO_Facilities, VPDES_DesignFlow)
+# # get formatted list of design flows for outfalls
+# design_flow <- cu_echo_get_VPDES_design_flow(ECHO_Facilities)
+# write.table(ECHO_Facilities,"ECHO_Facilities.txt",append = FALSE, quote = TRUE, sep="\t")
+
 #i <- 1048
 #i <- 26951
 # Create or retreive the Permit for each facility 
 #ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
 permit_dataframe <- NULL
 facility_dataframe <- NULL
+# GM loop start error marker  #####
+i <-  24502 #for testing only, this id contains MK data
 for (i in spoint:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
   print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
-  DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
+  #DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
   #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
   #DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
-  DMR_data<-echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
+  DMR_data<-echor::echoGetEffluent(ECHO_Facilities_i$Facility_ID, parameter_code = '50050',start_date=startDate,end_date=endDate)
   # We only create facility/permit features if we have actual outfall data to manage
   if ((as.integer(nrow(DMR_data)) > 0) ) {
     if (is.na(ECHO_Facilities_i$CWPEffectiveDate)) {
@@ -256,10 +261,9 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     print("PROCESSING OUTFALLS")
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
     outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
-    # get timeseries - this function makes a redundant call to echo for ts data... should replace
-    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, startDate, endDate) #GM FLAG ERROR IN PROGRESS.   edit and reload->  source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
-    # flag errors
-    facts <- permit(facts)
+    # get timeseries - this function makes a redundant call to echo for ts data... should replace to input DMR_data and maintain VAHydro output formatting
+    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, startDate, endDate) #GM FLAG ERROR IN PROGRESS.   edit and reload->  source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))###########
+    facts <- permit(facts) 
     if (import_mode == 'vahydro') {
       # push to VAHydro
       tsdf <- ts_import(outfalls,facts,1, base_url)

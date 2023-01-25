@@ -923,7 +923,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
   
   #This loop goes through each CWA regulated facility one by one to extract reported discharges 
   #from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
-  #outfall located in VA. 
+  #outfall located in VA.
   for (i in iteration:length(ECHO_Facilities$Facility_ID)){
     
     Facility_ID<-ECHO_Facilities$Facility_ID[i]
@@ -962,26 +962,27 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
           if(!is.na(outfall_DMR$statistical_base_code[l]=="MK")){ #ideally, we want a monthly average, which is indicated by the code "MK"
             #GM FLAG we entering this IF bc ==MK is false, and the ! makes the IF statement return TRUE, which may or may not be fine. 
             #GM cont, but then the values definitions here are false due to some logic or the outfall_DMR tibble structure
+            #GM update - this for loop works fine when there are MK values, need to create an else{} for not MK or 3c situations.
             print("Entering if MK")
-            #tsvalue_i[l]<-3 #GM remove this when done
-            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr)[l] 
-            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[l] #character class
-            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission)[l]
-            tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
-            varkey_i[l]<-"dmr_period_mgd"
-            nodi_i[l]<-outfall_DMR$nodi_desc[l] 
-            violation_i[l]<-outfall_DMR$violation_code[l]
-            violation_severity_i[l]<-outfall_DMR$violation_severity[l]
-            #GM replace below with above, because ==MK is false and function is only being fed one row
-            # tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l] 
-            # tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
-            # tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
+            # #tsvalue_i[l]<-3 #GM remove this when done
+            # tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr)[l] 
+            # tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[l] #character class
+            # tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission)[l]
             # tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
             # varkey_i[l]<-"dmr_period_mgd"
-            # nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l] 
-            # violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
-            # violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
-            
+            # nodi_i[l]<-outfall_DMR$nodi_desc[l] 
+            # violation_i[l]<-outfall_DMR$violation_code[l]
+            # violation_severity_i[l]<-outfall_DMR$violation_severity[l]
+            #GM no longer need to replace block below with above, was written because ==MK was false and function is only being fed one row
+            tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l]
+            tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
+            tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
+            tstime_i[l]<-as.character(round_date(mdy(tsendtime_i[l]) %m-% months(tscode_i[l]),unit="month"))#uses Lubridate package, date must be object of class POSIXlt, POSIXct, or Date
+            varkey_i[l]<-"dmr_period_mgd"
+            nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="MK"][l]
+            violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="MK"][l]
+            violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="MK"][l]
+
           }else if(!is.na(outfall_DMR$statistical_base_code[l]=="3C")){ #30 day average
             tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="3C"])[l] 
             tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="3C"][l] #character class
@@ -995,31 +996,31 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
           
           
         }
-        # #Now we store the values we get from each outfall in each facility[i] in a larger matrix
-        # #We do this so that results are not over written after each iteration
-        # tsvalue<-c(tsvalue,tsvalue_i)
-        # tsendtime<-c(tsendtime,tsendtime_i)
-        # tscode<-c(tscode,tscode_i)
-        # tstime<-c(tstime,tstime_i)
-        # varkey<-c(varkey,varkey_i)
-        # nodi<-c(nodi,nodi_i)
-        # violation<-c(violation,violation_i)
-        # violation_severity<-c(violation_severity,violation_severity_i)
-        # outfallID<-c(outfallID,paste0(Facility_ID,rep(outfall,length((tsvalue_i)))))
-        # hydrocode<-paste0('echo_',outfallID)
-        #GM comment out block above and replace with block below, should repeat for the 'else'
-        #Now we store the values we get from each outfall in each facility[i] directly because ts_ECHO_pull is only fed one DMR_data line, so there is only one iteration anyway
-        tsvalue<-tsvalue_i
-        print(paste0("Entering tsvalue = ",tsvalue)) #GM remove print line when done fixing function
-        tsendtime<-tsendtime_i
-        tscode<-tscode_i
-        tstime<-tstime_i
-        varkey<-varkey_i
-        nodi<-nodi_i
-        violation<-violation_i
-        violation_severity<-violation_severity_i
-        outfallID<-paste0(Facility_ID,rep(outfall,length((tsvalue_i))))
+        #Now we store the values we get from each outfall in each facility[i] in a larger matrix
+        #We do this so that results are not over written after each iteration
+        tsvalue<-c(tsvalue,tsvalue_i)
+        tsendtime<-c(tsendtime,tsendtime_i)
+        tscode<-c(tscode,tscode_i)
+        tstime<-c(tstime,tstime_i)
+        varkey<-c(varkey,varkey_i)
+        nodi<-c(nodi,nodi_i)
+        violation<-c(violation,violation_i)
+        violation_severity<-c(violation_severity,violation_severity_i)
+        outfallID<-c(outfallID,paste0(Facility_ID,rep(outfall,length((tsvalue_i)))))
         hydrocode<-paste0('echo_',outfallID)
+        # #GM the above block now works, previously commented out block above and replace with block below, would need to repeat for the 'else'
+        # #Now we store the values we get from each outfall in each facility[i] directly because ts_ECHO_pull is only fed one DMR_data line, so there is only one iteration anyway
+        # tsvalue<-tsvalue_i
+        # print(paste0("Entering tsvalue = ",tsvalue)) #GM remove print line when done fixing function
+        # tsendtime<-tsendtime_i
+        # tscode<-tscode_i
+        # tstime<-tstime_i
+        # varkey<-varkey_i
+        # nodi<-nodi_i
+        # violation<-violation_i
+        # violation_severity<-violation_severity_i
+        # outfallID<-paste0(Facility_ID,rep(outfall,length((tsvalue_i))))
+        # hydrocode<-paste0('echo_',outfallID)
       }
     }else{ #if the DMR contains no data, set variables to NA
       hydrocode<-c(hydrocode,NA)
