@@ -992,6 +992,15 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
             nodi_i[l]<-outfall_DMR$nodi_desc[outfall_DMR$statistical_base_code=="3C"][l] 
             violation_i[l]<-outfall_DMR$violation_code[outfall_DMR$statistical_base_code=="3C"][l]
             violation_severity_i[l]<-outfall_DMR$violation_severity[outfall_DMR$statistical_base_code=="3C"][l]
+          }else{ #GM TRY THIS ELSE
+            tsvalue_i[l]<-NA
+            tsendtime_i[l]<-NA
+            tscode_i[l]<-NA
+            tstime_i[l]<-NA
+            varkey_i[l]<-NA
+            nodi_i[l]<-NA
+            violation_i[l]<-NA
+            violation_severity_i[l]<-NA
           }        
           
           
