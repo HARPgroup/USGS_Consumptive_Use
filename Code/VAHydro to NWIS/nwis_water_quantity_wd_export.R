@@ -7,8 +7,8 @@ library('dplyr')
 library('tidyr')
 
 #load variables
-syear = 2020
-eyear = 2021
+syear = 2021
+eyear = 2022
 
 ##########################################################################
 #LOAD CONFIG FILE

@@ -66,15 +66,15 @@ HUC6_layer_name <- 'WBDHU6' #HUC6 layer withing the HUC .gdb
 source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))
 source("https://raw.githubusercontent.com/HARPgroup/hydro-tools/master/GIS_functions/GIS_functions.R")
 
-base_url <- "http://deq1.bse.vt.edu/d.alpha"
+base_url <- "http://deq1.bse.vt.edu:81/d.dh"
 
 # Generate REST token for authentication              
 token <-trimws(rest_token(base_url, token, rest_uname, rest_pw))
 
 
 #set timeframe
-startDate <- '01/01/2020'
-endDate <- '12/31/2020'
+startDate <- '01/01/2021'
+endDate <- '12/31/2021'
 
 #####################################################################
 # Parse command line arguments
@@ -141,7 +141,7 @@ ECHO_Facilities <- echor::echoWaterGetFacilityInfo(
  print(paste("Download Process Complete: ",end_time ,sep=""))
  print(paste("Time elapsed: ",end_time-start_time,sep=""))
  
- print(paste("Number of Facilities Before Spatial Containment", length(ECHO_Facilities[,1])))
+ print(paste("Number of Facilities Before Spatial Containment", nrow(ECHO_Facilities[,1])))
  
  coordinates(ECHO_Facilities) <- c("FacLong", "FacLat") # add col of coordinates, convert dataframe to Large SpatialPointsDataFrame
  ECHO_Facilities <- sp_contain(HUC6_path,HUC6_layer_name,ECHO_Facilities)
@@ -149,7 +149,7 @@ ECHO_Facilities <- echor::echoWaterGetFacilityInfo(
  #ECHO_Facilities_original <- ECHO_Facilities 
  ECHO_Facilities <- ECHO_Facilities[-which(is.na(ECHO_Facilities$Poly_Code)),]
  #think about adding a visual check like plotting on a map
- print(paste("Number of Facilities After Spatial Containment", length(ECHO_Facilities[,1])))
+ print(paste("Number of Facilities After Spatial Containment", nrow(ECHO_Facilities[,1])))
  
 
 ECHO_Facilities <- data.frame(ECHO_Facilities)
@@ -200,11 +200,12 @@ endDate<-format(as.Date(endDate, "%m/%d/%Y"), "%m/%d/%Y")
 #i <- 26951
 # Create or retreive the Permit for each facility 
 #ECHO_Facilities <- ECHO_Facilities[1:5,] # JM uses: 13465:13470 # 8034:8040 misc Dominion energy
+
 permit_dataframe <- NULL
 facility_dataframe <- NULL
 # GM loop start error marker  #####
 i <-  24502 #for testing only, this id contains MK data
-for (i in spoint:(length(ECHO_Facilities[,1]))){
+for (i in 1:3){#:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
   print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   #DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
@@ -238,7 +239,9 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     # - If YES, just load the facility, do not push any updates
     # - If NO, create/update 
     ECHO_Facilities_i$hydrocode <- as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID))
+    print('1')
     ECHO_Facilities_i <- vahydro_facility_match(ECHO_Facilities_i)
+    print('2')
     if (!is.na(ECHO_Facilities_i$matched_hydroid)) {
       print(paste0("Found Matched Facility with hydroid = ", ECHO_Facilities_i$matched_hydroid))
       facility <- getFeature(list(hydroid = ECHO_Facilities_i$matched_hydroid), token, base_url)
@@ -246,7 +249,7 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     } else {
       facility <- facility_REST(ECHO_Facilities_i, permit, token)
     }
-    
+    print('3')
     if (is.null(facility_dataframe)) {
       facility_dataframe <- facility
     } else {
@@ -262,8 +265,15 @@ for (i in spoint:(length(ECHO_Facilities[,1]))){
     print(paste("PROCESSING DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
     outfalls <- outfall_features_REST(DMR_data, facility, token, base_url)
     # get timeseries - this function makes a redundant call to echo for ts data... should replace to input DMR_data and maintain VAHydro output formatting
-    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, startDate, endDate) #GM FLAG ERROR IN PROGRESS.   edit and reload->  source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))###########
-    facts <- permit(facts) 
+    facts <- ts_ECHO_pull(ECHO_Facilities_i,DMR_data,1, "01/01/2010", endDate) #GM FLAG ERROR IN PROGRESS.   edit and reload->  source(paste(localpath,"/USGS_Consumptive_Use/Code/ECHO to VAHydro/R_functions.R", sep = ""))###########
+    # if (nrow(facts > 0)) { ##Finding a facility with data
+    #   print(i)
+    #   break
+    # }
+    ##facts <- permit(facts) #BB Function does not exist
+    ECHO_Facilities_i$DesignFlow_mgd <- NA
+    design_flow <- facility_properties(ECHO_Facilities_i)
+    facts <- ts_flagging(facts)
     if (import_mode == 'vahydro') {
       # push to VAHydro
       tsdf <- ts_import(outfalls,facts,1, base_url)

@@ -154,7 +154,8 @@ fips_REST <- function(fipscode,token){
   
   fips_hydroid <- getFeature(fips_inputs, token, base_url)
   
-  if(fips_hydroid != FALSE){
+  ##BB Changed condition from fips_hydroid != FALSE. Threw an error if fips_hydroid was a dataframe
+  if(class(fips_hydroid) == 'data.frame'){
     fips_hydroid <- as.character(fips_hydroid$hydroid)
   } else {
     fips_hydroid <- ''
@@ -441,8 +442,8 @@ dh_echo_format_ts <- function(timeseries, outfalls) {
         b.dmr_flag_units_100,
         b.dmr_flag_units_1000000,
         b.violation as echo_flag
-      from outfalls as a
-      left outer join timeseries as b 
+      from outfalls  a
+      left outer join timeseries b 
       on (a.hydrocode = b.hydrocode)
     "
   )
@@ -900,7 +901,7 @@ facility_properties<- function(ECHO_Facilities){
 #DMR data can be found from the following base URL query: 
 #https://ofmpub.epa.gov/echo/eff_rest_services.get_effluent_chart?
 
-ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/2010",endDate=NULL){
+ts_ECHO_pull<- function(ECHO_Facilities_i,DMR_data, iteration, startDate="01/01/2010",endDate=NULL){
   #mm/dd/yyyy: data on ECHO is limited to 2012 for most sites or 2009 for a few
   if (is.null(endDate)) {
     endDate<-Sys.Date()
@@ -924,14 +925,15 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
   #This loop goes through each CWA regulated facility one by one to extract reported discharges 
   #from each unique outfall. In the end, there will be ECHO_Facilities table with timeseries data for each
   #outfall located in VA.
-  for (i in iteration:length(ECHO_Facilities$Facility_ID)){
+  for (i in iteration:length(ECHO_Facilities_i$Facility_ID)){
     
-    Facility_ID<-ECHO_Facilities$Facility_ID[i]
-    print(paste("Processing Facility ID: ", Facility_ID, "(",i," of ",length(ECHO_Facilities$Facility_ID),")", sep=""))
+    Facility_ID<-ECHO_Facilities_i$Facility_ID[i]
+    print(paste("Processing Facility ID: ", Facility_ID, "(",i," of ",length(ECHO_Facilities_i$Facility_ID),")", sep=""))
     
 #GM#    DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) #CWA Effluent Chart ECHO REST Service for a single facility for a given timeframe # 50050 only looks at Flow, in conduit ot thru treatment plant - there are 347 parameter codes defined in ECHO
 #GM#   DMR_data<-read.csv(DMR_data,sep = ",", stringsAsFactors = F)#reads downloaded CWA Effluent Chart that contains discharge monitoring report (DMR) for a single facility
 #GM input DMR_data using echoGetEffluent instead of this method above    
+    
     DMR_data$dmr_value_nmbr[DMR_data$nodi_code %in% c('C','7')]<-0#nodi_code is the unique code indicating the reason why an expected DMR value was not submitted. C=No Discharge, B=Below Detection Limit, 9=Conditional Monitoring, 7=parameter/value not reported
     data_length<-length(unique(DMR_data$monitoring_period_end_date))#sees if there is any reported data worth extracting and examining
     if(data_length>0){ #if the value is NOT NA, enter loop
@@ -941,6 +943,8 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
         if(nchar(as.character(outfall_ID[j]), type="chars")<3){
           leadingzeros<-paste(rep(0,3-nchar(outfall_ID[j])),collapse= '')
           outfall_ID[j]<-paste0(leadingzeros,as.character(outfall_ID[j]))
+        }else if (nchar(outfall_ID[j]) == 4) {##BB - noticed there were several that were 4 long with an irrelevant first character (not in the hydrocode)
+          outfall_ID[j] <- substr(outfall_ID[j],2,4)
         }else{
           outfall_ID[j]<-as.character(outfall_ID[j])#if the outfall number is already three digits, no reformatting needed
         }
@@ -974,6 +978,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
             # violation_i[l]<-outfall_DMR$violation_code[l]
             # violation_severity_i[l]<-outfall_DMR$violation_severity[l]
             #GM no longer need to replace block below with above, was written because ==MK was false and function is only being fed one row
+            
             tsvalue_i[l]<-as.numeric(outfall_DMR$dmr_value_nmbr[outfall_DMR$statistical_base_code=="MK"])[l]
             tsendtime_i[l]<-outfall_DMR$monitoring_period_end_date[outfall_DMR$statistical_base_code=="MK"][l] #character class
             tscode_i[l]<-as.numeric(outfall_DMR$nmbr_of_submission[outfall_DMR$statistical_base_code=="MK"])[l]
@@ -1001,7 +1006,7 @@ ts_ECHO_pull<- function(ECHO_Facilities,DMR_data, iteration, startDate="01/01/20
             nodi_i[l]<-NA
             violation_i[l]<-NA
             violation_severity_i[l]<-NA
-          }        
+          }
           
           
         }

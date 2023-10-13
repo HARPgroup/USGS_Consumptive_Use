@@ -8,8 +8,8 @@ library('tidyr')
 options(scipen = 999)
 
 #load variables
-syear = 2020
-eyear = 2021
+syear = 2021
+eyear = 2022
 
 startdate <- paste(syear, "-01-01",sep='')
 enddate <- paste(eyear, "-12-31", sep='')
