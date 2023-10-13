@@ -205,7 +205,7 @@ permit_dataframe <- NULL
 facility_dataframe <- NULL
 # GM loop start error marker  #####
 i <-  24502 #for testing only, this id contains MK data
-for (i in 1:3){#:(length(ECHO_Facilities[,1]))){
+for (i in 1:(length(ECHO_Facilities[,1]))){
   ECHO_Facilities_i <- ECHO_Facilities[i,]
   print(paste("Checking for DMR DATA FOR FACILITY ",i," OF ",length(ECHO_Facilities[,1]),sep=""))
   #DMR_data<-paste0("https://ofmpub.epa.gov/echo/eff_rest_services.download_effluent_chart?p_id=",ECHO_Facilities_i$Facility_ID,"&parameter_code=50050&start_date=",startDate,"&end_date=",endDate) 
@@ -239,9 +239,8 @@ for (i in 1:3){#:(length(ECHO_Facilities[,1]))){
     # - If YES, just load the facility, do not push any updates
     # - If NO, create/update 
     ECHO_Facilities_i$hydrocode <- as.character(paste0("echo_",ECHO_Facilities_i$Facility_ID))
-    print('1')
     ECHO_Facilities_i <- vahydro_facility_match(ECHO_Facilities_i)
-    print('2')
+    
     if (!is.na(ECHO_Facilities_i$matched_hydroid)) {
       print(paste0("Found Matched Facility with hydroid = ", ECHO_Facilities_i$matched_hydroid))
       facility <- getFeature(list(hydroid = ECHO_Facilities_i$matched_hydroid), token, base_url)
@@ -249,7 +248,6 @@ for (i in 1:3){#:(length(ECHO_Facilities[,1]))){
     } else {
       facility <- facility_REST(ECHO_Facilities_i, permit, token)
     }
-    print('3')
     if (is.null(facility_dataframe)) {
       facility_dataframe <- facility
     } else {
